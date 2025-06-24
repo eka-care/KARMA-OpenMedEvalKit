@@ -1,1 +1,1 @@
-# KARMA-OpenEvalKit
+# KARMA-OpenMedEvalKit
