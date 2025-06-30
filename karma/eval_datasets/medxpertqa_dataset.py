@@ -8,6 +8,7 @@ multimodal dataset interface for medical question answering with images.
 import logging
 from typing import Dict, Any, Tuple
 
+from karma.dataset_registry import register_dataset
 from karma.eval_datasets.base_dataset import BaseMultimodalDataset
 
 logger = logging.getLogger(__name__)
@@ -18,6 +19,7 @@ CONFIG = "MM"
 COMMIT_HASH = "7186bd593752a47d6bd72ccf99ca67df69be18bd"
 
 
+@register_dataset("medxpertqa", metrics=["exact_match"], task_type="mcqa")
 class MedXpertQADataset(BaseMultimodalDataset):
     """
     MedXpertQA MM PyTorch Dataset implementing the new multimodal interface.

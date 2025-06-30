@@ -10,7 +10,6 @@ from typing import Dict, Any, Tuple
 
 from karma.eval_datasets.base_dataset import BaseMultimodalDataset
 from karma.dataset_registry import register_dataset
-
 logger = logging.getLogger(__name__)
 
 # Hardcoded confinement instructions
@@ -20,7 +19,7 @@ SPLIT = "validation"
 COMMIT_HASH = "91c6572c454088bf71b679ad90aa8dffcd0d5868"
 
 
-@register_dataset("medmcqa", metrics=["accuracy"], task_type="mcqa")
+@register_dataset("medmcqa", metrics=["exact_match"], task_type="mcqa")
 class MedMCQADataset(BaseMultimodalDataset):
     """
     MedMCQA PyTorch Dataset implementing the new multimodal interface.

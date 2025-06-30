@@ -259,16 +259,10 @@ class Benchmark:
         Returns:
             Dictionary of metric scores or None if metric not found
         """
-        metric = evaluate.load(metric_config["metric"])
+        metric = metric_config["metric"]
         references = [it["expected_output"] for it in prediction_results]
         predictions = [it["prediction"] for it in prediction_results]
-        if metric_config.get("processors"):
-            for processor in metric_config["processors"]:
-                references = [processor.process(reference) for reference in references]
-                predictions = [
-                    processor.process(prediction) for prediction in predictions
-                ]
-        score = metric.compute(references=references, predictions=predictions)
+        score = metric.evaluate(predictions=predictions, references=references)
         return score
 
     def evaluate(
@@ -321,7 +315,7 @@ class Benchmark:
         # Process batches from dataloader
         for batch_idx, samples in enumerate(dataloader):
             self.logger.info(batch_idx)
-            if batch_idx > 5:
+            if batch_idx > 2:
                 break
             batch_results = []
             samples = [
@@ -364,9 +358,12 @@ class Benchmark:
         )
         if overall_score is None:
             raise ValueError(
-                f"Metric {metric_config['metric']} not found in compute_metrics"
+                f"Metric {metric_config['metric'].metric_name} not found in compute_metrics"
             )
-        overall_score = overall_score[metric_config["metric"]]
+        
+        # Extract the main score from the metric results
+        metric_name = metric_config["metric"].metric_name
+        overall_score = overall_score[metric_name]
         # Create summary for Weave logging
         summary_data = {
             "overall_score": overall_score,
@@ -374,7 +371,7 @@ class Benchmark:
         }
 
         # Log to Weave
-        if self.use_weave:
+        if self.use_weave and evaluation_logger is not None:
             evaluation_logger.log_summary(summary_data)
             self.logger.info(
                 "📊 Summary results logged to Weave - check UI for comparisons!"

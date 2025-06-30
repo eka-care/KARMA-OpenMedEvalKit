@@ -9,7 +9,6 @@ import logging
 
 from karma.eval_datasets.medqa_dataset import MedQADataset
 from karma.dataset_registry import register_dataset
-
 logger = logging.getLogger(__name__)
 
 # Hardcoded confinement instructions

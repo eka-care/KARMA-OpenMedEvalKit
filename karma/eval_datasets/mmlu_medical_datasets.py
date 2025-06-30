@@ -7,7 +7,9 @@ and only update the dataset name, following the same optimization pattern.
 
 import logging
 
+from karma.dataset_registry import register_dataset
 from karma.eval_datasets.medqa_dataset import MedQADataset
+from karma.eval_datasets.base_dataset import BaseMultimodalDataset
 
 logger = logging.getLogger(__name__)
 
@@ -16,6 +18,7 @@ logger = logging.getLogger(__name__)
 SPLIT = "test"
 
 
+@register_dataset("mmlu_professional_medicine", metrics=["exact_match"], task_type="mcqa")
 class MMLUProfessionalMedicineDataset(MedQADataset):
     """MMLU Professional Medicine dataset inheriting from MedQA."""
 
@@ -28,6 +31,7 @@ class MMLUProfessionalMedicineDataset(MedQADataset):
         )
 
 
+@register_dataset("mmlu_anatomy", metrics=["exact_match"], task_type="mcqa")
 class MMLUAnatomyDataset(MedQADataset):
     """MMLU Anatomy dataset inheriting from MedQA."""
 
@@ -40,6 +44,7 @@ class MMLUAnatomyDataset(MedQADataset):
         )
 
 
+@register_dataset("mmlu_college_biology", metrics=["exact_match"], task_type="mcqa")
 class MMLUCollegeBiologyDataset(MedQADataset):
     """MMLU College Biology dataset inheriting from MedQA."""
 
@@ -52,6 +57,7 @@ class MMLUCollegeBiologyDataset(MedQADataset):
         )
 
 
+@register_dataset("mmlu_clinical_knowledge", metrics=["exact_match"], task_type="mcqa")
 class MMLUClinicalKnowledgeDataset(MedQADataset):
     """MMLU Clinical Knowledge dataset inheriting from MedQA."""
 
@@ -64,6 +70,7 @@ class MMLUClinicalKnowledgeDataset(MedQADataset):
         )
 
 
+@register_dataset("mmlu_college_medicine", metrics=["exact_match"], task_type="mcqa")
 class MMLUCollegeMedicineDataset(MedQADataset):
     """MMLU College Medicine dataset inheriting from MedQA."""
 

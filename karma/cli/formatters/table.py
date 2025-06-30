@@ -57,6 +57,7 @@ class ResultsFormatter:
                     num_samples = metric_data.get('num_samples', 0)
                     eval_time = metric_data.get('evaluation_time', 0)
                     
+                    
                     # Format score
                     if isinstance(score, float):
                         score_text = f"{score:.3f}"

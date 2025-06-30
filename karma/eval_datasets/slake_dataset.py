@@ -9,6 +9,7 @@ import logging
 
 from karma.eval_datasets.vqa_rad_dataset import VQARADDataset
 from karma.dataset_registry import register_dataset
+from karma.eval_datasets.base_dataset import BaseMultimodalDataset
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +19,7 @@ SPLIT = "test"
 COMMIT_HASH = "8d18b4d5a4eae47101c1d9f57b99fc58df66f17e"
 
 
-@register_dataset("slake", metrics=["accuracy", "bleu"], task_type="vqa")
+@register_dataset("slake", metrics=["exact_match"], task_type="vqa")
 class SLAKEDataset(VQARADDataset):
     """
     SLAKE PyTorch Dataset inheriting from VQARADDataset.

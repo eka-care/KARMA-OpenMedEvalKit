@@ -25,6 +25,7 @@ from rich.text import Text
 from karma.benchmark import Benchmark
 from karma.model_registry import model_registry
 from karma.dataset_registry import dataset_registry
+from karma.metrics_registry import metric_registry
 from karma.cli.utils import format_duration, validate_dataset_args
 
 
@@ -88,6 +89,7 @@ class MultiDatasetOrchestrator:
         # Discover models and datasets
         model_registry.discover_models()
         dataset_registry.discover_datasets()
+        metric_registry.discover_metrics()
 
         # Get dataset list
         if dataset_names is None:
@@ -263,6 +265,10 @@ class MultiDatasetOrchestrator:
             metrics = dataset_info["metrics"]
 
             for metric_name in metrics:
+                # Get metric class from registry
+                metric_class = metric_registry.get_metric(metric_name)
+                metric_instance = metric_class()
+
                 # Create benchmark instance
                 benchmark = Benchmark(
                     logger=logger,
@@ -274,7 +280,7 @@ class MultiDatasetOrchestrator:
 
                 # Configure metric
                 metric_config = {
-                    "metric": metric_name,
+                    "metric": metric_instance,
                     "processors": [],  # Add processors if needed
                 }
 
@@ -283,19 +289,21 @@ class MultiDatasetOrchestrator:
                     metric_config=metric_config, batch_size=batch_size
                 )
 
-                dataset_results[metric_name] = {
+                metric_key = metric_instance.metric_name
+
+                dataset_results[metric_key] = {
                     "score": result["overall_score"],
                     "evaluation_time": result["summary"]["evaluation_time"],
                     "num_samples": len(result["predictions"]),
                 }
 
                 if progress:
-                    metric_task = progress.add_task(f"Computing {metric_name}", total=1)
+                    metric_task = progress.add_task(f"Computing {metric_key}", total=1)
                     progress.remove_task(metric_task)
                 else:
-                    self.console.print(f"  Computing [yellow]{metric_name}[/yellow]...")
+                    self.console.print(f"  Computing [yellow]{metric_key}[/yellow]...")
                     self.console.print(
-                        f"    [green]{metric_name}: {result['overall_score']:.3f}[/green]"
+                        f"    [green]{metric_key}: {result['overall_score']:.3f}[/green]"
                     )
 
             # Store results

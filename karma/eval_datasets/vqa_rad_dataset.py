@@ -9,7 +9,7 @@ import logging
 from typing import Dict, Any
 
 from karma.eval_datasets.base_dataset import BaseMultimodalDataset
-
+from karma.dataset_registry import register_dataset
 logger = logging.getLogger(__name__)
 
 # Hardcoded confinement instructions for VQA
@@ -18,6 +18,7 @@ SPLIT = "test"
 COMMIT_HASH = "bcf91e7654fb9d51c8ab6a5b82cacf3fafd2fae9"
 
 
+@register_dataset("vqa_rad", metrics=["exact_match"], task_type="vqa")
 class VQARADDataset(BaseMultimodalDataset):
     """
     VQA-RAD PyTorch Dataset implementing the new multimodal interface.

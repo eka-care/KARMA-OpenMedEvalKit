@@ -71,7 +71,7 @@ CODE_TO_NAME = {
 
 @register_dataset(
     "in22conv", 
-    metrics=["bleu", "chrf"], 
+    metrics=["bleu"], 
     task_type="translation",
     required_args=["source_language", "target_language"],
     optional_args=["domain"],

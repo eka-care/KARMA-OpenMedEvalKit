@@ -34,7 +34,7 @@ class DatasetRegistry:
         
         Args:
             name: Name to register the dataset under
-            metrics: List of metrics that can be computed for this dataset
+            metrics: List of metric names that can be computed for this dataset
             task_type: Type of task (e.g., "mcqa", "vqa", "qa", "translation")
             required_args: List of required argument names for dataset instantiation
             optional_args: List of optional argument names for dataset instantiation
