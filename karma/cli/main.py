@@ -1,7 +1,7 @@
 """
 Main CLI entry point for the Karma healthcare model evaluation framework.
 
-This module provides the main command-line interface using Click for 
+This module provides the main command-line interface using Click for
 subcommand organization and Rich for beautiful output formatting.
 """
 
@@ -13,7 +13,7 @@ from karma.cli.commands.eval import eval_cmd
 from karma.cli.commands.list import list_cmd
 from karma.cli.commands.info import info_cmd
 
-# Install rich traceback handler for better error display
+# # Install rich traceback handler for better error display
 install()
 
 # Global console instance
@@ -28,10 +28,10 @@ console = Console()
 def karma(ctx, verbose, quiet):
     """
     Karma - Healthcare AI Model Evaluation Framework
-    
+
     A comprehensive toolkit for evaluating healthcare AI models across
     multiple datasets with automatic discovery and rich output formatting.
-    
+
     Examples:
         karma eval --model qwen --model-path "Qwen/Qwen2.5-0.5B-Instruct"
         karma list models
@@ -39,12 +39,12 @@ def karma(ctx, verbose, quiet):
     """
     # Ensure context object exists
     ctx.ensure_object(dict)
-    
+
     # Store global options in context
-    ctx.obj['verbose'] = verbose
-    ctx.obj['quiet'] = quiet
-    ctx.obj['console'] = console
-    
+    ctx.obj["verbose"] = verbose
+    ctx.obj["quiet"] = quiet
+    ctx.obj["console"] = console
+
     # Adjust console verbosity
     if quiet:
         console.quiet = True

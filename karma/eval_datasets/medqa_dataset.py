@@ -8,7 +8,7 @@ multimodal dataset interface for use with the refactored benchmark system.
 import logging
 from typing import Dict, Any, Tuple
 
-from karma.dataset_registry import register_dataset
+from karma.registries.dataset_registry import register_dataset
 from karma.eval_datasets.base_dataset import BaseMultimodalDataset
 
 logger = logging.getLogger(__name__)
@@ -18,6 +18,7 @@ CONFINEMENT_INSTRUCTIONS = "Output format: 'ANSWER: <option>', examples: ['ANSWE
 DATASET_NAME = "openlifescienceai/medqa"
 SPLIT = "test"
 COMMIT_HASH = "153e61cdd129eb79d3c27f82cdf3bc5e018c11b0"
+
 
 @register_dataset("medqa", metrics=["exact_match"], task_type="mcqa")
 class MedQADataset(BaseMultimodalDataset):

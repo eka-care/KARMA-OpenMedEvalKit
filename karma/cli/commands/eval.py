@@ -8,7 +8,6 @@ multiple healthcare datasets with support for dataset-specific arguments.
 import click
 from rich.console import Console
 from rich.panel import Panel
-from rich.text import Text
 
 from karma.cli.orchestrator import MultiDatasetOrchestrator
 from karma.cli.utils import (
@@ -19,8 +18,8 @@ from karma.cli.utils import (
     ClickFormatter,
 )
 from dotenv import load_dotenv
-from karma.model_registry import model_registry
-from karma.dataset_registry import dataset_registry
+from karma.registries.model_registry import model_registry
+from karma.registries.dataset_registry import dataset_registry
 
 
 @click.command(name="eval")

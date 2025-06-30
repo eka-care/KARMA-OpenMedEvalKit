@@ -8,8 +8,7 @@ since they share the same structure for visual question answering.
 import logging
 
 from karma.eval_datasets.vqa_rad_dataset import VQARADDataset
-from karma.dataset_registry import register_dataset
-from karma.eval_datasets.base_dataset import BaseMultimodalDataset
+from karma.registries.dataset_registry import register_dataset
 
 logger = logging.getLogger(__name__)
 

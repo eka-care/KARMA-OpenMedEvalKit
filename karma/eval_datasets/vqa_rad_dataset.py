@@ -9,7 +9,8 @@ import logging
 from typing import Dict, Any
 
 from karma.eval_datasets.base_dataset import BaseMultimodalDataset
-from karma.dataset_registry import register_dataset
+from karma.registries.dataset_registry import register_dataset
+
 logger = logging.getLogger(__name__)
 
 # Hardcoded confinement instructions for VQA

@@ -7,7 +7,7 @@ from transformers import AutoModelForImageTextToText, AutoProcessor
 from IPython.display import Audio
 
 from karma.models.base import BaseLLM
-from karma.model_registry import register_model
+from karma.registries.model_registry import register_model
 
 logger = logging.getLogger(__name__)
 

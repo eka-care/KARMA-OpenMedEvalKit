@@ -8,7 +8,7 @@ multimodal dataset interface for medical question answering with images.
 import logging
 from typing import Dict, Any, Tuple
 
-from karma.dataset_registry import register_dataset
+from karma.registries.dataset_registry import register_dataset
 from karma.eval_datasets.base_dataset import BaseMultimodalDataset
 
 logger = logging.getLogger(__name__)

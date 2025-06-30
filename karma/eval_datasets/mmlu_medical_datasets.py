@@ -7,9 +7,8 @@ and only update the dataset name, following the same optimization pattern.
 
 import logging
 
-from karma.dataset_registry import register_dataset
+from karma.registries.dataset_registry import register_dataset
 from karma.eval_datasets.medqa_dataset import MedQADataset
-from karma.eval_datasets.base_dataset import BaseMultimodalDataset
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +17,9 @@ logger = logging.getLogger(__name__)
 SPLIT = "test"
 
 
-@register_dataset("mmlu_professional_medicine", metrics=["exact_match"], task_type="mcqa")
+@register_dataset(
+    "mmlu_professional_medicine", metrics=["exact_match"], task_type="mcqa"
+)
 class MMLUProfessionalMedicineDataset(MedQADataset):
     """MMLU Professional Medicine dataset inheriting from MedQA."""
 

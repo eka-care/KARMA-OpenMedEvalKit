@@ -23,9 +23,9 @@ from rich.panel import Panel
 from rich.text import Text
 
 from karma.benchmark import Benchmark
-from karma.model_registry import model_registry
-from karma.dataset_registry import dataset_registry
-from karma.metrics_registry import metric_registry
+from karma.registries.model_registry import model_registry
+from karma.registries.dataset_registry import dataset_registry
+from karma.registries.metrics_registry import metric_registry
 from karma.cli.utils import format_duration, validate_dataset_args
 from karma.cache import CacheManager
 
@@ -118,12 +118,14 @@ class MultiDatasetOrchestrator:
             self.console.print(f"\n[cyan]Initializing cache manager[/cyan]")
             try:
                 # Use a generic dataset name for the shared cache manager
-                cache_manager = CacheManager(
-                    "multi_dataset", model.model_config
+                cache_manager = CacheManager("multi_dataset", model.model_config)
+                self.console.print(
+                    "[green]✓ Cache manager initialized successfully[/green]"
                 )
-                self.console.print("[green]✓ Cache manager initialized successfully[/green]")
             except Exception as e:
-                self.console.print(f"[red]✗ Failed to initialize cache manager: {e}[/red]")
+                self.console.print(
+                    f"[red]✗ Failed to initialize cache manager: {e}[/red]"
+                )
                 raise
 
         # Start evaluation
@@ -286,8 +288,7 @@ class MultiDatasetOrchestrator:
 
             for metric_name in metrics:
                 # Get metric class from registry
-                metric_class = metric_registry.get_metric(metric_name)
-                metric_instance = metric_class()
+                metric_instance = metric_registry.get_metric_class(metric_name)
 
                 # Create benchmark instance
                 benchmark = Benchmark(
@@ -295,6 +296,8 @@ class MultiDatasetOrchestrator:
                     model=model,
                     dataset=dataset,
                     cache_manager=cache_manager,
+                    progress=progress,
+                    console=self.console,
                 )
 
                 # Configure metric

@@ -9,7 +9,7 @@ import logging
 from typing import Dict, Any, Tuple
 
 from karma.eval_datasets.base_dataset import BaseMultimodalDataset
-from karma.dataset_registry import register_dataset
+from karma.registries.dataset_registry import register_dataset
 
 logger = logging.getLogger(__name__)
 
@@ -70,12 +70,12 @@ CODE_TO_NAME = {
 
 
 @register_dataset(
-    "in22conv", 
-    metrics=["bleu"], 
+    "in22conv",
+    metrics=["bleu"],
     task_type="translation",
     required_args=["source_language", "target_language"],
     optional_args=["domain"],
-    default_args={"source_language": "en", "domain": "conversational"}
+    default_args={"source_language": "en", "domain": "conversational"},
 )
 class IN22ConvDataset(BaseMultimodalDataset):
     """

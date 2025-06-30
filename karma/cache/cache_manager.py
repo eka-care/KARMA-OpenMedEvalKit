@@ -4,6 +4,8 @@ import base64
 import multiprocessing
 import os
 from concurrent.futures import ThreadPoolExecutor
+import numpy as np
+from PIL import Image
 
 from typing import Any, Dict, List, Tuple
 from karma.models.base import ModelConfig
@@ -18,9 +20,7 @@ class CacheManager:
     Handles hash generation and cache operations with configurable backends.
     """
 
-    def __init__(
-        self, dataset_name: str, model_config: ModelConfig
-    ):
+    def __init__(self, dataset_name: str, model_config: ModelConfig):
         self.model_config = model_config
 
         self.database_hits = 0
@@ -36,8 +36,10 @@ class CacheManager:
         elif cache_type == "dynamodb":
             self.cache_io = DynamoDBCacheIO()
         else:
-            raise ValueError(f"Unsupported cache type: {cache_type}. Supported types: duckdb, dynamodb")
-        
+            raise ValueError(
+                f"Unsupported cache type: {cache_type}. Supported types: duckdb, dynamodb"
+            )
+
         self.initialize_run(model_config, dataset_name)
 
     def format_model_input(self, model_input: Dict[str, Any]) -> Dict[str, Any]:
@@ -104,13 +106,6 @@ class CacheManager:
         Returns:
             Serializable representation of the object
         """
-        try:
-            # Try importing common libraries
-            import numpy as np
-            from PIL import Image
-        except ImportError:
-            np = None
-            Image = None
 
         # Handle numpy arrays
         if np is not None and isinstance(obj, np.ndarray):

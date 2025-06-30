@@ -8,7 +8,8 @@ multimodal dataset interface for use with the refactored benchmark system.
 import logging
 
 from karma.eval_datasets.medqa_dataset import MedQADataset
-from karma.dataset_registry import register_dataset
+from karma.registries.dataset_registry import register_dataset
+
 logger = logging.getLogger(__name__)
 
 # Hardcoded confinement instructions

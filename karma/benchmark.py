@@ -9,7 +9,6 @@ This module provides a base class that handles:
 - Weave integration
 """
 
-import logging
 import threading
 import time
 from typing import Any, Dict, List, Tuple, Optional
@@ -21,19 +20,10 @@ from weave import EvaluationLogger
 from karma.cache import CacheManager
 from karma.eval_datasets.base_dataset import BaseMultimodalDataset
 from karma.models.base import BaseLLM
-
-import evaluate
+from karma.cli.output_adapter import OutputAdapter
 
 
 class Benchmark:
-    """
-    Main benchmark class that works with any dataset and task combination.
-
-    Handles cache management, statistics tracking, timing, and provides
-    a generic evaluate function that works with any dataset/task pair.
-    Supports multimodal inputs (text, images, audio, etc.)
-    """
-
     def __init__(
         self,
         logger,
@@ -42,6 +32,10 @@ class Benchmark:
         verbose_mode: bool = False,
         use_weave: bool = False,
         project_name: str = "benchmark-evaluation",
+        enable_cache: bool = False,
+        cache_path: str = "",
+        console=None,
+        progress=None,
         cache_manager: Optional[CacheManager] = None,
     ):
         """
@@ -55,21 +49,24 @@ class Benchmark:
             enable_cache: Whether to enable persistent caching
             cache_path: Path to cache database (used only if cache_manager is None)
             cache_manager: Optional pre-initialized CacheManager instance
+            console: Optional rich Console for output (from orchestrator)
+            progress: Optional rich Progress instance for progress bars (from orchestrator)
         """
-        # Initialize DeepEval base
-        # Store model and basic settings
-        self.logger = logger
+        self.logger = OutputAdapter(logger=logger, console=console)
         self.model = model
         self.verbose_mode = verbose_mode
+        self.progress = progress
 
-        logger.info(f"Initializing benchmark with model: {model.model_config.model_id}")
-        logger.info(f"Dataset: {dataset.dataset_name}")
+        self.logger.info(
+            f"Initializing benchmark with model: {model.model_config.model_id}"
+        )
+        self.logger.info(f"Dataset: {dataset.dataset_name}")
 
         # Weave integration
         self.use_weave = use_weave
         if self.use_weave:
             weave.init(project_name)
-            logger.info(f"✅ Initialized Weave tracking: {project_name}")
+            self.logger.success(f"✅ Initialized Weave tracking: {project_name}")
 
         # Setup caching system
         self.enable_cache = cache_manager is not None
@@ -81,6 +78,14 @@ class Benchmark:
             logger.info("No cache manager provided")
 
         self.dataset = dataset
+
+    """
+    Main benchmark class that works with any dataset and task combination.
+
+    Handles cache management, statistics tracking, timing, and provides
+    a generic evaluate function that works with any dataset/task pair.
+    Supports multimodal inputs (text, images, audio, etc.)
+    """
 
     def get_batch_model_inputs(
         self, samples: List[Dict[str, Any]]
@@ -171,41 +176,43 @@ class Benchmark:
         """
         Generate predictions for a batch of samples, with cache checking and fetching.
         """
-        self.logger.info(f"Starting batch prediction for {len(samples)} samples")
+        n_samples = len(samples)
+        self.logger.debug(f"Starting batch prediction for {n_samples} samples")
         if dry_run:
-            self.logger.info("Dry run mode enabled - skipping model inference")
+            self.logger.debug("Dry run mode enabled - skipping model inference")
 
         results = []
 
         if not dry_run:
             model_inputs_to_generate = self.get_batch_model_inputs(samples)
-            self.logger.info("Generating batch responses from model")
+            self.logger.debug("Generating batch responses from model")
             start_time = time.time()
 
-            # Use batch generation with model inputs passed as kwargs
             batch_responses = self.model.batch_generate(**model_inputs_to_generate)
-
             generation_time = time.time() - start_time
             self.logger.info(
                 f"Model generation completed in {generation_time:.2f} seconds"
             )
 
+            # Use progress bar if available for per-sample progress
+            progress_task = None
+            if self.progress:
+                progress_task = self.progress.add_task(
+                    "Batch prediction", total=n_samples
+                )
+
             for i, (batch_response, sample) in enumerate(
                 zip(batch_responses, samples, strict=False)
             ):
                 expected = sample["expected_output"]
-
-                # batch_generate returns (thinking_content, response) tuples
                 if (
                     isinstance(batch_response, (tuple, list))
                     and len(batch_response) == 2
                 ):
                     thinking_content, response = batch_response
                 else:
-                    # Fallback for unexpected format
                     thinking_content = ""
                     response = batch_response
-
                 response = str(response)
                 thinking_content = str(thinking_content)
                 prediction, success = self.dataset.extract_prediction(response)
@@ -218,6 +225,10 @@ class Benchmark:
                     "success": success,
                 }
                 results.append(result)
+                if self.progress and progress_task is not None:
+                    self.progress.advance(progress_task)
+            if self.progress and progress_task is not None:
+                self.progress.remove_task(progress_task)
 
             # Step 3: Save new results to cache
             if self.enable_cache:
@@ -300,7 +311,12 @@ class Benchmark:
                 self.dataset.dataset_name.replace("/", "_")
             )
 
-        # Create dataloader
+        if self.progress:
+            print("here")
+            task = self.progress.add_task(
+                f"[cyan]Processing batches for {self.dataset.dataset_name}", total=None
+            )
+
         dataloader = DataLoader(
             self.dataset,
             batch_size=batch_size,
@@ -354,7 +370,12 @@ class Benchmark:
                         f"Prediction: {result['prediction']}, Expected: {expected}, "
                         f"From cache: {result.get('from_cache', False)}"
                     )
-        # Calculate overall results
+            if self.progress and task is not None:
+                self.progress.advance(task)
+
+        if task:
+            self.progress.remove_task(task)
+
         overall_score = self.compute_metrics(
             all_prediction_results, metric_config=metric_config
         )
@@ -362,7 +383,7 @@ class Benchmark:
             raise ValueError(
                 f"Metric {metric_config['metric'].metric_name} not found in compute_metrics"
             )
-        
+
         # Extract the main score from the metric results
         metric_name = metric_config["metric"].metric_name
         overall_score = overall_score[metric_name]
