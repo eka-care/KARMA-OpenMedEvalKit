@@ -2,6 +2,7 @@ import hashlib
 import json
 import base64
 import multiprocessing
+import os
 from concurrent.futures import ThreadPoolExecutor
 
 from typing import Any, Dict, List, Tuple
@@ -18,18 +19,25 @@ class CacheManager:
     """
 
     def __init__(
-        self, dataset_name: str, model_config: ModelConfig, cache_path: str = ""
+        self, dataset_name: str, model_config: ModelConfig
     ):
         self.model_config = model_config
 
         self.database_hits = 0
         self.database_misses = 0
 
-        # Initialize cache
-        if cache_path:
+        # Get cache configuration from environment variables
+        cache_type = os.getenv("KARMA_CACHE_TYPE", "duckdb").lower()
+        cache_path = os.getenv("KARMA_CACHE_PATH", "./cache.db")
+
+        # Initialize cache based on type
+        if cache_type == "duckdb":
             self.cache_io = DuckDBCacheIO(db_path=cache_path)
-        else:
+        elif cache_type == "dynamodb":
             self.cache_io = DynamoDBCacheIO()
+        else:
+            raise ValueError(f"Unsupported cache type: {cache_type}. Supported types: duckdb, dynamodb")
+        
         self.initialize_run(model_config, dataset_name)
 
     def format_model_input(self, model_input: Dict[str, Any]) -> Dict[str, Any]:

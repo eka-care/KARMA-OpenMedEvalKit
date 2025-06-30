@@ -18,6 +18,7 @@ from karma.cli.utils import (
     get_cache_info,
     ClickFormatter,
 )
+from dotenv import load_dotenv
 from karma.model_registry import model_registry
 from karma.dataset_registry import dataset_registry
 
@@ -45,7 +46,11 @@ from karma.dataset_registry import dataset_registry
     type=click.IntRange(1, 128),
     help="Batch size for evaluation",
 )
-@click.option("--cache-path", default="./cache.db", help="Path to cache database")
+@click.option(
+    "--cache/--no-cache",
+    default=True,
+    help="Enable or disable caching for evaluation",
+)
 @click.option("--output", default="results.json", help="Output file path")
 @click.option(
     "--format",
@@ -83,7 +88,7 @@ def eval_cmd(
     datasets,
     dataset_args,
     batch_size,
-    cache_path,
+    cache,
     output,
     output_format,
     save_format,
@@ -111,6 +116,8 @@ def eval_cmd(
     """
     console = ctx.obj["console"]
     verbose = ctx.obj.get("verbose", False)
+
+    load_dotenv()
 
     # Show header
     console.print(
@@ -179,7 +186,7 @@ def eval_cmd(
             dataset_names,
             parsed_dataset_args,
             batch_size,
-            cache_path,
+            cache,
             output,
         )
 
@@ -208,7 +215,7 @@ def eval_cmd(
             dataset_names=dataset_names,
             dataset_args=parsed_dataset_args,
             batch_size=batch_size,
-            cache_path=cache_path,
+            use_cache=cache,
             show_progress=progress,
         )
 
@@ -226,7 +233,10 @@ def eval_cmd(
 
         if verbose:
             console.print(f"Results saved to: {output}")
-            console.print(f"Cache database: {cache_path}")
+            if cache:
+                console.print("Cache: Enabled")
+            else:
+                console.print("Cache: Disabled")
 
     except KeyboardInterrupt:
         console.print("\n[yellow]Evaluation interrupted by user[/yellow]")
@@ -297,7 +307,7 @@ def _show_evaluation_plan(
     dataset_names: list,
     dataset_args: dict,
     batch_size: int,
-    cache_path: str,
+    use_cache: bool,
     output: str,
 ) -> None:
     """
@@ -310,7 +320,7 @@ def _show_evaluation_plan(
         dataset_names: List of dataset names
         dataset_args: Dataset arguments
         batch_size: Batch size
-        cache_path: Cache path
+        use_cache: Whether to use caching
         output: Output file path
     """
     console.print("\n[bold cyan]Evaluation Plan[/bold cyan]")
@@ -328,7 +338,7 @@ def _show_evaluation_plan(
         )
 
     console.print(f"[cyan]Batch Size:[/cyan] {batch_size}")
-    console.print(f"[cyan]Cache Path:[/cyan] {cache_path}")
+    console.print(f"[cyan]Cache:[/cyan] {'Enabled' if use_cache else 'Disabled'}")
     console.print(f"[cyan]Output File:[/cyan] {output}")
 
     # Show dataset arguments if any
@@ -339,11 +349,16 @@ def _show_evaluation_plan(
                 args_str = ", ".join([f"{k}={v}" for k, v in args.items()])
                 console.print(f"  {dataset_name}: {args_str}")
 
-    # Show cache info
-    cache_info = get_cache_info(cache_path)
-    if cache_info["exists"]:
-        console.print(
-            f"[cyan]Cache Status:[/cyan] Available ({cache_info['size_formatted']})"
-        )
+    # Show cache info if caching is enabled
+    if use_cache:
+        import os
+        cache_path = os.getenv("KARMA_CACHE_PATH", "./cache.db")
+        cache_info = get_cache_info(cache_path)
+        if cache_info["exists"]:
+            console.print(
+                f"[cyan]Cache Status:[/cyan] Available ({cache_info['size_formatted']})"
+            )
+        else:
+            console.print(f"[cyan]Cache Status:[/cyan] New cache will be created")
     else:
-        console.print(f"[cyan]Cache Status:[/cyan] New cache will be created")
+        console.print(f"[cyan]Cache Status:[/cyan] Disabled")

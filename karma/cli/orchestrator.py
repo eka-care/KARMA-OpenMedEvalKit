@@ -27,6 +27,7 @@ from karma.model_registry import model_registry
 from karma.dataset_registry import dataset_registry
 from karma.metrics_registry import metric_registry
 from karma.cli.utils import format_duration, validate_dataset_args
+from karma.cache import CacheManager
 
 
 logger = logging.getLogger(__name__)
@@ -70,7 +71,7 @@ class MultiDatasetOrchestrator:
         dataset_names: Optional[List[str]] = None,
         dataset_args: Optional[Dict[str, Dict[str, Any]]] = None,
         batch_size: int = 1,
-        cache_path: str = "./cache.duckdb",
+        use_cache: bool = True,
         show_progress: bool = True,
     ) -> Dict[str, Any]:
         """
@@ -80,7 +81,7 @@ class MultiDatasetOrchestrator:
             dataset_names: List of dataset names to evaluate (None for all)
             dataset_args: Dictionary mapping dataset names to their arguments
             batch_size: Batch size for evaluation
-            cache_path: Path to cache database
+            use_cache: Whether to use caching for evaluation
             show_progress: Whether to show progress bars
 
         Returns:
@@ -110,6 +111,20 @@ class MultiDatasetOrchestrator:
         except Exception as e:
             self.console.print(f"[red]✗ Failed to initialize model: {e}[/red]")
             raise
+
+        # Initialize cache manager once for all datasets
+        cache_manager = None
+        if use_cache:
+            self.console.print(f"\n[cyan]Initializing cache manager[/cyan]")
+            try:
+                # Use a generic dataset name for the shared cache manager
+                cache_manager = CacheManager(
+                    "multi_dataset", model.model_config
+                )
+                self.console.print("[green]✓ Cache manager initialized successfully[/green]")
+            except Exception as e:
+                self.console.print(f"[red]✗ Failed to initialize cache manager: {e}[/red]")
+                raise
 
         # Start evaluation
         overall_start_time = time.time()
@@ -142,8 +157,9 @@ class MultiDatasetOrchestrator:
                         dataset_args.get(dataset_name, {}),
                         model,
                         batch_size,
-                        cache_path,
+                        use_cache,
                         progress,
+                        cache_manager,
                     )
 
                     progress.advance(main_task)
@@ -154,7 +170,9 @@ class MultiDatasetOrchestrator:
                     dataset_args.get(dataset_name, {}),
                     model,
                     batch_size,
-                    cache_path,
+                    use_cache,
+                    None,
+                    cache_manager,
                 )
 
         # Add summary
@@ -230,8 +248,9 @@ class MultiDatasetOrchestrator:
         dataset_args: Dict[str, Any],
         model: Any,
         batch_size: int,
-        cache_path: str,
+        use_cache: bool,
         progress: Optional[Progress] = None,
+        cache_manager: Optional[CacheManager] = None,
     ) -> None:
         """
         Evaluate model on a single dataset.
@@ -241,8 +260,9 @@ class MultiDatasetOrchestrator:
             dataset_args: Arguments for dataset creation
             model: Model instance
             batch_size: Batch size for evaluation
-            cache_path: Path to cache database
+            use_cache: Whether to use caching for evaluation
             progress: Progress bar (optional)
+            cache_manager: Optional pre-initialized cache manager instance
         """
         dataset_start_time = time.time()
 
@@ -274,8 +294,7 @@ class MultiDatasetOrchestrator:
                     logger=logger,
                     model=model,
                     dataset=dataset,
-                    enable_cache=True,
-                    cache_path=cache_path,
+                    cache_manager=cache_manager,
                 )
 
                 # Configure metric

@@ -12,7 +12,7 @@ This module provides a base class that handles:
 import logging
 import threading
 import time
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, Optional
 
 import weave
 from torch.utils.data import DataLoader
@@ -42,8 +42,7 @@ class Benchmark:
         verbose_mode: bool = False,
         use_weave: bool = False,
         project_name: str = "benchmark-evaluation",
-        enable_cache: bool = False,
-        cache_path: str = "",
+        cache_manager: Optional[CacheManager] = None,
     ):
         """
         Initialize benchmark for any dataset/task combination.
@@ -54,6 +53,8 @@ class Benchmark:
             use_weave: Whether to use Weave EvaluationLogger
             project_name: Weave project name for tracking
             enable_cache: Whether to enable persistent caching
+            cache_path: Path to cache database (used only if cache_manager is None)
+            cache_manager: Optional pre-initialized CacheManager instance
         """
         # Initialize DeepEval base
         # Store model and basic settings
@@ -71,13 +72,14 @@ class Benchmark:
             logger.info(f"✅ Initialized Weave tracking: {project_name}")
 
         # Setup caching system
-        self.enable_cache = enable_cache
-        if self.enable_cache:
-            logger.info(f"Enabling cache with path: {cache_path}")
-            self.cache_manager = CacheManager(
-                dataset.dataset_name, self.model.model_config, cache_path=cache_path
-            )
+        self.enable_cache = cache_manager is not None
+
+        self.cache_manager = cache_manager
+        if self.cache_manager:
             logger.info("Cache manager initialized successfully")
+        else:
+            logger.info("No cache manager provided")
+
         self.dataset = dataset
 
     def get_batch_model_inputs(
