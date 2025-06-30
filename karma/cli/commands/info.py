@@ -17,7 +17,7 @@ from rich.text import Text
 
 from karma.cli.formatters.table import ModelFormatter, DatasetFormatter, SystemFormatter
 from karma.cli.utils import ClickFormatter, get_cache_info
-from karma.registry import model_registry
+from karma.model_registry import model_registry
 from karma.dataset_registry import dataset_registry
 
 

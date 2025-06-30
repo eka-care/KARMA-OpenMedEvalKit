@@ -18,7 +18,7 @@ from karma.cli.utils import (
     get_cache_info,
     ClickFormatter,
 )
-from karma.registry import model_registry
+from karma.model_registry import model_registry
 from karma.dataset_registry import dataset_registry
 
 

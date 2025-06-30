@@ -5,7 +5,7 @@ from PIL import Image
 from IPython.display import Audio
 
 from karma.models.base import BaseLLM
-from karma.registry import register_model
+from karma.model_registry import register_model
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 logger = logging.getLogger(__name__)

@@ -11,7 +11,7 @@ from rich.panel import Panel
 
 from karma.cli.formatters.table import ModelFormatter, DatasetFormatter
 from karma.cli.utils import ClickFormatter
-from karma.registry import model_registry
+from karma.model_registry import model_registry
 from karma.dataset_registry import dataset_registry
 
 

@@ -23,7 +23,7 @@ from rich.panel import Panel
 from rich.text import Text
 
 from karma.benchmark import Benchmark
-from karma.registry import model_registry
+from karma.model_registry import model_registry
 from karma.dataset_registry import dataset_registry
 from karma.cli.utils import format_duration, validate_dataset_args
 
