@@ -26,3 +26,10 @@ tasks
     --use_cache: true
     --duck_db:
         --cache_path: /tmp/duckdb_bench.duckdb
+
+
+pip install karma[audio]
+pip install karma[text]
+pip install karma[retrieval]
+pip install karma[images]
+pip install karma[all]

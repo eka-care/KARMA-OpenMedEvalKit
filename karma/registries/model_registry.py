@@ -2,148 +2,292 @@
 Model registry for automatic model discovery and registration.
 
 This module provides a decorator-based registry system that allows models
-to register themselves automatically when imported.
+to register themselves automatically when imported. Enhanced to support
+ModelMeta configurations for comprehensive model metadata management.
 """
 
 import importlib
 import pkgutil
-from typing import Dict, Type, List, Optional
+from typing import Dict, Type, List, Optional, Any
 import logging
+
+from karma.models.base_model_abs import BaseHFModel
+from karma.models.model_meta import ModelMeta, ModelType, ModalityType
 
 logger = logging.getLogger(__name__)
 
 
 class ModelRegistry:
-    """Decorator-based model registry for automatic model discovery."""
-    
+    """
+    Enhanced model registry supporting both legacy model classes and ModelMeta configurations.
+
+    Provides automatic model discovery with comprehensive metadata management
+    for multi-modal medical evaluation frameworks.
+    """
+
     def __init__(self):
-        self.models: Dict[str, Type] = {}
+        self.model_metas: Dict[str, ModelMeta] = {}
+        self.models_by_type: Dict[ModelType, List[str]] = {
+            model_type: [] for model_type in ModelType
+        }
+        self.models_by_modality: Dict[ModalityType, List[str]] = {
+            modality: [] for modality in ModalityType
+        }
         self._discovered = False
-    
-    def register_model(self, name: str):
+
+    def register_model_meta(self, model_meta: ModelMeta) -> None:
         """
-        Decorator to register a model class.
-        
+        Register a model using ModelMeta configuration.
+
         Args:
-            name: Name to register the model under
-            
-        Returns:
-            Decorator function
-            
+            model_meta: ModelMeta instance containing comprehensive model metadata
+
         Example:
-            @register_model("qwen")
-            class QwenModel(BaseLLM):
-                pass
+            model_meta = ModelMeta(
+                name="qwen-7b",
+                model_type=ModelType.TEXT_GENERATION,
+                loader_class="karma.models.qwen.QwenModel"
+            )
+            model_registry.register_model_meta(model_meta)
         """
-        def decorator(model_class: Type) -> Type:
-            # Import BaseLLM here to avoid circular imports
-            from karma.models.base import BaseLLM
-            
-            if not issubclass(model_class, BaseLLM):
-                raise ValueError(f"{model_class.__name__} must inherit from BaseLLM")
-            
-            if name in self.models:
-                logger.warning(f"Model '{name}' is already registered. Overriding with {model_class.__name__}")
-            
-            self.models[name] = model_class
-            logger.debug(f"Registered model: {name} -> {model_class.__name__}")
-            return model_class
-        return decorator
-    
-    def get_model(self, name: str) -> Type:
+        name = model_meta.name
+
+        if name in self.model_metas:
+            logger.warning(f"ModelMeta '{name}' is already registered. Overriding.")
+
+        self.model_metas[name] = model_meta
+
+        # Update categorical indexes
+        if name not in self.models_by_type[model_meta.model_type]:
+            self.models_by_type[model_meta.model_type].append(name)
+
+        for modality in model_meta.modalities:
+            if name not in self.models_by_modality[modality]:
+                self.models_by_modality[modality].append(name)
+
+        logger.debug(f"Registered ModelMeta: {name} -> {model_meta.model_type}")
+
+    def get_model(self, name: str, **override_kwargs) -> BaseHFModel:
         """
-        Get model class by name.
-        
+        Get and instantiate model by name with optional parameter overrides.
+
         Args:
             name: Name of the model to retrieve
-            
+            **override_kwargs: Parameters to override model defaults
+
         Returns:
-            Model class
-            
+            Instantiated model instance
+
         Raises:
             ValueError: If model is not found
         """
         if not self._discovered:
             self.discover_models()
-            
-        if name not in self.models:
-            available = list(self.models.keys())
-            raise ValueError(f"Model '{name}' not found. Available models: {available}")
-        return self.models[name]
-    
-    def list_models(self) -> List[str]:
+
+        if name in self.model_metas:
+            m = self._get_model_from_meta(name, **override_kwargs)
+            m.load_model()
+            return m
+
+        available = list(self.model_metas.keys())
+        raise ValueError(f"Model '{name}' not found. Available models: {available}")
+
+    def get_model_meta(self, name: str) -> ModelMeta:
         """
-        List available model names.
-        
+        Get ModelMeta configuration by name.
+
+        Args:
+            name: Name of the model metadata to retrieve
+
         Returns:
-            List of registered model names
+            ModelMeta configuration
+
+        Raises:
+            ValueError: If model metadata is not found
         """
         if not self._discovered:
             self.discover_models()
-        return list(self.models.keys())
-    
+
+        if name not in self.model_metas:
+            available = list(self.model_metas.keys())
+            raise ValueError(f"ModelMeta '{name}' not found. Available: {available}")
+        return self.model_metas[name]
+
+    def _get_model_from_meta(self, name: str, **override_kwargs) -> BaseHFModel:
+        """
+        Load model using ModelMeta configuration with parameter overrides.
+
+        Args:
+            name: Model name
+            **override_kwargs: Parameters to override defaults
+
+        Returns:
+            Instantiated model instance
+        """
+        model_meta = self.model_metas[name]
+        model_class = model_meta.get_loader_class()
+
+        # Merge kwargs: defaults < model_meta < overrides
+        final_kwargs = model_meta.merge_kwargs(override_kwargs)
+
+        # Always include model name/path
+        final_kwargs["model_name_or_path"] = model_meta.name
+
+        return model_class(**final_kwargs)
+
+    def list_models(self) -> List[str]:
+        """
+        List all available model names.
+
+        Returns:
+            List of all registered model names
+        """
+        if not self._discovered:
+            self.discover_models()
+
+        return sorted(list(self.model_metas.keys()))
+
+    def list_models_by_type(self, model_type: ModelType) -> List[str]:
+        """
+        List models by type.
+
+        Args:
+            model_type: Model type to filter by
+
+        Returns:
+            List of model names of the specified type
+        """
+        if not self._discovered:
+            self.discover_models()
+        return self.models_by_type[model_type].copy()
+
+    def list_models_by_modality(self, modality: ModalityType) -> List[str]:
+        """
+        List models by supported modality.
+
+        Args:
+            modality: Modality to filter by
+
+        Returns:
+            List of model names supporting the specified modality
+        """
+        if not self._discovered:
+            self.discover_models()
+        return self.models_by_modality[modality].copy()
+
+    def get_models_info(self) -> List[Dict[str, Any]]:
+        """
+        Get information about all registered models.
+
+        Returns:
+            List of dictionaries containing model information
+        """
+        if not self._discovered:
+            self.discover_models()
+
+        models_info = []
+
+        for name, model_meta in self.model_metas.items():
+            models_info.append(model_meta.get_model_info())
+
+        return models_info
+
     def discover_models(self):
         """
         Automatically discover and import all model modules.
-        
+
         This method imports all modules in the karma.models package,
         which triggers the decorator registration.
         """
         if self._discovered:
             return
-            
+
         try:
             import karma.models
-            
+
             # Import all modules in karma.models package
             for finder, name, ispkg in pkgutil.iter_modules(
-                karma.models.__path__, 
-                karma.models.__name__ + "."
+                karma.models.__path__, karma.models.__name__ + "."
             ):
-                if not name.endswith('.base'):  # Skip base module to avoid issues
+                if not name.endswith(".base_model_abs") and not name.endswith(
+                    ".model_meta"
+                ):  # Skip base module to avoid issues
                     try:
                         importlib.import_module(name)
-                        logger.debug(f"Imported model module: {name}")
+                        logger.info(f"Imported model module: {name}")
                     except ImportError as e:
                         logger.warning(f"Could not import model module {name}: {e}")
         except ImportError as e:
             logger.error(f"Could not import karma.models package: {e}")
-            
+
         self._discovered = True
-    
+
     def is_registered(self, name: str) -> bool:
         """
         Check if a model is registered.
-        
+
         Args:
             name: Name of the model to check
-            
+
         Returns:
             True if model is registered, False otherwise
         """
         if not self._discovered:
             self.discover_models()
-        return name in self.models
-    
+        return name in self.model_metas
+
+    def has_model_meta(self, name: str) -> bool:
+        """
+        Check if a model has ModelMeta configuration.
+
+        Args:
+            name: Name of the model to check
+
+        Returns:
+            True if model has metadata configuration, False otherwise
+        """
+        if not self._discovered:
+            self.discover_models()
+        return name in self.model_metas
+
     def unregister_model(self, name: str) -> bool:
         """
         Unregister a model.
-        
+
         Args:
             name: Name of the model to unregister
-            
+
         Returns:
             True if model was unregistered, False if it wasn't registered
         """
-        if name in self.models:
-            del self.models[name]
+        if name in self.model_metas:
+            model_meta = self.model_metas[name]
+            del self.model_metas[name]
+
+            # Remove from categorical indexes
+            if name in self.models_by_type[model_meta.model_type]:
+                self.models_by_type[model_meta.model_type].remove(name)
+
+            for modality in model_meta.modalities:
+                if name in self.models_by_modality[modality]:
+                    self.models_by_modality[modality].remove(name)
+
             logger.debug(f"Unregistered model: {name}")
             return True
+
         return False
-    
+
     def clear_registry(self):
-        """Clear all registered models. Mainly for testing purposes."""
-        self.models.clear()
+        """Clear all registered models and metadata. Mainly for testing purposes."""
+        self.model_metas.clear()
+
+        # Reset categorical indexes
+        for model_type in ModelType:
+            self.models_by_type[model_type].clear()
+
+        for modality in ModalityType:
+            self.models_by_modality[modality].clear()
+
         self._discovered = False
         logger.debug("Cleared model registry")
 
@@ -151,5 +295,26 @@ class ModelRegistry:
 # Global registry instance
 model_registry = ModelRegistry()
 
-# Convenience decorator function
-register_model = model_registry.register_model
+# Convenience function
+register_model_meta = model_registry.register_model_meta
+
+
+# Convenience functions for CLI and programmatic access
+def get_model(name: str, **kwargs) -> Any:
+    """Get model instance with optional parameter overrides."""
+    return model_registry.get_model(name, **kwargs)
+
+
+def get_model_meta(name: str) -> ModelMeta:
+    """Get ModelMeta configuration by name."""
+    return model_registry.get_model_meta(name)
+
+
+def list_models_by_type(model_type: ModelType) -> List[str]:
+    """List models by type."""
+    return model_registry.list_models_by_type(model_type)
+
+
+def list_models_by_modality(modality: ModalityType) -> List[str]:
+    """List models by modality."""
+    return model_registry.list_models_by_modality(modality)

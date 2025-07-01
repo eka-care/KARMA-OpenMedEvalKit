@@ -103,14 +103,14 @@ class MultiDatasetOrchestrator:
 
         # Initialize model once
         self.console.print(f"\n[cyan]Initializing model: {self.model_name}[/cyan]")
-        model_class = model_registry.get_model(self.model_name)
-
-        try:
-            model = model_class(self.model_path, **self.model_kwargs)
-            self.console.print("[green]✓ Model initialized successfully[/green]")
-        except Exception as e:
-            self.console.print(f"[red]✗ Failed to initialize model: {e}[/red]")
-            raise
+        model = model_registry.get_model(self.model_name)
+        model_meta = model_registry.get_model_meta(self.model_name)
+        # try:
+        #     model = model_class(self.model_path, **self.model_kwargs)
+        #     self.console.print("[green]✓ Model initialized successfully[/green]")
+        # except Exception as e:
+        #     self.console.print(f"[red]✗ Failed to initialize model: {e}[/red]")
+        #     raise
 
         # Initialize cache manager once for all datasets
         cache_manager = None
@@ -118,7 +118,7 @@ class MultiDatasetOrchestrator:
             self.console.print(f"\n[cyan]Initializing cache manager[/cyan]")
             try:
                 # Use a generic dataset name for the shared cache manager
-                cache_manager = CacheManager("multi_dataset", model.model_config)
+                cache_manager = CacheManager("multi_dataset", model_meta)
                 self.console.print(
                     "[green]✓ Cache manager initialized successfully[/green]"
                 )
@@ -292,7 +292,6 @@ class MultiDatasetOrchestrator:
 
                 # Create benchmark instance
                 benchmark = Benchmark(
-                    logger=logger,
                     model=model,
                     dataset=dataset,
                     cache_manager=cache_manager,

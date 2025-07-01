@@ -19,15 +19,17 @@ from weave import EvaluationLogger
 
 from karma.cache import CacheManager
 from karma.eval_datasets.base_dataset import BaseMultimodalDataset
-from karma.models.base import BaseLLM
-from karma.cli.output_adapter import OutputAdapter
+from karma.models.base_model_abs import BaseHFModel
+
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class Benchmark:
     def __init__(
         self,
-        logger,
-        model: BaseLLM,
+        model: BaseHFModel,
         dataset: BaseMultimodalDataset,
         verbose_mode: bool = False,
         use_weave: bool = False,
@@ -52,14 +54,12 @@ class Benchmark:
             console: Optional rich Console for output (from orchestrator)
             progress: Optional rich Progress instance for progress bars (from orchestrator)
         """
-        self.logger = OutputAdapter(logger=logger, console=console)
+        self.logger = logger
         self.model = model
         self.verbose_mode = verbose_mode
         self.progress = progress
 
-        self.logger.info(
-            f"Initializing benchmark with model: {model.model_config.model_id}"
-        )
+        self.logger.info(f"Initializing benchmark with model: {model}")
         self.logger.info(f"Dataset: {dataset.dataset_name}")
 
         # Weave integration
@@ -87,23 +87,6 @@ class Benchmark:
     Supports multimodal inputs (text, images, audio, etc.)
     """
 
-    def get_batch_model_inputs(
-        self, samples: List[Dict[str, Any]]
-    ) -> Dict[str, List[Any]]:
-        """Convert batch of samples to multimodal model inputs."""
-        batch_inputs = {
-            "prompts": [sample["input"] for sample in samples],
-            "images": [sample.get("images", None) for sample in samples],
-            "audios": [sample.get("audios", None) for sample in samples],
-        }
-
-        # Remove keys where all values are None
-        batch_inputs = {
-            k: v for k, v in batch_inputs.items() if any(x is not None for x in v)
-        }
-
-        return batch_inputs
-
     def _create_weave_logger(self, dataset_name: str) -> EvaluationLogger:
         """
         Create Weave evaluation logger if enabled.
@@ -115,7 +98,7 @@ class Benchmark:
             EvaluationLogger instance or None if disabled
         """
         # Sanitize model name for Weave (alphanumeric and underscores only)
-        model_name = self.model.model_config.model_id
+        model_name = self.model.model_name_or_path
         sanitized_model_name = "".join(
             c if c.isalnum() or c == "_" else "_" for c in model_name
         )
@@ -184,11 +167,10 @@ class Benchmark:
         results = []
 
         if not dry_run:
-            model_inputs_to_generate = self.get_batch_model_inputs(samples)
             self.logger.debug("Generating batch responses from model")
             start_time = time.time()
 
-            batch_responses = self.model.batch_generate(**model_inputs_to_generate)
+            batch_responses = self.model.run(inputs=samples)
             generation_time = time.time() - start_time
             self.logger.info(
                 f"Model generation completed in {generation_time:.2f} seconds"
@@ -205,26 +187,21 @@ class Benchmark:
                 zip(batch_responses, samples, strict=False)
             ):
                 expected = sample["expected_output"]
-                if (
-                    isinstance(batch_response, (tuple, list))
-                    and len(batch_response) == 2
-                ):
-                    thinking_content, response = batch_response
-                else:
-                    thinking_content = ""
-                    response = batch_response
+
+                response = batch_response
+
                 response = str(response)
-                thinking_content = str(thinking_content)
                 prediction, success = self.dataset.extract_prediction(response)
+
                 result = {
                     "prediction": prediction,
-                    "thinking_content": thinking_content,
                     "from_cache": False,
                     "sample": sample,
                     "expected_output": expected,
                     "success": success,
                 }
                 results.append(result)
+
                 if self.progress and progress_task is not None:
                     self.progress.advance(progress_task)
             if self.progress and progress_task is not None:
@@ -316,6 +293,8 @@ class Benchmark:
             task = self.progress.add_task(
                 f"[cyan]Processing batches for {self.dataset.dataset_name}", total=None
             )
+        else:
+            task = None
 
         dataloader = DataLoader(
             self.dataset,

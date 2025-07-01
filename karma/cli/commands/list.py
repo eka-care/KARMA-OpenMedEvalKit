@@ -76,6 +76,7 @@ def list_models(ctx, output_format):
         console.print(f"\n{ClickFormatter.success(f'Found {len(models)} models')}")
 
     except Exception as e:
+        raise e
         console.print(ClickFormatter.error(f"Failed to list models: {str(e)}"))
         raise click.Abort()
 
