@@ -19,7 +19,7 @@
 
 **Documentation**: <https://karma-docs.example.com>
 
-**Source Code**: <https://github.com/your-org/KARMA-OpenMedEvalKit>
+**Source Code**: <https://github.com/eka-care/KARMA-OpenMedEvalKit>
 
 ---
 
