@@ -122,8 +122,10 @@ class Benchmark:
             - cache_hits: List of results found in cache
             - samples_to_generate: List of samples that need to be generated
         """
-        if self.verbose_mode:
-            self.logger.info(f"Attempting to fetch {len(samples)} samples from cache")
+        # if self.verbose_mode:
+        self.logger.info(
+            f"Attempting to fetch {len(samples)} samples from cache for samples: {samples}"
+        )
 
         results = []
         samples_to_generate = []
@@ -144,6 +146,7 @@ class Benchmark:
             else:
                 samples_to_generate.append(sample)
 
+        self.logger.info(f"Cache hits: {cache_results}")
         if self.verbose_mode:
             self.logger.info(f"Cache hits: {cache_hits}/{len(samples)}")
             self.logger.info(
@@ -207,7 +210,9 @@ class Benchmark:
 
             # Step 3: Save new results to cache
             if self.enable_cache:
-                self.logger.info("Starting asynchronous cache update")
+                self.logger.info(
+                    f"Starting asynchronous cache update for datapoint {results}"
+                )
                 cache_thread = threading.Thread(
                     target=self.cache_manager.batch_save_rows,
                     args=(results,),
@@ -248,8 +253,12 @@ class Benchmark:
             Dictionary of metric scores or None if metric not found
         """
         metric = metric_config["metric"]
-        references = [self.dataset.postprocess(it["expected_output"]) for it in prediction_results]
-        predictions = [self.dataset.postprocess(it["prediction"]) for it in prediction_results]
+        references = [
+            self.dataset.postprocess(it["expected_output"]) for it in prediction_results
+        ]
+        predictions = [
+            self.dataset.postprocess(it["prediction"]) for it in prediction_results
+        ]
         score = metric.evaluate(predictions=predictions, references=references)
         return score
 
