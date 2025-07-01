@@ -4,7 +4,7 @@ import torch
 from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor
 
 from karma.models.base_model_abs import BaseHFModel
-from karma.models.model_meta import ModelMeta, ModelType, ModalityType
+from karma.data_models.model_meta import ModelMeta, ModelType, ModalityType
 from karma.registries.model_registry import register_model_meta
 
 logger = logging.getLogger(__name__)

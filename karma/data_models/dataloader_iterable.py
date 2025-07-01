@@ -19,3 +19,6 @@ class DataLoaderIterable(BaseModel):
         default=None,
         description="Audio prompt passed as a sample from the dataset iter",
     )
+
+    class Config:
+        arbitrary_types_allowed = True

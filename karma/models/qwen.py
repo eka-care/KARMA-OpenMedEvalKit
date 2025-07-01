@@ -2,8 +2,9 @@ import logging
 from typing import Tuple, List, Optional, Union, Dict, Any
 import torch
 
+from karma.data_models.dataloader_iterable import DataLoaderIterable
 from karma.models.base_model_abs import BaseHFModel
-from karma.models.model_meta import ModelMeta, ModelType, ModalityType
+from karma.data_models.model_meta import ModelMeta, ModelType, ModalityType
 from karma.registries.model_registry import register_model_meta
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
@@ -75,17 +76,17 @@ class QwenThinkingLLM(BaseHFModel):
 
     def preprocess(
         self,
-        prompts,
+        inputs: List[DataLoaderIterable],
         **kwargs,
     ) -> Dict[str, torch.Tensor]:
         inputs = [
             self.processor.apply_chat_template(
-                [{"role": "user", "content": prompt}],
+                [{"role": "user", "content": datapoint.input}],
                 tokenize=False,
                 add_generation_prompt=True,
                 enable_thinking=self.enable_thinking,
             )
-            for prompt in prompts
+            for datapoint in inputs
         ]
         model_inputs = self.processor(
             inputs,

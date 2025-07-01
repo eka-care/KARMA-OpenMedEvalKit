@@ -8,11 +8,11 @@ ModelMeta configurations for comprehensive model metadata management.
 
 import importlib
 import pkgutil
-from typing import Dict, Type, List, Optional, Any
+from typing import Dict, List, Any
 import logging
 
 from karma.models.base_model_abs import BaseHFModel
-from karma.models.model_meta import ModelMeta, ModelType, ModalityType
+from karma.data_models.model_meta import ModelMeta, ModelType, ModalityType
 
 logger = logging.getLogger(__name__)
 

@@ -18,6 +18,7 @@ from torch.utils.data import DataLoader
 from weave import EvaluationLogger
 
 from karma.cache import CacheManager
+from karma.data_models.dataloader_iterable import DataLoaderIterable
 from karma.eval_datasets.base_dataset import BaseMultimodalDataset
 from karma.models.base_model_abs import BaseHFModel
 
@@ -109,9 +110,7 @@ class Benchmark:
         self.logger.info("🔍 Weave EvaluationLogger initialized for summary tracking")
         return evaluation_logger
 
-    def fetch_from_cache(
-        self, samples: List[Dict[str, Any]]
-    ) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
+    def fetch_from_cache(self, samples: List[DataLoaderIterable]):
         """
         Fetch results from cache and return cache hits and misses.
 
@@ -137,9 +136,9 @@ class Benchmark:
                 cache_hits += 1
                 result = {
                     "prediction": cache_result.get("model_output", ""),
-                    "thinking_content": cache_result.get("model_output_reasoning", ""),
+                    # "thinking_content": cache_result.get("model_output_reasoning", ""),
                     "from_cache": True,
-                    "expected_output": sample.get("expected_output", ""),
+                    "expected_output": sample.expected_output,
                 }
                 results.append(result)
             else:
@@ -154,7 +153,7 @@ class Benchmark:
         return results, samples_to_generate
 
     def batch_predict(
-        self, samples: List[Dict[str, Any]], dry_run: bool = False
+        self, samples: List[DataLoaderIterable], dry_run: bool = False
     ) -> List[Dict[str, Any]]:
         """
         Generate predictions for a batch of samples, with cache checking and fetching.
@@ -186,8 +185,7 @@ class Benchmark:
             for i, (batch_response, sample) in enumerate(
                 zip(batch_responses, samples, strict=False)
             ):
-                expected = sample["expected_output"]
-
+                expected = sample.expected_output
                 response = batch_response
 
                 response = str(response)
@@ -196,7 +194,7 @@ class Benchmark:
                 result = {
                     "prediction": prediction,
                     "from_cache": False,
-                    "sample": sample,
+                    "sample": sample.model_dump(exclude_none=True),
                     "expected_output": expected,
                     "success": success,
                 }
@@ -315,9 +313,9 @@ class Benchmark:
             if batch_idx > 2:
                 break
             batch_results = []
-            samples = [
-                dict(s) for s in samples
-            ]  # Ensure samples are proper dictionaries
+            # samples = [
+            #     dict(s) for s in samples
+            # ]  # Ensure samples are proper dictionaries
             if self.enable_cache:
                 batch_results, samples_to_generate = self.fetch_from_cache(samples)
             else:
@@ -332,7 +330,7 @@ class Benchmark:
             # Process results and extract answers using dataset template
             for result, sample in zip(batch_results, samples, strict=False):
                 # Use dataset's extract_answer method (which uses template)
-                expected = sample["expected_output"]
+                expected = sample.expected_output
 
                 # Create final prediction result
                 prediction_result = {

@@ -1,14 +1,14 @@
 import logging
 import os
-from typing import Optional, List, Dict, Union, Any
+from typing import Optional, List, Dict, Union
 
 import torch
 from PIL import Image
 from transformers import AutoModelForImageTextToText, AutoProcessor
-from IPython.display import Audio
 
+from karma.data_models.dataloader_iterable import DataLoaderIterable
 from karma.models.base_model_abs import BaseHFModel
-from karma.models.model_meta import ModelMeta, ModalityType, ModelType
+from karma.data_models.model_meta import ModelMeta, ModalityType, ModelType
 from karma.registries.model_registry import register_model_meta
 
 logger = logging.getLogger(__name__)
@@ -75,7 +75,7 @@ class MedGemmaLLM(BaseHFModel):
 
     def run(self, inputs, **kwargs):
         print(inputs)
-        model_inputs = self.preprocess(**inputs)
+        model_inputs = self.preprocess(inputs)
         results = self.model.generate(
             **model_inputs,
             max_new_tokens=self.max_tokens,
@@ -94,21 +94,20 @@ class MedGemmaLLM(BaseHFModel):
 
     def preprocess(
         self,
-        inputs: List[Any],
+        inputs: List[DataLoaderIterable],
         **kwargs,
     ) -> Dict[str, torch.Tensor]:
         batch_messages = []
 
-        for i, prompt in enumerate(prompts):
+        for i, data_point in enumerate(inputs):
             messages = []
             user_content: List[Dict[str, Union[str, Image.Image]]] = [
-                {"type": "text", "text": prompt}
+                {"type": "text", "text": data_point.input}
             ]
 
             # Add image if provided
-            if images is not None and i < len(images) and images[i] is not None:
-                sample_images = images[i]
-                for image in sample_images:
+            if data_point.images:
+                for image in data_point.images:
                     user_content.append({"type": "image", "image": image})
 
             messages.append({"role": "user", "content": user_content})

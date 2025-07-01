@@ -10,7 +10,8 @@ from PIL import Image
 from typing import Any, Dict, List, Tuple
 from karma.cache.duckdb_cache_io import DuckDBCacheIO
 from karma.cache.dynamodb_cache_io import DynamoDBCacheIO
-from karma.models.model_meta import ModelMeta
+from karma.data_models.dataloader_iterable import DataLoaderIterable
+from karma.data_models.model_meta import ModelMeta
 
 
 class CacheManager:
@@ -202,7 +203,7 @@ class CacheManager:
         return config_hash
 
     def batch_fetch_rows(
-        self, model_inputs: List[Dict[str, Any]]
+        self, model_inputs: List[DataLoaderIterable]
     ) -> List[Dict[str, Any] | None]:
         """
         Fetch multiple cached inference results.
@@ -213,7 +214,7 @@ class CacheManager:
         Returns:
             Dictionary mapping model inputs to cached results (None if not found)
         """
-
+        model_inputs = [dict(input) for input in model_inputs]
         # Use centralized batch cache key generation
         _, cache_keys = self._batch_generate_cache_keys(model_inputs)
         # Batch fetch from database
