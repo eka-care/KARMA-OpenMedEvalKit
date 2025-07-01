@@ -25,7 +25,7 @@ class DatasetRegistry:
         name: str, 
         metrics: List[str], 
         task_type: str = "mcqa",
-        postprocessors: Optional[List[str]] = None,
+        processors: Optional[List[str]] = None,
         required_args: Optional[List[str]] = None,
         optional_args: Optional[List[str]] = None,
         default_args: Optional[Dict[str, Any]] = None
@@ -37,7 +37,7 @@ class DatasetRegistry:
             name: Name to register the dataset under
             metrics: List of metric names that can be computed for this dataset
             task_type: Type of task (e.g., "mcqa", "vqa", "qa", "translation")
-            postprocessors: List of postprocessor names that can be applied to this dataset
+            processors: List of processor names that can be applied to this dataset
             required_args: List of required argument names for dataset instantiation
             optional_args: List of optional argument names for dataset instantiation
             default_args: Dictionary of default values for arguments
@@ -86,7 +86,7 @@ class DatasetRegistry:
                 'default_args': processed_default_args,
                 'module': dataset_class.__module__,
                 'class_name': dataset_class.__name__,
-                'postprocessors': postprocessors
+                'processors': processors
             }
             logger.debug(f"Registered dataset: {name} -> {dataset_class.__name__}")
             return dataset_class
@@ -398,7 +398,7 @@ class DatasetRegistry:
         # Check for unexpected arguments
         all_valid_args = set(required_args + optional_args + list(default_args.keys()))
         # Add common dataset arguments that are always allowed
-        all_valid_args.update(['dataset_name', 'split', 'config', 'stream', 'commit_hash'])
+        all_valid_args.update(['dataset_name', 'split', 'config', 'stream', 'commit_hash', 'processors'])
         
         unexpected_args = [arg for arg in provided_args.keys() if arg not in all_valid_args]
         if unexpected_args:

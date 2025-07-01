@@ -5,13 +5,12 @@ This module provides the IN22ConvDataset class that implements the new
 multimodal dataset interface for translation from English to Indian languages.
 """
 
-import logging
-from typing import Dict, Any, Tuple
+from typing import Dict, Any, Tuple, List, Optional
 
 from karma.eval_datasets.base_dataset import BaseMultimodalDataset
 from karma.registries.dataset_registry import register_dataset
-from karma.preprocessors.indiclang import DevanagariTransliterator
-logger = logging.getLogger(__name__)
+from karma.cli.output_adapter import OutputAdapter
+
 
 CONFINEMENT_INSTRUCTIONS = "Translate the given English text to the target language. Output only the translation without any additional text."
 DATASET_NAME = "ai4bharat/IN22-Conv"
@@ -68,14 +67,13 @@ CODE_TO_NAME = {
     "urd_Arab": "Urdu",
 }
 
-postprocessors = [DevanagariTransliterator()]
 @register_dataset(
     "in22conv",
     metrics=["bleu"],
     task_type="translation",
-    postprocessors=[pro.name for pro in postprocessors],
+    processors=["devnagari_transliterator"],
     required_args=["source_language", "target_language"],
-    optional_args=["domain"],
+    optional_args=["domain", "processors"],
     default_args={"source_language": "en", "domain": "conversational"},
 )
 class IN22ConvDataset(BaseMultimodalDataset):
@@ -89,10 +87,10 @@ class IN22ConvDataset(BaseMultimodalDataset):
         source_language: str,
         target_language: str,
         domain: str = "conversational",
+        processors: Optional[List] = None,
         dataset_name: str = DATASET_NAME,
         split: str = SPLIT,
         commit_hash: str = COMMIT_HASH,
-        postprocessors = postprocessors,
         **kwargs,
     ):
         """
@@ -102,6 +100,7 @@ class IN22ConvDataset(BaseMultimodalDataset):
             source_language: Source language code (e.g., 'en')
             target_language: Target language code (e.g., 'hi')
             domain: Domain type (e.g., 'conversational')
+            processors: List of processor instances (passed by orchestrator)
             dataset_name: Name of the HuggingFace dataset
             split: Dataset split to use
             commit_hash: Specific commit hash of the dataset
@@ -125,7 +124,12 @@ class IN22ConvDataset(BaseMultimodalDataset):
         self.source_language = ID_TO_CODE[source_language]
         self.target_language = ID_TO_CODE[target_language]
         self.domain = domain
-        self.postprocessors = postprocessors
+        
+        # Initialize processors
+        self.processors = []
+        if processors:
+            self.processors = processors
+            
 
         super().__init__(
             dataset_name=dataset_name, split=split, commit_hash=commit_hash, **kwargs
@@ -186,10 +190,17 @@ class IN22ConvDataset(BaseMultimodalDataset):
                 break
 
         return response, True
+
     def postprocess(self, response: str) -> str:
         """
-        Postprocess the response.
+        Postprocess the response using registered processors.
+        
+        Args:
+            response: The response text to postprocess
+            
+        Returns:
+            The postprocessed response text
         """
-        for postprocessor in self.postprocessors:
-            response = postprocessor.process(response)
+        for processor in self.processors:
+            response = processor.process(response)
         return response

@@ -26,6 +26,7 @@ from karma.benchmark import Benchmark
 from karma.registries.model_registry import model_registry
 from karma.registries.dataset_registry import dataset_registry
 from karma.registries.metrics_registry import metric_registry
+from karma.registries.processor_registry import processor_registry
 from karma.cli.utils import format_duration, validate_dataset_args
 from karma.cache import CacheManager
 
@@ -277,9 +278,27 @@ class MultiDatasetOrchestrator:
             # Get dataset info
             dataset_info = dataset_registry.get_dataset_info(dataset_name)
 
+            # Get processors from dataset registry metadata and processor registry
+            processor_names = dataset_info.get('processors', [])
+            processor_instances = []
+            
+            if processor_names:
+                for processor_name in processor_names:
+                    try:
+                        processor_instance = processor_registry.get_processor(processor_name)
+                        processor_instances.append(processor_instance)
+                        self.console.print(f"\nLoaded processor '{processor_name}' for dataset '{dataset_name}'")
+                    except ValueError as e:
+                        self.console.print(f"\nCould not load processor '{processor_name}' for dataset '{dataset_name}': {e}")
+
+            # Pass processors to dataset creation
+            final_dataset_args = dataset_args.copy()
+            if processor_instances:
+                final_dataset_args['processors'] = processor_instances
+
             # Create dataset with validated arguments
             dataset = dataset_registry.create_dataset(
-                dataset_name, validate_args=True, **dataset_args
+                dataset_name, validate_args=True, **final_dataset_args
             )
 
             # Run evaluation for each metric

@@ -1,5 +1,4 @@
 import evaluate
-from karma.preprocessors.indiclang import DevanagariTransliterator
 from karma.registries.metrics_registry import register_metric, BaseMetric
 
 

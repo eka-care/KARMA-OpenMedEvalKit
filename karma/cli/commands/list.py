@@ -174,10 +174,10 @@ def list_datasets(ctx, task_type, metric, output_format, show_args):
                 info = filtered_datasets[dataset_name]
                 task_type_str = info.get("task_type", "unknown")
                 metrics_str = ", ".join(info.get("metrics", []))
-                postprocessors_str = ", ".join(info.get("postprocessors") or [])
-                
-                if postprocessors_str:
-                    console.print(f"  {dataset_name} ({task_type_str}) - Metrics: {metrics_str} - Postprocessors: {postprocessors_str}")
+                processors_str = ", ".join(info.get("processors") or [])
+
+                if processors_str:
+                    console.print(f"  {dataset_name} ({task_type_str}) - Metrics: {metrics_str} - Processors: {processors_str}")
                 else:
                     console.print(f"  {dataset_name} ({task_type_str}) - Metrics: {metrics_str}")
 
@@ -267,7 +267,7 @@ def _show_detailed_args(console: Console, datasets_info: dict) -> None:
         required_args = info.get("required_args", [])
         optional_args = info.get("optional_args", [])
         default_args = info.get("default_args", {})
-        postprocessors = info.get("postprocessors") or []
+        processors = info.get("processors") or []
 
         if required_args:
             console.print(f"  [red]Required:[/red] {', '.join(required_args)}")
@@ -279,8 +279,8 @@ def _show_detailed_args(console: Console, datasets_info: dict) -> None:
             defaults_str = ", ".join([f"{k}={v}" for k, v in default_args.items()])
             console.print(f"  [green]Defaults:[/green] {defaults_str}")
 
-        if postprocessors:
-            console.print(f"  [bright_magenta]Postprocessors:[/bright_magenta] {', '.join(postprocessors)}")
+        if processors:
+            console.print(f"  [bright_magenta]Processors:[/bright_magenta] {', '.join(processors)}")
 
         # Show example usage
         if required_args:
