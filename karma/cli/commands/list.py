@@ -6,6 +6,7 @@ datasets, and other resources in the Karma framework.
 """
 
 import click
+from typing import Optional
 from rich.console import Console
 from rich.panel import Panel
 
@@ -174,7 +175,12 @@ def list_datasets(ctx, task_type, metric, output_format, show_args):
                 info = filtered_datasets[dataset_name]
                 task_type_str = info.get("task_type", "unknown")
                 metrics_str = ", ".join(info.get("metrics", []))
-                console.print(f"  {dataset_name} ({task_type_str}) - {metrics_str}")
+                processors_str = ", ".join(info.get("processors") or [])
+
+                if processors_str:
+                    console.print(f"  {dataset_name} ({task_type_str}) - Metrics: {metrics_str} - Processors: {processors_str}")
+                else:
+                    console.print(f"  {dataset_name} ({task_type_str}) - Metrics: {metrics_str}")
 
         # Show summary
         filter_parts = []
@@ -199,7 +205,7 @@ def list_datasets(ctx, task_type, metric, output_format, show_args):
 
 
 def _apply_dataset_filters(
-    datasets_info: dict, task_type: str = None, metric: str = None
+    datasets_info: dict, task_type: Optional[str] = None, metric: Optional[str] = None
 ) -> dict:
     """
     Apply filters to dataset information.
@@ -262,6 +268,7 @@ def _show_detailed_args(console: Console, datasets_info: dict) -> None:
         required_args = info.get("required_args", [])
         optional_args = info.get("optional_args", [])
         default_args = info.get("default_args", {})
+        processors = info.get("processors") or []
 
         if required_args:
             console.print(f"  [red]Required:[/red] {', '.join(required_args)}")
@@ -272,6 +279,9 @@ def _show_detailed_args(console: Console, datasets_info: dict) -> None:
         if default_args:
             defaults_str = ", ".join([f"{k}={v}" for k, v in default_args.items()])
             console.print(f"  [green]Defaults:[/green] {defaults_str}")
+
+        if processors:
+            console.print(f"  [bright_magenta]Processors:[/bright_magenta] {', '.join(processors)}")
 
         # Show example usage
         if required_args:

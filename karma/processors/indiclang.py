@@ -11,12 +11,14 @@ import unicodedata
 
 from indic_transliteration import sanscript
 from indic_transliteration.detect import detect
+from karma.processors.base import BaseProcessor
+from karma.registries.processor_registry import register_processor
 
 logger = logging.getLogger(__name__)
 
 
-
-class DevanagariTransliterator:
+@register_processor("devnagari_transliterator")
+class DevanagariTransliterator(BaseProcessor):
     """
     Simple transliterator that converts any Indic text to Devanagari script
     using automatic script detection.
@@ -24,7 +26,8 @@ class DevanagariTransliterator:
     
     def __init__(self):
         """Initialize the transliterator."""
-        pass
+        super().__init__()
+        self.name = "devnagari_transliterator"
     
     def process(self, text: str) -> str:
         """

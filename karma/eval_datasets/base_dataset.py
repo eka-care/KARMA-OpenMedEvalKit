@@ -109,6 +109,11 @@ class BaseMultimodalDataset(IterableDataset, ABC):
         """
         return prediction.lower(), True
 
+    def postprocess(self, response: str) -> str:
+        """
+        Postprocess the response.
+        """
+        return response
 
 # def worker_init_fn(worker_id):
 # """

@@ -1,35 +1,248 @@
-# parrotlet-omni
+# KARMA: Knowledge Assessment and Reasoning for Medical Applications
+
+<p align="center">
+    <em>High-performance, easy to learn, fast to benchmark, ready for production</em>
+</p>
+<p align="center">
+    <a href="https://github.com/your-org/KARMA-OpenMedEvalKit" target="_blank">
+        <img src="https://img.shields.io/badge/python-3.12+-blue.svg" alt="Python Version">
+    </a>
+    <a href="https://github.com/your-org/KARMA-OpenMedEvalKit/blob/main/LICENSE" target="_blank">
+        <img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License">
+    </a>
+    <a href="https://pytorch.org/" target="_blank">
+        <img src="https://img.shields.io/badge/framework-PyTorch-orange.svg" alt="Framework">
+    </a>
+</p>
+
+---
+
+**Documentation**: <https://karma-docs.example.com>
+
+**Source Code**: <https://github.com/eka-care/KARMA-OpenMedEvalKit>
+
+---
+
+KARMA is a comprehensive, high-performance evaluation framework for building medical AI benchmarks with Python 3.12+ based on standard PyTorch models.
+
+The key features are:
+
+* **Fast**: Very high performance evaluation, capable of processing thousands of medical examples efficiently
+* **Easy**: Designed to be easy to use and learn. Less time reading docs, more time evaluating models  
+* **Comprehensive**: Support for 12+ medical datasets across multiple modalities (text, images, VQA)
+* **Model Agnostic**: Works with any model - Qwen, MedGemma, or your custom architecture
+* **Smart Caching**: Intelligent result caching with DuckDB/DynamoDB backends for faster re-evaluations
+* **Production Ready**: Built-in CLI, progress tracking, and formatted outputs for production workflows
+* **Standards-based**: Extensible architecture with registry-based auto-discovery of models and datasets
+
+## Table of Contents
+
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Example](#example)
+- [Supported Models](#supported-models)
+  - [Built-in models](#built-in-models)
+  - [Adding Custom Models](#adding-custom-models)
+- [Custom Model and Dataset Registration](#custom-model-and-dataset-registration)
+  - [Registering a Custom Model](#registering-a-custom-model)
+  - [Registering a Custom Dataset](#registering-a-custom-dataset)
+  - [Using Your Custom Components](#using-your-custom-components)
+  - [Registration Parameters](#registration-parameters)
+- [Usage](#usage)
+- [Configuration](#configuration)
+  - [Caching options](#caching-options)
+- [Contributing](#contributing)
+  - [Adding New Components](#adding-new-components)
+- [License](#license)
 
 
-karma eval \
---model Qwen/Qwen3-0.6B
---dataset openlifescienceai/pubmedqa \
---metric_config metric_config.json
---model_configs 
+## Installation
 
+Clone the repository and install KARMA from source:
 
-tasks
--- model 
-    -- Qwen/Qwen3-0.6B
-        -- temp: 0.0
-        -- top_p: 0.9
+```bash
+# Clone the repository
+git clone https://github.com/your-org/KARMA-OpenMedEvalKit.git
+cd KARMA-OpenMedEvalKit
 
--- task
-    -- openlifescienceai/pubmedqa (MCQATask - Accuracy)
-    -- mteb/medical-retrieval (RetrievalTask - nDCG, MRR)
-    -- ai4bharat/IN22-Conv (TranslationTask - BLEU, WER)
-        -- targetLanguage: hi
-    -- eka/DocAssistSummary (EkaDocAssistLLMRubricTask)
+# Install with uv (recommended)
+uv install
 
+# Or install with pip
+pip install -e .
+```
 
---cache_details
-    --use_cache: true
-    --duck_db:
-        --cache_path: /tmp/duckdb_bench.duckdb
+## Example
 
+Evaluate your first medical AI model Using the Example of Qwen3 Model:
 
-pip install karma[audio]
-pip install karma[text]
-pip install karma[retrieval]
-pip install karma[images]
-pip install karma[all]
+```bash
+$ karma eval --model qwen --model-path "Qwen/Qwen3-0.6B" --datasets pubmedqa
+```
+
+## Supported Models
+
+KARMA depends on PyTorch and HuggingFace Transformers.
+
+### Built-in models
+
+* **qwen** - for Qwen3 series models with thinking capabilities
+* **medgemma** - for google/medgemma-4b-it from Google
+
+### Adding Custom Models
+
+KARMA supports custom model integration through its registry system. See the Contributing section for details on adding new models.
+
+## Custom Model and Dataset Registration
+
+KARMA uses a decorator-based registry system that makes it easy to add your own models and datasets for evaluation.
+
+### Registering a Custom Model
+
+Create a new model by inheriting from `BaseLLM` and using the `@register_model` decorator:
+
+```python
+from karma.models.base import BaseLLM
+from karma.registries.model_registry import register_model
+
+@register_model("my_custom_model")
+class MyCustomModel(BaseLLM):
+    """Custom model implementation."""
+    
+    def __init__(self, model_path: str, device: str = "cuda", **kwargs):
+        super().__init__(model_path=model_path, device=device, **kwargs)
+    
+```
+
+### Registering a Custom Dataset
+
+Create a new dataset by inheriting from `BaseMultimodalDataset` and using the `@register_dataset` decorator:
+
+```python
+from karma.eval_datasets.base_dataset import BaseMultimodalDataset
+from karma.registries.dataset_registry import register_dataset
+
+@register_dataset(
+    "my_custom_dataset", 
+    metrics=["exact_match", "accuracy"], 
+    task_type="mcqa",
+    required_args=["domain"],
+    optional_args=["split", "subset"],
+    default_args={"split": "test"}
+)
+class MyCustomDataset(BaseMultimodalDataset):
+    """Custom dataset implementation."""
+    
+    def __init__(self, domain: str, split: str = "test", subset: str = None, **kwargs):
+        self.domain = domain
+        self.split = split
+        self.subset = subset
+        super().__init__(**kwargs)
+    
+```
+
+### Using Your Custom Components
+
+After defining your custom model and dataset, use them with the CLI:
+
+```bash
+# Ensure your custom components are imported/registered
+python -c "import your_custom_module"
+
+# Use your custom model and dataset
+karma eval --model my_custom_model --model-path "path/to/model" \
+  --datasets "my_custom_dataset" \
+  --dataset-args "my_custom_dataset:domain=medical"
+```
+
+### Registration Parameters
+
+**Model Registration:**
+- `name`: Unique identifier for your model
+
+**Dataset Registration:**
+- `name`: Unique identifier for your dataset
+- `metrics`: List of applicable metrics (e.g., `["exact_match", "bleu", "accuracy"]`)
+- `task_type`: Type of task (`"mcqa"`, `"vqa"`, `"translation"`, `"qa"`)
+- `required_args`: Arguments that must be provided when creating the dataset
+- `optional_args`: Arguments that can be provided but have defaults
+- `default_args`: Default values for arguments
+
+## Usage
+
+List available resources:
+
+```bash
+karma list models
+karma list datasets
+```
+
+Basic evaluation:
+
+```bash
+karma eval --model qwen --model-path "Qwen/Qwen3-0.6B"
+```
+
+Evaluate specific datasets:
+
+```bash
+karma eval --model qwen --model-path "Qwen/Qwen3-0.6B" --datasets "pubmedqa,medmcqa"
+```
+
+With dataset-specific arguments:
+
+```bash
+karma eval --model qwen --model-path "Qwen/Qwen3-0.6B" --datasets "in22conv" \
+  --dataset-args "in22conv:source_language=en,target_language=hi"
+```
+
+Advanced options:
+
+```bash
+karma eval --model qwen --model-path "Qwen/Qwen3-0.6B" \
+  --datasets "pubmedqa" --batch-size 16 --output results.json --no-cache
+```
+
+## Configuration
+
+KARMA supports environment-based configuration. Create a `.env` file:
+
+```bash
+# Cache configuration  
+KARMA_CACHE_TYPE=duckdb
+KARMA_CACHE_PATH=./cache.db
+
+# Model configuration
+HUGGINGFACE_TOKEN=your_token
+LOG_LEVEL=INFO
+```
+
+### Caching options
+
+* **DuckDB** (default) - for local development
+* **DynamoDB** - for production environments
+
+Enable or disable caching:
+
+```bash
+karma eval --cache      # Enable (default)
+karma eval --no-cache   # Disable
+```
+
+## Contributing
+
+We welcome contributions to KARMA!
+
+### Adding New Components
+
+KARMA uses a registry-based architecture that makes it easy to add:
+* **New datasets** - Extend BaseMultimodalDataset and register with @register_dataset
+* **New models** - Extend BaseLLM and register with @register_model  
+* **New metrics** - Implement custom evaluation metrics
+* **New processors** - Add data preprocessing capabilities
+
+See the existing implementations in `karma/eval_datasets/` and `karma/models/` for examples.
+
+## License
+
+This project is licensed under the terms of the MIT license.
