@@ -193,15 +193,21 @@ class DatasetFormatter:
         table.add_column("Dataset", style="cyan")
         table.add_column("Task Type", style="blue")
         table.add_column("Metrics", style="yellow")
-        table.add_column("Required Args", style="magenta")
-        table.add_column("Status", style="green")
+        table.add_column("Postprocessors", style="magenta")
+        table.add_column("Required Args", style="green")
+        table.add_column("Status", style="bright_green")
         
         for dataset_name in sorted(datasets_info.keys()):
             info = datasets_info[dataset_name]
             
             metrics = ", ".join(info.get('metrics', []))
+            postprocessors = ", ".join(info.get('postprocessors') or [])
             required_args = ", ".join(info.get('required_args', []))
             
+            if not metrics:
+                metrics = "—"
+            if not postprocessors:
+                postprocessors = "—"
             if not required_args:
                 required_args = "—"
             
@@ -209,6 +215,7 @@ class DatasetFormatter:
                 dataset_name,
                 info.get('task_type', 'unknown'),
                 metrics,
+                postprocessors,
                 required_args,
                 "✓ Available"
             )
@@ -239,6 +246,10 @@ class DatasetFormatter:
         # Metrics
         metrics = dataset_info.get('metrics', [])
         table.add_row("Metrics", ", ".join(metrics) if metrics else "None")
+        
+        # Postprocessors
+        postprocessors = dataset_info.get('postprocessors') or []
+        table.add_row("Postprocessors", ", ".join(postprocessors) if postprocessors else "None")
         
         # Arguments
         required_args = dataset_info.get('required_args', [])

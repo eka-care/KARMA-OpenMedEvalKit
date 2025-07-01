@@ -10,7 +10,7 @@ from typing import Dict, Any, Tuple
 
 from karma.eval_datasets.base_dataset import BaseMultimodalDataset
 from karma.registries.dataset_registry import register_dataset
-
+from karma.preprocessors.indiclang import DevanagariTransliterator
 logger = logging.getLogger(__name__)
 
 CONFINEMENT_INSTRUCTIONS = "Translate the given English text to the target language. Output only the translation without any additional text."
@@ -68,11 +68,12 @@ CODE_TO_NAME = {
     "urd_Arab": "Urdu",
 }
 
-
+postprocessors = [DevanagariTransliterator()]
 @register_dataset(
     "in22conv",
     metrics=["bleu"],
     task_type="translation",
+    postprocessors=[pro.name for pro in postprocessors],
     required_args=["source_language", "target_language"],
     optional_args=["domain"],
     default_args={"source_language": "en", "domain": "conversational"},
@@ -91,6 +92,7 @@ class IN22ConvDataset(BaseMultimodalDataset):
         dataset_name: str = DATASET_NAME,
         split: str = SPLIT,
         commit_hash: str = COMMIT_HASH,
+        postprocessors = postprocessors,
         **kwargs,
     ):
         """
@@ -123,6 +125,7 @@ class IN22ConvDataset(BaseMultimodalDataset):
         self.source_language = ID_TO_CODE[source_language]
         self.target_language = ID_TO_CODE[target_language]
         self.domain = domain
+        self.postprocessors = postprocessors
 
         super().__init__(
             dataset_name=dataset_name, split=split, commit_hash=commit_hash, **kwargs
@@ -183,3 +186,10 @@ class IN22ConvDataset(BaseMultimodalDataset):
                 break
 
         return response, True
+    def postprocess(self, response: str) -> str:
+        """
+        Postprocess the response.
+        """
+        for postprocessor in self.postprocessors:
+            response = postprocessor.process(response)
+        return response

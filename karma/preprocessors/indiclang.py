@@ -24,7 +24,7 @@ class DevanagariTransliterator:
     
     def __init__(self):
         """Initialize the transliterator."""
-        pass
+        self.name = "devnagari_transliterator"
     
     def process(self, text: str) -> str:
         """

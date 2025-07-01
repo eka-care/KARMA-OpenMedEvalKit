@@ -30,7 +30,7 @@ def karma(ctx, verbose, quiet):
     Karma - Healthcare AI Model Evaluation Framework
 
     A comprehensive toolkit for evaluating healthcare AI models across
-    multiple datasets with automatic discovery and rich output formatting.
+    multiple India centric datasets with automatic discovery and rich output formatting.
 
     Examples:
         karma eval --model qwen --model-path "Qwen/Qwen2.5-0.5B-Instruct"

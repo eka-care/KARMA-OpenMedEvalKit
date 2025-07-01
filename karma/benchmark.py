@@ -273,8 +273,8 @@ class Benchmark:
             Dictionary of metric scores or None if metric not found
         """
         metric = metric_config["metric"]
-        references = [it["expected_output"] for it in prediction_results]
-        predictions = [it["prediction"] for it in prediction_results]
+        references = [self.dataset.postprocess(it["expected_output"]) for it in prediction_results]
+        predictions = [self.dataset.postprocess(it["prediction"]) for it in prediction_results]
         score = metric.evaluate(predictions=predictions, references=references)
         return score
 
@@ -316,6 +316,8 @@ class Benchmark:
             task = self.progress.add_task(
                 f"[cyan]Processing batches for {self.dataset.dataset_name}", total=None
             )
+        else:
+            task = None
 
         dataloader = DataLoader(
             self.dataset,

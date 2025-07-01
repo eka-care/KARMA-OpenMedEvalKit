@@ -16,19 +16,8 @@ class HfMetric(BaseMetric):
 class BleuMetric(HfMetric):
     def __init__(self, metric_name: str = "bleu"):
         super().__init__(metric_name)
-        self.transliterator = DevanagariTransliterator()
-
     def evaluate(self, predictions, references, smooth: bool = True):
-        # Process predictions (list of strings)
-        predictions = [self.transliterator.process(text=pred) for pred in predictions]
-
-        # Process references (list of list of strings)
-        # Each inner list contains reference translations for the corresponding prediction
-        references = [
-            [self.transliterator.process(text=ref) for ref in ref_list]
-            for ref_list in references
-        ]
-
+        references = [[ref] for ref in references]
         return self.metric.compute(
             predictions=predictions, references=references, smooth=smooth
         )
