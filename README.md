@@ -204,6 +204,7 @@ python -c "import your_custom_module"
 karma eval --model my_custom_model --model-path "path/to/model" \
   --datasets "my_custom_dataset" \
   --dataset-args "my_custom_dataset:domain=medical"
+  --model-kwargs '{"temperature":0.5}'
 ```
 
 ### Registration Parameters
