@@ -197,9 +197,6 @@ class MyCustomDataset(BaseMultimodalDataset):
 After defining your custom model and dataset, use them with the CLI:
 
 ```bash
-# Ensure your custom components are imported/registered
-python -c "import your_custom_module"
-
 # Use your custom model and dataset
 karma eval --model my_custom_model --model-path "path/to/model" \
   --datasets "my_custom_dataset" \

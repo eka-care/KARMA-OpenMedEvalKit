@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_serializer
 from PIL import Image
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
@@ -22,3 +22,15 @@ class DataLoaderIterable(BaseModel):
 
     class Config:
         arbitrary_types_allowed = True
+        exclude_none = True
+        exclude_unset = True
+        exclude_defaults = True
+
+    @model_serializer
+    def serialize_model(self) -> Dict[str, Any]:
+        # Custom serialization logic that excludes None values
+        return {k: v for k, v in self.__dict__.items() if v is not None}
+
+
+d = DataLoaderIterable(input="this is the inptu")
+print(d.model_dump())
