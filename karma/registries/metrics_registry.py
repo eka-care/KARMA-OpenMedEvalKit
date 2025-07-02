@@ -6,14 +6,6 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class BaseMetric:
-    def __init__(self, metric_name: str):
-        self.metric_name = metric_name
-
-    def evaluate(self, predictions, references):
-        raise NotImplementedError
-
-
 class MetricRegistry:
     """Decorator-based metric registry for automatic metric discovery."""
 

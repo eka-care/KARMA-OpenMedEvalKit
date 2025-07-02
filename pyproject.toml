@@ -39,3 +39,10 @@ build-backend = "setuptools.build_meta"
 
 [project.scripts]
 karma = "karma.cli.main:main"
+
+[project.optional-dependencies]
+audio = [
+    "jiwer>=4.0.0",
+    "num2words>=0.5.14",
+    "torchaudio>=2.7.1",
+]
