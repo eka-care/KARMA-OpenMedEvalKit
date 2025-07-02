@@ -43,13 +43,6 @@ class CacheManager:
 
         self.initialize_run(model_config, dataset_name)
 
-    def format_model_input(self, model_input: Dict[str, Any]) -> Dict[str, Any]:
-        processed_model_input = {
-            "prompt": model_input.get("input", ""),
-            "images": model_input.get("images", []),
-            "audios": model_input.get("audios", []),
-        }
-        return processed_model_input
 
     def _generate_cache_key(self, model_input: Dict[str, Any]) -> Tuple[str, str]:
         """
@@ -62,7 +55,7 @@ class CacheManager:
             Tuple of (input_hash, cache_key)
         """
         # Generate input hash
-        input_hash = self.generate_hash(self.format_model_input(model_input))
+        input_hash = self.generate_hash(model_input)
 
         # Generate cache key with model config
         cache_key_data = {
@@ -155,7 +148,6 @@ class CacheManager:
 
             # For objects, use JSON serialization
             serializable_data = CacheManager._make_serializable(data)
-
             if isinstance(serializable_data, (dict, list)):
                 json_str = json.dumps(serializable_data)
             else:

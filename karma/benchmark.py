@@ -21,7 +21,7 @@ from karma.cache import CacheManager
 from karma.data_models.dataloader_iterable import DataLoaderIterable
 from karma.eval_datasets.base_dataset import BaseMultimodalDataset
 from karma.models.base_model_abs import BaseHFModel
-
+from karma.metrics.base_metric_abs import BaseMetric
 import logging
 
 logger = logging.getLogger(__name__)
@@ -234,7 +234,7 @@ class Benchmark:
     def compute_metrics(
         self,
         prediction_results: List[Dict[str, Any]],
-        metric_config: Dict[str, Any],
+        metrics: List[BaseMetric],
     ) -> Dict[str, float] | None:
         """
         Compute metrics for prediction results using multi-threading.
@@ -246,18 +246,20 @@ class Benchmark:
         Returns:
             Dictionary of metric scores or None if metric not found
         """
-        metric = metric_config["metric"]
-        references = [
-            self.dataset.postprocess(it["expected_output"]) for it in prediction_results
-        ]
-        predictions = [
-            self.dataset.postprocess(it["prediction"]) for it in prediction_results
-        ]
-        score = metric.evaluate(predictions=predictions, references=references)
-        return score
+        scores = {}
+        references = self.dataset.postprocess([it["expected_output"] for it in prediction_results])
+        predictions = self.dataset.postprocess([it["prediction"] for it in prediction_results])
+        print(metrics)
+        for metric in metrics:
+            score = metric.evaluate(predictions=predictions, references=references)
+            if isinstance(score, dict):
+                scores[metric.metric_name] = score[metric.metric_name]
+            else:
+                scores[metric.metric_name] = score
+        return scores
 
     def evaluate(
-        self, metric_config: Dict[str, Any], batch_size: int = 1, dry_run: bool = False
+        self, metrics: List[BaseMetric], batch_size: int = 1, dry_run: bool = False
     ) -> Dict[str, Any]:
         """
         Generic evaluate function that works with any dataset.
@@ -356,20 +358,14 @@ class Benchmark:
         if task:
             self.progress.remove_task(task)
 
-        overall_score = self.compute_metrics(
-            all_prediction_results, metric_config=metric_config
+        overall_scores = self.compute_metrics(
+            all_prediction_results, metrics=metrics
         )
-        if overall_score is None:
-            raise ValueError(
-                f"Metric {metric_config['metric'].metric_name} not found in compute_metrics"
-            )
 
-        # Extract the main score from the metric results
-        metric_name = metric_config["metric"].metric_name
-        overall_score = overall_score[metric_name]
+       
         # Create summary for Weave logging
         summary_data = {
-            "overall_score": overall_score,
+            "overall_score": overall_scores,
             "evaluation_time": time.time() - start_time,
         }
 
@@ -380,7 +376,7 @@ class Benchmark:
                 "📊 Summary results logged to Weave - check UI for comparisons!"
             )
 
-        self.logger.info(f"\n🎯 Overall Score: {overall_score:.1%}")
+        self.logger.info(f"\n🎯 Overall Score: {overall_scores}")
         self.logger.info(f"⏱️  Total evaluation time: {time.time() - start_time:.2f}s")
 
         if self.enable_cache:
@@ -416,7 +412,7 @@ class Benchmark:
                 )
 
         return {
-            "overall_score": overall_score,
+            "overall_score": overall_scores,
             "predictions": all_prediction_results,
             "summary": summary_data,
         }

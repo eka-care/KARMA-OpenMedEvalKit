@@ -124,15 +124,8 @@ class IN22ConvDataset(BaseMultimodalDataset):
         self.source_language = ID_TO_CODE[source_language]
         self.target_language = ID_TO_CODE[target_language]
         self.domain = domain
-        
-        # Initialize processors
-        self.processors = []
-        if processors:
-            self.processors = processors
-            
-
         super().__init__(
-            dataset_name=dataset_name, split=split, commit_hash=commit_hash, **kwargs
+            dataset_name=dataset_name, split=split, commit_hash=commit_hash, processors=processors, **kwargs
         )
         self.dataset_name = (
             f"{DATASET_NAME}-{self.source_language}-{self.target_language}"
@@ -191,16 +184,3 @@ class IN22ConvDataset(BaseMultimodalDataset):
 
         return response, True
 
-    def postprocess(self, response: str) -> str:
-        """
-        Postprocess the response using registered processors.
-        
-        Args:
-            response: The response text to postprocess
-            
-        Returns:
-            The postprocessed response text
-        """
-        for processor in self.processors:
-            response = processor.process(response)
-        return response

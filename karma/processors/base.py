@@ -5,6 +5,8 @@ This module provides the base class that all processors
 should inherit from to ensure a consistent interface.
 """
 
+from typing import List
+
 
 class BaseProcessor:
     """Base class for all processors."""
@@ -13,15 +15,15 @@ class BaseProcessor:
         """Initialize the processor with a default name."""
         self.name = self.__class__.__name__.lower()
     
-    def process(self, text: str) -> str:
+    def process(self, texts: List[str]) -> List[str]:
         """
-        Process the input text.
+        Process the input texts.
         
         Args:
-            text: Input text to process
+            texts: List of input texts to process
             
         Returns:
-            Processed text
+            List of processed texts
             
         Raises:
             NotImplementedError: Must be implemented by subclasses

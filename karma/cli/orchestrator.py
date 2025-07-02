@@ -304,38 +304,35 @@ class MultiDatasetOrchestrator:
             # Run evaluation for each metric
             dataset_results = {}
             metrics = dataset_info["metrics"]
-
+            metrics_classes = []
             for metric_name in metrics:
                 # Get metric class from registry
                 metric_instance = metric_registry.get_metric_class(metric_name)
-
+                metrics_classes.append(metric_instance)
                 # Create benchmark instance
-                benchmark = Benchmark(
-                    model=model,
-                    dataset=dataset,
-                    cache_manager=cache_manager,
-                    progress=progress,
-                    console=self.console,
-                )
+            benchmark = Benchmark(
+                model=model,
+                dataset=dataset,
+                cache_manager=cache_manager,
+                progress=progress,
+                console=self.console,
+            )
 
-                # Configure metric
-                metric_config = {
-                    "metric": metric_instance,
-                    "processors": [],  # Add processors if needed
-                }
+            # Configure metric
+            
 
-                # Run evaluation
-                result = benchmark.evaluate(
-                    metric_config=metric_config, batch_size=batch_size
-                )
+            # Run evaluation
+            result = benchmark.evaluate(
+                metrics=metrics_classes, batch_size=batch_size
+            )
 
-                metric_key = metric_instance.metric_name
+            for metric_key, score in result["overall_score"].items():
 
                 dataset_results[metric_key] = {
-                    "score": result["overall_score"],
+                    "score": score,
                     "evaluation_time": result["summary"]["evaluation_time"],
                     "num_samples": len(result["predictions"]),
-                }
+                    }
 
                 if progress:
                     metric_task = progress.add_task(f"Computing {metric_key}", total=1)
@@ -343,7 +340,7 @@ class MultiDatasetOrchestrator:
                 else:
                     self.console.print(f"  Computing [yellow]{metric_key}[/yellow]...")
                     self.console.print(
-                        f"    [green]{metric_key}: {result['overall_score']:.3f}[/green]"
+                        f"    [green]{metric_key}: {score:.3f}[/green]"
                     )
 
             # Store results

@@ -6,10 +6,9 @@ to provide model inputs directly to the benchmark system.
 """
 
 from abc import ABC, abstractmethod
-from typing import Dict, Any, Tuple, Generator, Optional
+from typing import Dict, Any, Tuple, Generator, Optional, List
 from torch.utils.data import IterableDataset
 from datasets import load_dataset
-
 
 class BaseMultimodalDataset(IterableDataset, ABC):
     """
@@ -26,6 +25,7 @@ class BaseMultimodalDataset(IterableDataset, ABC):
         config: Optional[str] = None,
         stream: bool = True,
         commit_hash: Optional[str] = None,
+        processors: Optional[List] = [],
         **kwargs,
     ):
         """
@@ -61,7 +61,7 @@ class BaseMultimodalDataset(IterableDataset, ABC):
             )
         )
         self.config = config
-
+        self.processors = processors
     def __iter__(self) -> Generator[Dict[str, Any], None, None]:
         """
         Get a single sample from the dataset.
@@ -107,13 +107,16 @@ class BaseMultimodalDataset(IterableDataset, ABC):
         """
         Extract the prediction from the model output.
         """
-        return prediction.lower(), True
+        return prediction, True
 
-    def postprocess(self, response: str) -> str:
+    def postprocess(self, responses: List[str]) -> List[str]:
         """
         Postprocess the response.
         """
-        return response
+        if self.processors:
+            for processor in self.processors:
+                responses = processor.process(responses)
+        return responses
 
 # def worker_init_fn(worker_id):
 # """

@@ -124,6 +124,7 @@ def eval_cmd(
         # With dataset arguments
         karma eval --model qwen --model-path "path" --datasets "in22conv" \\
           --dataset-args "in22conv:source_language=en,target_language=hi"
+          --postprocessor-args "in22conv:language=hindi"
     """
     console = ctx.obj["console"]
     verbose = ctx.obj.get("verbose", False)
@@ -271,7 +272,7 @@ def eval_cmd(
         console.print(
             f"\n{ClickFormatter.success('Evaluation completed successfully!')}"
         )
-        console.Abort()
+        
 
         if verbose:
             console.print(f"Results saved to: {output}")
@@ -279,7 +280,7 @@ def eval_cmd(
                 console.print("Cache: Enabled")
             else:
                 console.print("Cache: Disabled")
-
+        
     except KeyboardInterrupt:
         console.print("\n[yellow]Evaluation interrupted by user[/yellow]")
         raise click.Abort()

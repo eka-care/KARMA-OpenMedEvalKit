@@ -8,6 +8,7 @@ script detection.
 
 import logging
 import unicodedata
+from typing import List
 
 from indic_transliteration import sanscript
 from indic_transliteration.detect import detect
@@ -29,42 +30,49 @@ class DevanagariTransliterator(BaseProcessor):
         super().__init__()
         self.name = "devnagari_transliterator"
     
-    def process(self, text: str) -> str:
+    def process(self, texts: List[str]) -> List[str]:
         """
         Transliterate any Indic text to Devanagari script with automatic script detection.
         
         Args:
-            text: Input text to transliterate
+            texts: List of input texts to transliterate
             
         Returns:
-            Text transliterated to Devanagari script
+            List of texts transliterated to Devanagari script
         """
         
-        try:
-            # Apply Unicode normalization
-            text = unicodedata.normalize('NFC', text)
-            
-            # Detect the script/scheme of input text
-            detected_scheme = detect(text)
-            
-            # If already Devanagari, return as is
-            if detected_scheme == 'Devanagari':
-                return text.strip()
-            
-            # If detection fails or unsupported, try to transliterate from common schemes
-            if detected_scheme is None:
-                logger.debug(f"Could not detect scheme for text: {text[:50]}...")
-                return text.strip()
-            
-            # Transliterate to Devanagari
-            transliterated = sanscript.transliterate(text, detected_scheme, sanscript.DEVANAGARI)
-            
-            # Apply Unicode normalization to result
-            transliterated = unicodedata.normalize('NFC', transliterated)
-            
-            return transliterated
-            
-        except Exception as e:
-            logger.warning(f"Transliteration failed: {e}")
-            return text.strip()  # Return original text if transliteration fails
+        results = []
+        
+        for text in texts:
+            try:
+                # Apply Unicode normalization
+                text = unicodedata.normalize('NFC', text)
+                
+                # Detect the script/scheme of input text
+                detected_scheme = detect(text)
+                
+                # If already Devanagari, return as is
+                if detected_scheme == 'Devanagari':
+                    results.append(text.strip())
+                    continue
+                
+                # If detection fails or unsupported, try to transliterate from common schemes
+                if detected_scheme is None:
+                    logger.debug(f"Could not detect scheme for text: {text[:50]}...")
+                    results.append(text.strip())
+                    continue
+                
+                # Transliterate to Devanagari
+                transliterated = sanscript.transliterate(text, detected_scheme, sanscript.DEVANAGARI)
+                
+                # Apply Unicode normalization to result
+                transliterated = unicodedata.normalize('NFC', transliterated)
+                
+                results.append(transliterated)
+                
+            except Exception as e:
+                logger.warning(f"Transliteration failed: {e}")
+                results.append(text.strip())  # Return original text if transliteration fails
+        
+        return results
         

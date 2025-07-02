@@ -1,5 +1,5 @@
 import torch
-from typing import Dict, Any, Generator
+from typing import Dict, Any, Generator, Optional, List
 from karma.data_models.dataloader_iterable import DataLoaderIterable
 from karma.eval_datasets.base_dataset import BaseMultimodalDataset
 from karma.registries.dataset_registry import register_dataset
@@ -12,18 +12,19 @@ COMMIT_HASH = "5f4495c91d500742a58d1be2ab07d77f73c0acf8"
 
 @register_dataset(
     "indicvoices_r",
-    metrics=["bleu"],
+    metrics=["bleu", "wer", "cer"],
     task_type="transcription",
     required_args=["language"],
     default_args={"language": "hindi"},
+    processors=["asr_wer_preprocessor"]
 )
 class IndicVoicesRDataset(BaseMultimodalDataset):
-    def __init__(self, language: str = "hindi", dataset_name: str = DATASET_NAME , split: str = SPLIT, stream: bool = True, commit_hash: str = COMMIT_HASH, **kwargs):
+    def __init__(self, language: str = "hindi", dataset_name: str = DATASET_NAME , split: str = SPLIT, stream: bool = True, commit_hash: str = COMMIT_HASH, processors: Optional[List] = [], **kwargs):
         """
         Initialize the IndicVoicesR dataset.
         
         """
-        super().__init__(dataset_name = dataset_name, config=language, split = split, stream = stream, commit_hash = commit_hash, **kwargs)
+        super().__init__(dataset_name = dataset_name, config=language, split = split, stream = stream, commit_hash = commit_hash, processors=processors, **kwargs)
         self.language = language
         self.dataset_name = f"{DATASET_NAME}-{self.language}"
 
