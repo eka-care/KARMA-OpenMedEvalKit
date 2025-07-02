@@ -9,6 +9,7 @@ from karma.models.base_model_abs import BaseHFModel
 from karma.data_models.model_meta import ModelMeta, ModelType, ModalityType
 from karma.registries.model_registry import register_model_meta
 from karma.data_models.dataloader_iterable import DataLoaderIterable
+
 logger = logging.getLogger(__name__)
 
 
@@ -51,12 +52,11 @@ class IndicConformerASR(BaseHFModel):
             self.model_name_or_path,
             trust_remote_code=True,
         )
-        
+
         # Move model to device using base class method
         self.to(self.device)
         self.is_loaded = True
 
-   
     def run(
         self,
         inputs: List[DataLoaderIterable],
@@ -74,23 +74,27 @@ class IndicConformerASR(BaseHFModel):
         """
         if not self.is_loaded:
             self.load_model()
-            
+
         if self.model is None:
             raise RuntimeError("Model is not loaded")
 
         transcriptions = []
-        
+
         for input_item in inputs:
-            language = input_item.other_args["language"][:2].lower() if input_item.other_args is not None else self.language
+            language = (
+                input_item.other_args["language"][:2].lower()
+                if input_item.other_args is not None
+                else self.language
+            )
             decoding_method = kwargs.get("decoding_method", self.decoding_method)
-            
+
             processed_audio = self.preprocess(input_item)
-            
+
             processed_audio = processed_audio.to(self.device)
-            
+
             with torch.no_grad():
                 transcription = self.model(processed_audio, language, decoding_method)
-            
+
             transcriptions.append(transcription)
 
         return transcriptions
@@ -102,15 +106,19 @@ class IndicConformerASR(BaseHFModel):
     ) -> torch.Tensor:
         """
         Preprocess inputs for compatibility with base class interface.
-        
+
         Args:
             inputs: List of DataLoaderIterable items
             **kwargs: Additional preprocessing arguments
-            
+
         Returns:
             List of preprocessed audio tensors
         """
-        wav_tensor = torch.tensor(input_item.audio, dtype=torch.float32).unsqueeze(0).to(self.device)
+        wav_tensor = (
+            torch.tensor(input_item.audio, dtype=torch.float32)
+            .unsqueeze(0)
+            .to(self.device)
+        )
         return wav_tensor
 
     def postprocess(self, model_outputs: List[str], **kwargs) -> List[str]:
@@ -133,8 +141,6 @@ INDIC_CONFORMER_MULTILINGUAL_META = ModelMeta(
     model_type=ModelType.AUDIO_RECOGNITION,
     modalities=[ModalityType.AUDIO],
     description="Multilingual Conformer ASR model for Indian languages",
-    n_parameters=600_000_000,
-    framework=["PyTorch", "Transformers"],
     audio_sample_rate=16000,
     supported_audio_formats=["wav", "flac", "mp3"],
     loader_class="karma.models.indic_conformer.IndicConformerASR",
@@ -149,13 +155,6 @@ INDIC_CONFORMER_MULTILINGUAL_META = ModelMeta(
         "decoding_method": "ctc",
     },
     languages=["hin-Deva", "ben-Beng", "tam-Taml", "tel-Telu", "mar-Deva"],
-    medical_domains=[
-        "patient_interviews",
-        "clinical_documentation",
-        "telemedicine",
-        "multilingual_healthcare",
-    ],
-    clinical_specialties=["primary_care", "psychiatry", "public_health"],
     license="MIT",
     open_weights=True,
     reference="https://huggingface.co/ai4bharat/indic-conformer-600m-multilingual",

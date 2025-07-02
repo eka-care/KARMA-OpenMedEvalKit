@@ -104,13 +104,6 @@ class ModelMeta(BaseModel):
         default_factory=lambda: ["eng-Latn"],
         description="Supported languages in ISO format",
     )
-    medical_domains: Optional[List[str]] = Field(
-        default_factory=list,
-        description="Specialized medical domains (e.g., radiology, pathology)",
-    )
-    clinical_specialties: Optional[List[str]] = Field(
-        default_factory=list, description="Clinical specialties covered"
-    )
 
     # Performance metadata
     benchmark_scores: Dict[str, float] = Field(
