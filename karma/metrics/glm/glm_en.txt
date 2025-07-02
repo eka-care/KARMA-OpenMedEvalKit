@@ -1,0 +1,66 @@
+two	2
+five	5
+per	/
+twenty fifteen	2015
+statin induced	statin-induced
+person's	persons
+antidiabetic	anti-diabetic
+three	3
+steroid induced	steroid-induced
+heart related	heart-related
+xray	x-ray
+twenty	20
+example	e g
+one	1
+penicillin type	penicillin-type
+drug induced	drug-induced
+six	6
+infection	infections
+antiepileptic	anti-epileptic
+five mg	5mg
+two hundred	200
+medicine	medicines
+five hundred mg	500mg
+beta blockers	beta-blockers
+thirty	30
+milk based	milk-based
+four	4
+for example	e g
+fifty	50
+fifteen year	15-year
+fifteen	15
+ear	ears
+amlodipin induced	amlodipine-induced
+twenty mg	20mg
+twelve	12
+thyroxine induced	thyroxine-induced
+ten	10
+obsessive compulsive	obsessive-compulsive
+forty	40
+contrast enhanced	contrast-enhanced
+affect	affects
+two point five	2.5
+three to four	3-4
+three hundred	300
+t four	t4
+seizure	seizures
+pain relieving	pain-relieving
+meellitis	mellitus
+long standing	long-standing
+hallucination	hallucinations
+example	eg
+disorders	disorder
+delusion	delusions
+well maintained	well-maintained
+well healed	well-healed
+two thousand seven	2007
+two thousand eight	2008
+twenty five	25
+tumour	tumor
+tenmg	10mg
+t two	t2
+sixteen	16
+reaction	reactions
+per deciliter	/ dl
+parkinson's	parkinsons
+nitrate induced	nitrate-induced

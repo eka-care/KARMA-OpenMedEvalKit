@@ -1,29 +1,28 @@
 import logging
-from typing import Tuple, List, Optional
+from typing import Tuple, List, Optional, Union, Dict, Any
 import torch
-from PIL import Image
-from IPython.display import Audio
 
-from karma.models.base import BaseLLM
-from karma.registries.model_registry import register_model
+from karma.data_models.dataloader_iterable import DataLoaderIterable
+from karma.models.base_model_abs import BaseHFModel
+from karma.data_models.model_meta import ModelMeta, ModelType, ModalityType
+from karma.registries.model_registry import register_model_meta
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 logger = logging.getLogger(__name__)
 
 
-@register_model("qwen")
-class QwenThinkingLLM(BaseLLM):
+class QwenThinkingLLM(BaseHFModel):
     """Qwen language model with specialized thinking capabilities."""
 
     def __init__(
         self,
-        model_path: str,
+        model_name_or_path: str,
         device: str = "mps",
         max_tokens: int = 32768,
         temperature: float = 0.7,
         top_p: float = 0.9,
         top_k: Optional[int] = None,
-        enable_thinking: bool = True,
+        enable_thinking: bool = False,
         **kwargs,
     ):
         """
@@ -41,7 +40,7 @@ class QwenThinkingLLM(BaseLLM):
         """
         # Initialize parent class
         super().__init__(
-            model_path=model_path,
+            model_name_or_path=model_name_or_path,
             device=device,
             max_tokens=max_tokens,
             temperature=temperature,
@@ -51,12 +50,19 @@ class QwenThinkingLLM(BaseLLM):
             **kwargs,
         )
 
+        self.model_name_or_path = model_name_or_path
+        self.device = device
+        self.max_tokens = max_tokens
+        self.temperature = temperature
+        self.top_p = top_p
+        self.top_k = top_k
+        self.enable_thinking = enable_thinking
         # Qwen thinking end token ID (</think>)
         self.thinking_end_token_id = 151668
 
     def load_model(self):
         self.model = AutoModelForCausalLM.from_pretrained(
-            self.model_path,
+            self.model_name_or_path,
             device_map=self.device,
             torch_dtype=torch.bfloat16,
             trust_remote_code=True,
@@ -65,23 +71,22 @@ class QwenThinkingLLM(BaseLLM):
             else "eager",
         )
         self.processor = AutoTokenizer.from_pretrained(
-            self.model_path, trust_remote_code=True
+            self.model_name_or_path, trust_remote_code=True
         )
 
-    def format_inputs(
+    def preprocess(
         self,
-        prompts: List[str],
-        images: Optional[List[Image.Image]] = None,
-        audios: Optional[List[Audio]] = None,
-    ) -> str:
+        inputs: List[DataLoaderIterable],
+        **kwargs,
+    ) -> Dict[str, torch.Tensor]:
         inputs = [
             self.processor.apply_chat_template(
-                [{"role": "user", "content": prompt}],
+                [{"role": "user", "content": datapoint.input}],
                 tokenize=False,
                 add_generation_prompt=True,
-                enable_thinking=self.model_config.enable_thinking,
+                enable_thinking=self.enable_thinking,
             )
-            for prompt in prompts
+            for datapoint in inputs
         ]
         model_inputs = self.processor(
             inputs,
@@ -92,18 +97,86 @@ class QwenThinkingLLM(BaseLLM):
         ).to(self.device)
         return model_inputs
 
-    def format_outputs(self, outputs: List[str]) -> List[Tuple[str, str]]:
-        if not self.model_config.enable_thinking:
-            return [("", output) for output in outputs]
+    def run(
+        self,
+        inputs: Union[torch.Tensor, Dict[str, torch.Tensor], List[str], Any],
+        **kwargs,
+    ):
+        model_inputs = self.preprocess(inputs)
+        results = self.model.generate(
+            **model_inputs,
+            max_new_tokens=self.max_tokens,
+            temperature=self.temperature,
+            top_p=self.top_p,
+            top_k=self.top_k,
+        )
+
+        # Extract only the newly generated tokens
+        input_length = model_inputs["input_ids"].shape[1]
+        outputs = [
+            self.processor.decode(results[i][input_length:], skip_special_tokens=True)
+            for i in range(len(results))
+        ]
+        return self.postprocess(outputs)
+
+    def postprocess(self, model_outputs: List[str], **kwargs) -> List[Tuple[str, str]]:
+        if not self.enable_thinking:
+            return [("", output) for output in model_outputs]
         else:
             return [
                 self.parse_thinking_content(output)
                 if "</think>" in output
                 else ("", output)
-                for output in outputs
+                for output in model_outputs
             ]
 
     def parse_thinking_content(self, output) -> Tuple[str, str]:
         thinking_content = output.split("</think>")[0]
         final_answer = output.split("</think>")[1]
         return thinking_content.replace("<think>", "").strip(), final_answer.strip()
+
+
+QwenModel3_06B = ModelMeta(
+    name="Qwen/Qwen3-0.6B",
+    description="QWEN model",
+    loader_class="karma.models.qwen.QwenThinkingLLM",
+    loader_kwargs={
+        "temperature": 0.7,
+        "top_k": 50,
+        "top_p": 0.9,
+        "enable_thinking": True,
+        "max_tokens": 256,
+    },
+    revision=None,
+    reference=None,
+    model_type=ModelType.TEXT_GENERATION,
+    modalities=[ModalityType.TEXT],
+    n_parameters=None,
+    memory_usage_mb=None,
+    max_tokens=None,
+    embed_dim=None,
+    framework=["PyTorch", "Transformers"],
+)
+QwenModel_1_7B = ModelMeta(
+    name="Qwen/Qwen3-1.7B",
+    description="QWEN model",
+    loader_class="karma.models.qwen.QwenThinkingLLM",
+    loader_kwargs={
+        "temperature": 0.7,
+        "top_k": 50,
+        "top_p": 0.9,
+        "enable_thinking": True,
+        "max_tokens": 256,
+    },
+    revision=None,
+    reference=None,
+    model_type=ModelType.TEXT_GENERATION,
+    modalities=[ModalityType.TEXT],
+    n_parameters=None,
+    memory_usage_mb=None,
+    max_tokens=None,
+    embed_dim=None,
+    framework=["PyTorch", "Transformers"],
+)
+register_model_meta(QwenModel3_06B)
+register_model_meta(QwenModel_1_7B)

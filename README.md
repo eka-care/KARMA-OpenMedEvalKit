@@ -97,21 +97,72 @@ KARMA supports custom model integration through its registry system. See the Con
 
 KARMA uses a decorator-based registry system that makes it easy to add your own models and datasets for evaluation.
 
-### Registering a Custom Model
+### Registering a Model
 
-Create a new model by inheriting from `BaseLLM` and using the `@register_model` decorator:
+Create a new model by inheriting from `BaseHFModel` and then call the `register_model_meta` method from registry.py with the [`ModelMeta`](https://github.com/eka-care/KARMA-OpenMedEvalKit/blob/8052163b72209aa0ee25d5a6146969213e398cd8/karma/data_models/model_meta.py)
+
+See sample implementation from [qwen.py](https://github.com/eka-care/KARMA-OpenMedEvalKit/blob/8052163b72209aa0ee25d5a6146969213e398cd8/karma/models/qwen.py)
+Multiple models from the same family can be imported through this now.
+
+Take any model specific inputs through the `loader_kwargs` in ModelMeta, they have to be set as init parameters to be used.
+They are passed as kwargs from the model registry.
 
 ```python
-from karma.models.base import BaseLLM
-from karma.registries.model_registry import register_model
+from karma.models.base_model_abs import BaseHFModel
+from karma.data_models.model_meta import ModelMeta, ModelType, ModalityType
+from karma.registries.model_registry import register_model_meta
 
-@register_model("my_custom_model")
-class MyCustomModel(BaseLLM):
+logger = logging.getLogger(__name__)
+
+class MyCustomModel(BaseHFModel):
     """Custom model implementation."""
     
-    def __init__(self, model_path: str, device: str = "cuda", **kwargs):
-        super().__init__(model_path=model_path, device=device, **kwargs)
-    
+    def __init__(
+        self,
+        model_name_or_path: str,
+        device: str = "mps",
+        max_tokens: int = 32768,
+        temperature: float = 0.7,
+        top_p: float = 0.9,
+        top_k: Optional[int] = None,
+        enable_thinking: bool = True,
+        **kwargs,
+    ):
+    super().__init__(
+            model_name_or_path=model_name_or_path,
+            device=device,
+            max_tokens=max_tokens,
+            temperature=temperature,
+            top_p=top_p,
+            top_k=top_k,
+            enable_thinking=enable_thinking,
+            **kwargs,
+        )
+      
+    ...
+  
+my_custom_model = ModelMeta(
+    name="Qwen/Qwen3-1.7B",
+    description="QWEN model",
+    loader_class="karma.models.custom.MyCustomModel",
+    loader_kwargs={
+        "temperature": 0.7,
+        "top_k": 50,
+        "top_p": 0.9,
+        "enable_thinking": True,
+        "max_tokens": 256,
+    },
+    revision=None,
+    reference=None,
+    model_type=ModelType.TEXT_GENERATION,
+    modalities=[ModalityType.TEXT],
+    n_parameters=None,
+    memory_usage_mb=None,
+    max_tokens=None,
+    embed_dim=None,
+    framework=["PyTorch", "Transformers"],
+)
+register_model_meta(my_custom_model)
 ```
 
 ### Registering a Custom Dataset
@@ -146,13 +197,11 @@ class MyCustomDataset(BaseMultimodalDataset):
 After defining your custom model and dataset, use them with the CLI:
 
 ```bash
-# Ensure your custom components are imported/registered
-python -c "import your_custom_module"
-
 # Use your custom model and dataset
 karma eval --model my_custom_model --model-path "path/to/model" \
   --datasets "my_custom_dataset" \
   --dataset-args "my_custom_dataset:domain=medical"
+  --model-kwargs '{"temperature":0.5}'
 ```
 
 ### Registration Parameters

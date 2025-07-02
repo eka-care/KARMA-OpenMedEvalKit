@@ -8,6 +8,7 @@ multimodal dataset interface for medical question answering with images.
 import logging
 from typing import Dict, Any, Tuple
 
+from karma.data_models.dataloader_iterable import DataLoaderIterable
 from karma.registries.dataset_registry import register_dataset
 from karma.eval_datasets.base_dataset import BaseMultimodalDataset
 
@@ -48,7 +49,7 @@ class MedXpertQADataset(BaseMultimodalDataset):
             **kwargs,
         )
 
-    def format_item(self, sample: Dict[str, Any]) -> Dict[str, Any]:
+    def format_item(self, sample: Dict[str, Any]) -> DataLoaderIterable:
         """
         Format a sample into a medical QA prompt.
 
@@ -71,11 +72,11 @@ class MedXpertQADataset(BaseMultimodalDataset):
         choices_text = "\n".join(formatted_choices)
         prompt = f"Question: {question}\n\n{choices_text}\n\n{CONFINEMENT_INSTRUCTIONS}"
 
-        processed_sample = {
-            "input": prompt,
-            "expected_output": label,
-            "images": images,  # Include images for multimodal models
-        }
+        processed_sample = DataLoaderIterable(
+            input=prompt,
+            expected_output=label,
+            images=images,  # Include images for multimodal models
+        )
 
         return processed_sample
 

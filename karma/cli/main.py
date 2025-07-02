@@ -13,6 +13,14 @@ from karma.cli.commands.eval import eval_cmd
 from karma.cli.commands.list import list_cmd
 from karma.cli.commands.info import info_cmd
 
+import logging
+from rich.logging import RichHandler
+
+FORMAT = "%(message)s"
+logging.basicConfig(
+    level="INFO", format=FORMAT, datefmt="[%X]", handlers=[RichHandler()]
+)
+
 # # Install rich traceback handler for better error display
 install()
 

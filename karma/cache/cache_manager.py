@@ -8,9 +8,10 @@ import numpy as np
 from PIL import Image
 
 from typing import Any, Dict, List, Tuple
-from karma.models.base import ModelConfig
 from karma.cache.duckdb_cache_io import DuckDBCacheIO
 from karma.cache.dynamodb_cache_io import DynamoDBCacheIO
+from karma.data_models.dataloader_iterable import DataLoaderIterable
+from karma.data_models.model_meta import ModelMeta
 
 
 class CacheManager:
@@ -20,7 +21,7 @@ class CacheManager:
     Handles hash generation and cache operations with configurable backends.
     """
 
-    def __init__(self, dataset_name: str, model_config: ModelConfig):
+    def __init__(self, dataset_name: str, model_config: ModelMeta):
         self.model_config = model_config
 
         self.database_hits = 0
@@ -64,7 +65,10 @@ class CacheManager:
         input_hash = self.generate_hash(self.format_model_input(model_input))
 
         # Generate cache key with model config
-        cache_key_data = {**self.model_config.to_dict(), "input_hash": input_hash}
+        cache_key_data = {
+            **self.model_config.model_dump(exclude_none=True),
+            "input_hash": input_hash,
+        }
         cache_key = self.generate_hash(cache_key_data)
 
         return input_hash, cache_key
@@ -84,7 +88,6 @@ class CacheManager:
         # Use ThreadPoolExecutor for CPU-bound hash generation
         # executor.map() preserves order - results will be in same order as inputs
         max_workers = min(len(model_inputs), multiprocessing.cpu_count())
-
         # Prepare data for parallel processing
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             results = list(executor.map(self._generate_cache_key, model_inputs))
@@ -166,7 +169,7 @@ class CacheManager:
             fallback_str = str(data)
             return hashlib.md5(fallback_str.encode()).hexdigest()
 
-    def initialize_run(self, model_config: ModelConfig, dataset_name: str) -> str:
+    def initialize_run(self, model_config: ModelMeta, dataset_name: str) -> str:
         """
         Initialize a new run and return config hash.
 
@@ -178,14 +181,15 @@ class CacheManager:
             Configuration hash for this run
         """
         # Generate config hash directly
-        config_data = {**model_config.to_dict(), "dataset_name": dataset_name}
+        model_config_dict = model_config.model_dump(exclude_none=True)
+        config_data = {**model_config_dict, "dataset_name": dataset_name}
         config_hash = self.generate_hash(config_data)
 
         # Store run metadata
         run_data = {
             "config_hash": config_hash,
-            "model_config": json.dumps(model_config.to_dict()),
-            "model_id": model_config.model_id,
+            "model_config": json.dumps(model_config_dict),
+            "model_id": model_config.name,
             "dataset_name": dataset_name,
         }
 
@@ -198,7 +202,7 @@ class CacheManager:
         return config_hash
 
     def batch_fetch_rows(
-        self, model_inputs: List[Dict[str, Any]]
+        self, model_inputs: List[DataLoaderIterable]
     ) -> List[Dict[str, Any] | None]:
         """
         Fetch multiple cached inference results.
@@ -209,7 +213,7 @@ class CacheManager:
         Returns:
             Dictionary mapping model inputs to cached results (None if not found)
         """
-
+        model_inputs = [input.model_dump() for input in model_inputs]
         # Use centralized batch cache key generation
         _, cache_keys = self._batch_generate_cache_keys(model_inputs)
         # Batch fetch from database

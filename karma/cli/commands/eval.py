@@ -20,6 +20,9 @@ from karma.cli.utils import (
 from dotenv import load_dotenv
 from karma.registries.model_registry import model_registry
 from karma.registries.dataset_registry import dataset_registry
+import json
+import yaml
+import os
 
 
 @click.command(name="eval")
@@ -28,8 +31,7 @@ from karma.registries.dataset_registry import dataset_registry
 )
 @click.option(
     "--model-path",
-    required=True,
-    help="Model path (local path or HuggingFace model ID)",
+    help="Model path (local path or HuggingFace model ID). If not provided, uses path from model metadata.",
 )
 @click.option(
     "--datasets",
@@ -79,6 +81,14 @@ from karma.registries.dataset_registry import dataset_registry
     is_flag=True,
     help="Validate arguments and show what would be evaluated without running",
 )
+@click.option(
+    "--model-config",
+    help="Path to model configuration file (JSON/YAML) with model-specific parameters",
+)
+@click.option(
+    "--model-kwargs",
+    help='Model parameter overrides as JSON string (e.g., \'{"temperature": 0.7, "top_p": 0.9}\')',
+)
 @click.pass_context
 def eval_cmd(
     ctx,
@@ -94,6 +104,8 @@ def eval_cmd(
     progress,
     interactive,
     dry_run,
+    model_config,
+    model_kwargs,
 ):
     """
     Evaluate a model on healthcare datasets.
@@ -132,19 +144,45 @@ def eval_cmd(
         model_registry.discover_models()
         dataset_registry.discover_datasets()
 
-        # Validate model
-        if not model_registry.is_registered(model):
-            available_models = model_registry.list_models()
+        # Validate model (check by ModelMeta name, not short alias)
+        model_names = model_registry.list_models()
+
+        # Check if the provided model name matches any registered model
+        if model not in model_names:
+            # Try to find partial matches or suggest alternatives
+            partial_matches = [
+                name for name in model_names if model.lower() in name.lower()
+            ]
+
             console.print(
                 ClickFormatter.error(f"Model '{model}' not found in registry")
             )
-            console.print(f"Available models: {', '.join(available_models)}")
+
+            if partial_matches:
+                console.print(
+                    f"Did you mean one of these? {', '.join(partial_matches[:5])}"
+                )
+            else:
+                console.print(f"Available models: {', '.join(model_names[:10])}")
+                if len(model_names) > 10:
+                    console.print(f"... and {len(model_names) - 10} more")
+
             raise click.Abort()
 
-        # Validate model path
-        if not validate_model_path(model_path):
+        # Handle model configuration and parameter overrides
+        model_overrides = _prepare_model_overrides(
+            model, model_path, model_config, model_kwargs, console
+        )
+
+        # Extract final model path (could come from meta config)
+        final_model_path = model_overrides.get("model_name_or_path", model_path)
+
+        # Validate final model path if provided
+        if final_model_path and not validate_model_path(final_model_path):
             console.print(
-                ClickFormatter.warning(f"Model path '{model_path}' may not be valid")
+                ClickFormatter.warning(
+                    f"Model path '{final_model_path}' may not be valid"
+                )
             )
             if not click.confirm("Continue anyway?"):
                 raise click.Abort()
@@ -181,9 +219,10 @@ def eval_cmd(
         _show_evaluation_plan(
             console,
             model,
-            model_path,
+            final_model_path,
             dataset_names,
             parsed_dataset_args,
+            model_overrides,
             batch_size,
             cache,
             output,
@@ -206,7 +245,10 @@ def eval_cmd(
         console.print("\n" + "=" * 60)
 
         orchestrator = MultiDatasetOrchestrator(
-            model_name=model, model_path=model_path, console=console
+            model_name=model,
+            model_path=final_model_path,
+            model_kwargs=model_overrides,
+            console=console,
         )
 
         # Run evaluation
@@ -229,6 +271,7 @@ def eval_cmd(
         console.print(
             f"\n{ClickFormatter.success('Evaluation completed successfully!')}"
         )
+        console.Abort()
 
         if verbose:
             console.print(f"Results saved to: {output}")
@@ -305,6 +348,7 @@ def _show_evaluation_plan(
     model_path: str,
     dataset_names: list,
     dataset_args: dict,
+    model_overrides: dict,
     batch_size: int,
     use_cache: bool,
     output: str,
@@ -348,9 +392,23 @@ def _show_evaluation_plan(
                 args_str = ", ".join([f"{k}={v}" for k, v in args.items()])
                 console.print(f"  {dataset_name}: {args_str}")
 
+    # Show model overrides if any
+    if model_overrides:
+        console.print(f"[cyan]Model Configuration:[/cyan]")
+        # Filter out internal keys
+        display_overrides = {
+            k: v
+            for k, v in model_overrides.items()
+            if not k.startswith("_") and k != "model_name_or_path"
+        }
+        if display_overrides:
+            for key, value in display_overrides.items():
+                console.print(f"  {key}: {value}")
+
     # Show cache info if caching is enabled
     if use_cache:
         import os
+
         cache_path = os.getenv("KARMA_CACHE_PATH", "./cache.db")
         cache_info = get_cache_info(cache_path)
         if cache_info["exists"]:
@@ -361,3 +419,149 @@ def _show_evaluation_plan(
             console.print(f"[cyan]Cache Status:[/cyan] New cache will be created")
     else:
         console.print(f"[cyan]Cache Status:[/cyan] Disabled")
+
+
+def _prepare_model_overrides(
+    model_name: str,
+    model_path: str,
+    model_config: str,
+    model_kwargs: str,
+    console: Console,
+) -> dict:
+    """
+    Prepare model configuration with proper override hierarchy.
+
+    Priority: CLI kwargs > config file > model metadata defaults > CLI model_path
+
+    Args:
+        model_name: Name of the model from registry
+        model_path: Model path from CLI (can be None if using metadata)
+        model_config: Path to config file (JSON/YAML)
+        model_kwargs: JSON string of parameter overrides
+        console: Rich console for output
+
+    Returns:
+        Dictionary of merged model parameters
+    """
+    final_config = {}
+
+    # 1. Start with model metadata defaults (always available in new system)
+    try:
+        model_meta = model_registry.get_model_meta(model_name)
+        final_config.update(model_meta.loader_kwargs)
+
+        # Use model name from metadata if no CLI path provided
+        if not model_path:
+            final_config["model_name_or_path"] = model_meta.name
+            console.print(
+                f"[dim]Using model path from metadata: {model_meta.name}[/dim]"
+            )
+
+        console.print(
+            f"[dim]Loaded {len(model_meta.loader_kwargs)} default parameters from model metadata[/dim]"
+        )
+    except Exception as e:
+        console.print(ClickFormatter.warning(f"Could not load model metadata: {e}"))
+
+    # 2. Override with CLI model path if provided
+    if model_path:
+        final_config["model_name_or_path"] = model_path
+
+    # 3. Override with config file parameters
+    if model_config:
+        try:
+            config_data = _load_config_file(model_config)
+            final_config.update(config_data)
+            console.print(
+                f"[dim]Loaded {len(config_data)} parameters from config file: {model_config}[/dim]"
+            )
+        except Exception as e:
+            console.print(
+                ClickFormatter.warning(
+                    f"Could not load model config file '{model_config}': {e}"
+                )
+            )
+
+    # 4. Override with CLI kwargs (highest priority)
+    if model_kwargs:
+        try:
+            cli_overrides = json.loads(model_kwargs)
+            final_config.update(cli_overrides)
+            console.print(
+                f"[dim]Applied {len(cli_overrides)} parameter overrides from CLI[/dim]"
+            )
+        except json.JSONDecodeError as e:
+            console.print(ClickFormatter.warning(f"Invalid JSON in model-kwargs: {e}"))
+
+    return final_config
+
+
+def _load_config_file(config_path: str) -> dict:
+    """
+    Load configuration from JSON or YAML file.
+
+    Args:
+        config_path: Path to configuration file
+
+    Returns:
+        Configuration dictionary
+
+    Raises:
+        FileNotFoundError: If file doesn't exist
+        ValueError: If file format is unsupported or invalid
+    """
+    if not os.path.exists(config_path):
+        raise FileNotFoundError(f"Config file not found: {config_path}")
+
+    file_ext = os.path.splitext(config_path)[1].lower()
+
+    with open(config_path, "r") as f:
+        if file_ext in [".json"]:
+            return json.load(f)
+        elif file_ext in [".yaml", ".yml"]:
+            return yaml.safe_load(f)
+        else:
+            # Try to auto-detect format
+            content = f.read()
+            f.seek(0)
+
+            try:
+                return json.loads(content)
+            except json.JSONDecodeError:
+                try:
+                    return yaml.safe_load(content)
+                except yaml.YAMLError:
+                    raise ValueError(f"Unsupported config file format: {config_path}")
+
+
+def _get_model_specific_help(model_name: str) -> str:
+    """
+    Get model-specific parameter help text.
+
+    Args:
+        model_name: Name of the model
+
+    Returns:
+        Help text for model-specific parameters
+    """
+    try:
+        model_meta = model_registry.get_model_meta(model_name)
+        help_lines = [
+            f"Model: {model_meta.name}",
+            f"Type: {model_meta.model_type.value}",
+        ]
+
+        if model_meta.loader_kwargs:
+            help_lines.append("Default parameters:")
+            for key, value in model_meta.loader_kwargs.items():
+                help_lines.append(f"  {key}: {value}")
+
+        if model_meta.medical_domains:
+            help_lines.append(
+                f"Medical domains: {', '.join(model_meta.medical_domains)}"
+            )
+
+        return "\n".join(help_lines)
+
+    except Exception:
+        return "Could not retrieve model parameter information."

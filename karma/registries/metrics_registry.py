@@ -6,14 +6,6 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class BaseMetric:
-    def __init__(self, metric_name: str):
-        self.metric_name = metric_name
-
-    def evaluate(self, predictions, references):
-        raise NotImplementedError
-
-
 class MetricRegistry:
     """Decorator-based metric registry for automatic metric discovery."""
 
@@ -38,6 +30,9 @@ class MetricRegistry:
         """
 
         def decorator(metric_class: Type) -> Type:
+            # Import BaseMetric here to avoid circular imports
+            from karma.metrics.base_metric_abs import BaseMetric
+
             if not issubclass(metric_class, BaseMetric):
                 raise ValueError(
                     f"{metric_class.__name__} must inherit from BaseMetric"
@@ -73,7 +68,7 @@ class MetricRegistry:
         if name not in self.metrics:
             # check if it's supported by the hf-evaluate library.
             try:
-                from karma.metrics import HfMetric
+                from karma.metrics.common_metrics import HfMetric
 
                 # check if the class can be initalised.
                 metric = HfMetric(name)
@@ -101,16 +96,26 @@ class MetricRegistry:
         """
         Automatically discover and import all metric modules.
 
-        This method imports the karma.metrics module,
+        This method imports all modules in the karma.metrics package,
         which triggers the decorator registration.
         """
         if self._discovered:
             return
 
         try:
-            # Import the metrics module to trigger decorator registration
-            importlib.import_module("karma.metrics")
-            logger.debug("Imported karma.metrics module")
+            import karma.metrics
+
+            # Import all modules in karma.metrics package
+            for finder, name, ispkg in pkgutil.iter_modules(
+                karma.metrics.__path__, karma.metrics.__name__ + "."
+            ):
+                # Skip base classes and utility modules
+                if not name.endswith((".base_metric_abs", ".asr_wer_preprocessor")):
+                    try:
+                        importlib.import_module(name)
+                        logger.debug(f"Imported metric module: {name}")
+                    except ImportError as e:
+                        logger.warning(f"Could not import metric module {name}: {e}")
         except ImportError as e:
             logger.error(f"Could not import karma.metrics package: {e}")
 

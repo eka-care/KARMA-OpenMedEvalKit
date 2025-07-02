@@ -18,18 +18,21 @@ from torch.utils.data import DataLoader
 from weave import EvaluationLogger
 
 from karma.cache import CacheManager
+from karma.data_models.dataloader_iterable import DataLoaderIterable
 from karma.eval_datasets.base_dataset import BaseMultimodalDataset
-from karma.models.base import BaseLLM
-from karma.cli.output_adapter import OutputAdapter
+from karma.models.base_model_abs import BaseHFModel
+
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class Benchmark:
     def __init__(
         self,
-        logger,
-        model: BaseLLM,
+        model: BaseHFModel,
         dataset: BaseMultimodalDataset,
-        verbose_mode: bool = False,
+        verbose_mode: bool = True,
         use_weave: bool = False,
         project_name: str = "benchmark-evaluation",
         enable_cache: bool = False,
@@ -52,14 +55,12 @@ class Benchmark:
             console: Optional rich Console for output (from orchestrator)
             progress: Optional rich Progress instance for progress bars (from orchestrator)
         """
-        self.logger = OutputAdapter(logger=logger, console=console)
+        self.logger = logger
         self.model = model
         self.verbose_mode = verbose_mode
         self.progress = progress
 
-        self.logger.info(
-            f"Initializing benchmark with model: {model.model_config.model_id}"
-        )
+        self.logger.info(f"Initializing benchmark with model: {model}")
         self.logger.info(f"Dataset: {dataset.dataset_name}")
 
         # Weave integration
@@ -87,23 +88,6 @@ class Benchmark:
     Supports multimodal inputs (text, images, audio, etc.)
     """
 
-    def get_batch_model_inputs(
-        self, samples: List[Dict[str, Any]]
-    ) -> Dict[str, List[Any]]:
-        """Convert batch of samples to multimodal model inputs."""
-        batch_inputs = {
-            "prompts": [sample["input"] for sample in samples],
-            "images": [sample.get("images", None) for sample in samples],
-            "audios": [sample.get("audios", None) for sample in samples],
-        }
-
-        # Remove keys where all values are None
-        batch_inputs = {
-            k: v for k, v in batch_inputs.items() if any(x is not None for x in v)
-        }
-
-        return batch_inputs
-
     def _create_weave_logger(self, dataset_name: str) -> EvaluationLogger:
         """
         Create Weave evaluation logger if enabled.
@@ -115,7 +99,7 @@ class Benchmark:
             EvaluationLogger instance or None if disabled
         """
         # Sanitize model name for Weave (alphanumeric and underscores only)
-        model_name = self.model.model_config.model_id
+        model_name = self.model.model_name_or_path
         sanitized_model_name = "".join(
             c if c.isalnum() or c == "_" else "_" for c in model_name
         )
@@ -126,9 +110,7 @@ class Benchmark:
         self.logger.info("🔍 Weave EvaluationLogger initialized for summary tracking")
         return evaluation_logger
 
-    def fetch_from_cache(
-        self, samples: List[Dict[str, Any]]
-    ) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
+    def fetch_from_cache(self, samples: List[DataLoaderIterable]):
         """
         Fetch results from cache and return cache hits and misses.
 
@@ -140,9 +122,6 @@ class Benchmark:
             - cache_hits: List of results found in cache
             - samples_to_generate: List of samples that need to be generated
         """
-        if self.verbose_mode:
-            self.logger.info(f"Attempting to fetch {len(samples)} samples from cache")
-
         results = []
         samples_to_generate = []
         # Step 1: Check cache for existing results
@@ -154,9 +133,9 @@ class Benchmark:
                 cache_hits += 1
                 result = {
                     "prediction": cache_result.get("model_output", ""),
-                    "thinking_content": cache_result.get("model_output_reasoning", ""),
+                    # "thinking_content": cache_result.get("model_output_reasoning", ""),
                     "from_cache": True,
-                    "expected_output": sample.get("expected_output", ""),
+                    "expected_output": sample.expected_output,
                 }
                 results.append(result)
             else:
@@ -171,7 +150,7 @@ class Benchmark:
         return results, samples_to_generate
 
     def batch_predict(
-        self, samples: List[Dict[str, Any]], dry_run: bool = False
+        self, samples: List[DataLoaderIterable], dry_run: bool = False
     ) -> List[Dict[str, Any]]:
         """
         Generate predictions for a batch of samples, with cache checking and fetching.
@@ -184,11 +163,10 @@ class Benchmark:
         results = []
 
         if not dry_run:
-            model_inputs_to_generate = self.get_batch_model_inputs(samples)
             self.logger.debug("Generating batch responses from model")
             start_time = time.time()
 
-            batch_responses = self.model.batch_generate(**model_inputs_to_generate)
+            batch_responses = self.model.run(inputs=samples)
             generation_time = time.time() - start_time
             self.logger.info(
                 f"Model generation completed in {generation_time:.2f} seconds"
@@ -204,27 +182,21 @@ class Benchmark:
             for i, (batch_response, sample) in enumerate(
                 zip(batch_responses, samples, strict=False)
             ):
-                expected = sample["expected_output"]
-                if (
-                    isinstance(batch_response, (tuple, list))
-                    and len(batch_response) == 2
-                ):
-                    thinking_content, response = batch_response
-                else:
-                    thinking_content = ""
-                    response = batch_response
+                expected = sample.expected_output
+                response = batch_response
+
                 response = str(response)
-                thinking_content = str(thinking_content)
                 prediction, success = self.dataset.extract_prediction(response)
+
                 result = {
                     "prediction": prediction,
-                    "thinking_content": thinking_content,
                     "from_cache": False,
-                    "sample": sample,
+                    "sample": sample.model_dump(),
                     "expected_output": expected,
                     "success": success,
                 }
                 results.append(result)
+
                 if self.progress and progress_task is not None:
                     self.progress.advance(progress_task)
             if self.progress and progress_task is not None:
@@ -232,7 +204,9 @@ class Benchmark:
 
             # Step 3: Save new results to cache
             if self.enable_cache:
-                self.logger.info("Starting asynchronous cache update")
+                self.logger.info(
+                    f"Starting asynchronous cache update for datapoint {results}"
+                )
                 cache_thread = threading.Thread(
                     target=self.cache_manager.batch_save_rows,
                     args=(results,),
@@ -249,7 +223,7 @@ class Benchmark:
                     "prediction": "DRY_RUN",
                     "thinking_content": "",
                     "from_cache": False,
-                    "sample": sample,
+                    "sample": sample.model_dump(),
                     "expected_output": expected,
                     "success": True,
                 }
@@ -273,8 +247,12 @@ class Benchmark:
             Dictionary of metric scores or None if metric not found
         """
         metric = metric_config["metric"]
-        references = [self.dataset.postprocess(it["expected_output"]) for it in prediction_results]
-        predictions = [self.dataset.postprocess(it["prediction"]) for it in prediction_results]
+        references = [
+            self.dataset.postprocess(it["expected_output"]) for it in prediction_results
+        ]
+        predictions = [
+            self.dataset.postprocess(it["prediction"]) for it in prediction_results
+        ]
         score = metric.evaluate(predictions=predictions, references=references)
         return score
 
@@ -338,9 +316,9 @@ class Benchmark:
             if batch_idx > 2:
                 break
             batch_results = []
-            samples = [
-                dict(s) for s in samples
-            ]  # Ensure samples are proper dictionaries
+            # samples = [
+            #     dict(s) for s in samples
+            # ]  # Ensure samples are proper dictionaries
             if self.enable_cache:
                 batch_results, samples_to_generate = self.fetch_from_cache(samples)
             else:
@@ -355,13 +333,13 @@ class Benchmark:
             # Process results and extract answers using dataset template
             for result, sample in zip(batch_results, samples, strict=False):
                 # Use dataset's extract_answer method (which uses template)
-                expected = sample["expected_output"]
+                expected = sample.expected_output
 
                 # Create final prediction result
                 prediction_result = {
                     "prediction": result["prediction"],
                     "expected_output": expected,
-                    "sample": sample,
+                    "sample": sample.model_dump(),
                     "from_cache": result.get("from_cache", False),
                     "success": result.get("success", True),
                 }

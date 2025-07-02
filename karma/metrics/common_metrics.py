@@ -1,5 +1,7 @@
 import evaluate
-from karma.registries.metrics_registry import register_metric, BaseMetric
+
+from karma.metrics.base_metric_abs import BaseMetric
+from karma.registries.metrics_registry import register_metric
 
 
 class HfMetric(BaseMetric):
@@ -7,7 +9,7 @@ class HfMetric(BaseMetric):
         super().__init__(metric_name)
         self.metric = evaluate.load(metric_name)
 
-    def evaluate(self, predictions, references):
+    def evaluate(self, predictions, references, **kwargs):
         return self.metric.compute(predictions=predictions, references=references)
 
 
@@ -15,7 +17,8 @@ class HfMetric(BaseMetric):
 class BleuMetric(HfMetric):
     def __init__(self, metric_name: str = "bleu"):
         super().__init__(metric_name)
-    def evaluate(self, predictions, references, smooth: bool = True):
+
+    def evaluate(self, predictions, references, **kwargs):
         references = [[ref] for ref in references]
         return self.metric.compute(
             predictions=predictions, references=references, smooth=smooth

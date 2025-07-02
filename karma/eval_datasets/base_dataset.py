@@ -73,15 +73,17 @@ class BaseMultimodalDataset(IterableDataset, ABC):
             Dictionary containing the sample data including 'expected_output'
         """
         for idx, sample in enumerate(self.dataset):
-            if isinstance(sample, dict):
-                item = self.format_item(sample)
-                item["idx"] = idx
-                yield item
-            else:
-                # Handle non-dict samples appropriately
-                item = self.format_item(dict(sample))
-                item["idx"] = idx
-                yield item
+            item = self.format_item(sample)
+            yield item
+            # if isinstance(sample, dict):
+            #     item = self.format_item(sample)
+            #     # item["idx"] = idx
+            #     yield item
+            # else:
+            #     # Handle non-dict samples appropriately
+            #     item = self.format_item(dict(sample))
+            #     # item["idx"] = idx
+            #     yield item
 
     @abstractmethod
     def format_item(self, sample: Dict[str, Any]) -> Dict[str, Any]:
