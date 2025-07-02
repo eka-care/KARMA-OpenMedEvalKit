@@ -1,5 +1,6 @@
 import re
 from num2words import num2words
+from karma.metrics.glm_processor import GLMProcessor
 from jiwer import Compose, ToLowerCase, RemoveMultipleSpaces, RemovePunctuation
 
 def replace_digits_with_words(text):
@@ -21,9 +22,9 @@ class ASRTextProcessor:
         self.language = language
 
     def normalize(self, transcription: list[str]) -> list[str]:
-        # Create a shallow copy (optional, if you don?~@~Yt want to mutate)
-        #if self.use_glm:
-        #    t.words = self.apply_glm(t.words, t.language)
+        if self.use_glm:
+            glm_processor = GLMProcessor(glm_dir="./metrics/glm")
+            transcription = glm_processor.apply(transcription, lang=self.language)
         if self.use_num2text:
             transcription = self.apply_num2text(transcription, self.language)
         if not self.use_punc:
