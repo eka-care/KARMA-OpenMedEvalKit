@@ -271,6 +271,7 @@ def eval_cmd(
         console.print(
             f"\n{ClickFormatter.success('Evaluation completed successfully!')}"
         )
+        console.Abort()
 
         if verbose:
             console.print(f"Results saved to: {output}")

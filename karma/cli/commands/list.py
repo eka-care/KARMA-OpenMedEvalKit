@@ -14,6 +14,7 @@ from karma.cli.formatters.table import ModelFormatter, DatasetFormatter
 from karma.cli.utils import ClickFormatter
 from karma.registries.model_registry import model_registry
 from karma.registries.dataset_registry import dataset_registry
+from karma.registries.metrics_registry import metric_registry
 
 
 @click.group(name="list")
@@ -204,6 +205,68 @@ def list_datasets(ctx, task_type, metric, output_format, show_args):
         raise click.Abort()
 
 
+@list_cmd.command(name="metrics")
+@click.option(
+    "--format",
+    "output_format",
+    type=click.Choice(["table", "simple"], case_sensitive=False),
+    default="table",
+    help="Output format",
+)
+@click.pass_context
+def list_metrics(ctx, output_format):
+    """
+    List all available metrics in the registry.
+
+    This command discovers and displays all metrics that have been registered
+    with the Karma framework.
+
+    Examples:
+        karma list metrics
+        karma list metrics --format simple
+    """
+    console = ctx.obj["console"]
+
+    try:
+        # Discover metrics
+        console.print("[cyan]Discovering metrics...[/cyan]")
+        metric_registry.discover_metrics()
+
+        # Get metrics list
+        metrics = metric_registry.list_metrics()
+
+        if not metrics:
+            console.print(ClickFormatter.warning("No metrics found in registry"))
+            console.print(
+                "\nTo register a metric, add the @register_metric decorator to your metric class."
+            )
+            return
+
+        # Display results
+        if output_format == "table":
+            from rich.table import Table
+            
+            table = Table(title="Available Metrics", show_header=True, header_style="bold cyan")
+            table.add_column("Metric Name", style="green", width=20)
+            table.add_column("Status", style="blue", width=15)
+            
+            for metric in sorted(metrics):
+                table.add_row(metric, "✓ Available")
+            
+            console.print("\n")
+            console.print(table)
+        else:
+            console.print(f"\n[cyan]Available Metrics ({len(metrics)}):[/cyan]")
+            for metric in sorted(metrics):
+                console.print(f"  {metric}")
+
+        console.print(f"\n{ClickFormatter.success(f'Found {len(metrics)} metrics')}")
+
+    except Exception as e:
+        console.print(ClickFormatter.error(f"Failed to list metrics: {str(e)}"))
+        raise click.Abort()
+
+
 def _apply_dataset_filters(
     datasets_info: dict, task_type: Optional[str] = None, metric: Optional[str] = None
 ) -> dict:
@@ -329,3 +392,8 @@ def list_all(ctx, output_format):
     console.print("\n[bold cyan]DATASETS[/bold cyan]")
     console.print("─" * 20)
     ctx.invoke(list_datasets, output_format=output_format)
+
+    # List metrics
+    console.print("\n[bold cyan]METRICS[/bold cyan]")
+    console.print("─" * 20)
+    ctx.invoke(list_metrics, output_format=output_format)

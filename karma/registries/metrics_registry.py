@@ -2,7 +2,7 @@ from typing import Dict, Type, List
 import pkgutil
 import importlib
 import logging
-from karma.metrics.base_metric_abs import BaseMetric
+
 logger = logging.getLogger(__name__)
 
 
@@ -30,6 +30,9 @@ class MetricRegistry:
         """
 
         def decorator(metric_class: Type) -> Type:
+            # Import BaseMetric here to avoid circular imports
+            from karma.metrics.base_metric_abs import BaseMetric
+
             if not issubclass(metric_class, BaseMetric):
                 raise ValueError(
                     f"{metric_class.__name__} must inherit from BaseMetric"
@@ -93,16 +96,26 @@ class MetricRegistry:
         """
         Automatically discover and import all metric modules.
 
-        This method imports the karma.metrics module,
+        This method imports all modules in the karma.metrics package,
         which triggers the decorator registration.
         """
         if self._discovered:
             return
 
         try:
-            # Import the metrics module to trigger decorator registration
-            importlib.import_module("karma.metrics")
-            logger.debug("Imported karma.metrics module")
+            import karma.metrics
+
+            # Import all modules in karma.metrics package
+            for finder, name, ispkg in pkgutil.iter_modules(
+                karma.metrics.__path__, karma.metrics.__name__ + "."
+            ):
+                # Skip base classes and utility modules
+                if not name.endswith((".base_metric_abs", ".asr_wer_preprocessor")):
+                    try:
+                        importlib.import_module(name)
+                        logger.debug(f"Imported metric module: {name}")
+                    except ImportError as e:
+                        logger.warning(f"Could not import metric module {name}: {e}")
         except ImportError as e:
             logger.error(f"Could not import karma.metrics package: {e}")
 

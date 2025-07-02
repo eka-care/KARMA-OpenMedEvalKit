@@ -77,6 +77,11 @@ class DatasetRegistry:
             processed_optional_args = optional_args.copy() if optional_args else []
             processed_default_args = default_args.copy() if default_args else {}
             
+            # Validate metrics if possible (warn if invalid, don't fail registration)
+            for metric in processed_metrics:
+                if not self._validate_metric_during_registration(metric):
+                    logger.warning(f"Metric '{metric}' for dataset '{name}' may not be available in metric registry")
+            
             self.datasets[name] = {
                 'class': dataset_class,
                 'metrics': processed_metrics,
@@ -184,6 +189,101 @@ class DatasetRegistry:
         """
         info = self.get_dataset_info(name)
         return info['metrics'].copy()
+    
+    def validate_metric(self, metric_name: str) -> bool:
+        """
+        Check if a metric is valid and exists in the metric registry.
+        
+        Args:
+            metric_name: Name of the metric to validate
+            
+        Returns:
+            True if metric is valid and exists, False otherwise
+        """
+        try:
+            from karma.registries.metrics_registry import metric_registry
+            
+            # First check if it's registered in KARMA metrics
+            if metric_registry.is_registered(metric_name):
+                return True
+            
+            # Then check if it can be loaded from HuggingFace Evaluate
+            try:
+                from karma.metrics.common_metrics import HfMetric
+                HfMetric(metric_name)
+                return True
+            except (ValueError, ImportError, FileNotFoundError):
+                return False
+                
+        except ImportError:
+            logger.warning("Could not import metric registry for validation")
+            return False
+    
+    def validate_dataset_metrics(self, name: str) -> Dict[str, bool]:
+        """
+        Validate all metrics for a dataset.
+        
+        Args:
+            name: Name of the dataset
+            
+        Returns:
+            Dictionary mapping metric names to their validation status
+            
+        Raises:
+            ValueError: If dataset is not found
+        """
+        metrics = self.get_dataset_metrics(name)
+        return {metric: self.validate_metric(metric) for metric in metrics}
+    
+    def get_invalid_metrics(self, name: str) -> List[str]:
+        """
+        Get list of invalid metrics for a dataset.
+        
+        Args:
+            name: Name of the dataset
+            
+        Returns:
+            List of metric names that are invalid or don't exist
+            
+        Raises:
+            ValueError: If dataset is not found
+        """
+        validation_results = self.validate_dataset_metrics(name)
+        return [metric for metric, is_valid in validation_results.items() if not is_valid]
+    
+    def has_valid_metrics(self, name: str) -> bool:
+        """
+        Check if all metrics for a dataset are valid.
+        
+        Args:
+            name: Name of the dataset
+            
+        Returns:
+            True if all metrics are valid, False if any are invalid
+            
+        Raises:
+            ValueError: If dataset is not found
+        """
+        return len(self.get_invalid_metrics(name)) == 0
+    
+    def _validate_metric_during_registration(self, metric_name: str) -> bool:
+        """
+        Helper method to validate metrics during dataset registration.
+        Uses a more lenient approach to avoid breaking registration.
+        
+        Args:
+            metric_name: Name of the metric to validate
+            
+        Returns:
+            True if metric appears valid, False if likely invalid
+        """
+        try:
+            from karma.registries.metrics_registry import metric_registry
+            return metric_registry.is_registered(metric_name)
+        except ImportError:
+            # If we can't import the registry, assume the metric is valid
+            # to avoid breaking the registration process
+            return True
     
     def get_dataset_task_type(self, name: str) -> str:
         """
