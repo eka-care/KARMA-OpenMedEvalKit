@@ -8,18 +8,21 @@ class DataLoaderIterable(BaseModel):
         default=None,
         description="Input prompt passed as a sample from the dataset iter",
     )
-    images: Optional[Union[Image, List[Image]]] = Field(
+    images: Optional[Union[Image.Image, List[Image.Image]]] = Field(
         default=None,
         description="Image prompt passed as a sample from the dataset iter. See medxpertqa",
     )
-    expected_output: Optional[Union[str]] = Field(
+    expected_output: Optional[Any] = Field(
         default=None,
     )
     audio: Optional[Any] = Field(
         default=None,
         description="Audio prompt passed as a sample from the dataset iter",
     )
-
+    other_args: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description="Other arguments passed as a sample from the dataset iter",
+    )
     class Config:
         arbitrary_types_allowed = True
         exclude_none = True

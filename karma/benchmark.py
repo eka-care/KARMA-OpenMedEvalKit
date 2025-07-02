@@ -32,7 +32,7 @@ class Benchmark:
         self,
         model: BaseHFModel,
         dataset: BaseMultimodalDataset,
-        verbose_mode: bool = False,
+        verbose_mode: bool = True,
         use_weave: bool = False,
         project_name: str = "benchmark-evaluation",
         enable_cache: bool = False,
@@ -191,7 +191,7 @@ class Benchmark:
                 result = {
                     "prediction": prediction,
                     "from_cache": False,
-                    "sample": sample,
+                    "sample": sample.model_dump(),
                     "expected_output": expected,
                     "success": success,
                 }
@@ -223,7 +223,7 @@ class Benchmark:
                     "prediction": "DRY_RUN",
                     "thinking_content": "",
                     "from_cache": False,
-                    "sample": sample,
+                    "sample": sample.model_dump(),
                     "expected_output": expected,
                     "success": True,
                 }
@@ -339,7 +339,7 @@ class Benchmark:
                 prediction_result = {
                     "prediction": result["prediction"],
                     "expected_output": expected,
-                    "sample": sample,
+                    "sample": sample.model_dump(),
                     "from_cache": result.get("from_cache", False),
                     "success": result.get("success", True),
                 }

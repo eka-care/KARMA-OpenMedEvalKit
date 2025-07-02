@@ -10,7 +10,7 @@ from typing import Dict, Any, Tuple, List, Optional
 from karma.eval_datasets.base_dataset import BaseMultimodalDataset
 from karma.registries.dataset_registry import register_dataset
 from karma.cli.output_adapter import OutputAdapter
-
+from karma.data_models.dataloader_iterable import DataLoaderIterable
 
 CONFINEMENT_INSTRUCTIONS = "Translate the given English text to the target language. Output only the translation without any additional text."
 DATASET_NAME = "ai4bharat/IN22-Conv"
@@ -138,7 +138,7 @@ class IN22ConvDataset(BaseMultimodalDataset):
             f"{DATASET_NAME}-{self.source_language}-{self.target_language}"
         )
 
-    def format_item(self, sample: Dict[str, Any]) -> Dict[str, Any]:
+    def format_item(self, sample: Dict[str, Any]) -> DataLoaderIterable:
         """
         Format a sample into a translation prompt.
 
@@ -154,10 +154,10 @@ class IN22ConvDataset(BaseMultimodalDataset):
         # Create translation prompt
         prompt = f"Translate the following English text to {CODE_TO_NAME[self.target_language]}:\n\n{source_text}\n\n{CONFINEMENT_INSTRUCTIONS}"
 
-        processed_sample = {
-            "input": prompt,
-            "expected_output": target_text,
-        }
+        processed_sample = DataLoaderIterable(
+            input=prompt,
+            expected_output=target_text,
+        )
 
         return processed_sample
 

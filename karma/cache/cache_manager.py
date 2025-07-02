@@ -243,7 +243,7 @@ class CacheManager:
         """
         # Prepare batch data for database
         inference_data_list = []
-        model_inputs = [data["sample"].model_dump() for data in batch_data]
+        model_inputs = [data["sample"] for data in batch_data]
         # Use centralized batch cache key generation
         input_hashes, cache_keys = self._batch_generate_cache_keys(model_inputs)
 

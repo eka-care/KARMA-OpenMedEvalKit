@@ -10,7 +10,7 @@ from typing import Dict, Any
 
 from karma.eval_datasets.base_dataset import BaseMultimodalDataset
 from karma.registries.dataset_registry import register_dataset
-
+from karma.data_models.dataloader_iterable import DataLoaderIterable
 logger = logging.getLogger(__name__)
 
 # Hardcoded confinement instructions for VQA
@@ -43,7 +43,7 @@ class VQARADDataset(BaseMultimodalDataset):
             dataset_name=dataset_name, split=split, commit_hash=commit_hash, **kwargs
         )
 
-    def format_item(self, sample: Dict[str, Any]) -> Dict[str, Any]:
+    def format_item(self, sample: Dict[str, Any]) -> DataLoaderIterable:
         """
         Format a sample into a VQA prompt.
 
@@ -55,7 +55,7 @@ class VQARADDataset(BaseMultimodalDataset):
         """
         question = sample.get("question", "")
         answer = sample.get("answer", "").lower()
-        image = sample.get("image", None)
+        image = sample["image"]
 
         # Create VQA prompt
         if answer in ["yes", "no"]:
@@ -65,10 +65,10 @@ class VQARADDataset(BaseMultimodalDataset):
         else:
             prompt = f"Question: {question}\n\nPlease answer the question concisely."
 
-        processed_sample = {
-            "input": prompt,
-            "expected_output": answer,
-            "images": [image],  # Include image for multimodal models
-        }
+        processed_sample = DataLoaderIterable(
+            input=prompt,
+            expected_output=answer,
+            images=[image],  # Include image for multimodal models
+        )
 
         return processed_sample

@@ -1,12 +1,14 @@
 import logging
-from typing import List, Dict, Union, Any
+from typing import List, Dict, Union, Any, Optional
 import torch
-from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor
+import librosa  # type: ignore
+import numpy as np
+from transformers import AutoModel
 
 from karma.models.base_model_abs import BaseHFModel
 from karma.data_models.model_meta import ModelMeta, ModelType, ModalityType
 from karma.registries.model_registry import register_model_meta
-
+from karma.data_models.dataloader_iterable import DataLoaderIterable
 logger = logging.getLogger(__name__)
 
 
@@ -16,11 +18,10 @@ class IndicConformerASR(BaseHFModel):
     def __init__(
         self,
         model_name_or_path: str,
+        device: str = "cpu",
         language: str = "hi",
-        device: str = "auto",
-        chunk_length_s: int = 30,
-        stride_length_s: int = 5,
-        return_timestamps: bool = True,
+        decoding_method: str = "ctc",
+        target_sample_rate: int = 16000,
         **kwargs,
     ):
         """
@@ -28,11 +29,10 @@ class IndicConformerASR(BaseHFModel):
 
         Args:
             model_name_or_path: Path to the model (HuggingFace model ID)
-            language: Target language code (e.g., 'hi', 'en', 'bn')
             device: Device to use for inference
-            chunk_length_s: Chunk length in seconds for long audio
-            stride_length_s: Stride length in seconds
-            return_timestamps: Whether to return timestamps
+            language: Target language code (e.g., 'hi', 'en', 'bn')
+            decoding_method: Decoding method ('ctc' or 'rnnt')
+            target_sample_rate: Expected sample rate for audio
             **kwargs: Additional model-specific parameters
         """
         super().__init__(
@@ -42,86 +42,78 @@ class IndicConformerASR(BaseHFModel):
         )
 
         self.language = language
-        self.chunk_length_s = chunk_length_s
-        self.stride_length_s = stride_length_s
-        self.return_timestamps = return_timestamps
+        self.decoding_method = decoding_method
+        self.target_sample_rate = target_sample_rate
 
     def load_model(self) -> None:
-        """Load the ASR model and processor."""
-        self.model = AutoModelForSpeechSeq2Seq.from_pretrained(
+        """Load the ASR model."""
+        self.model = AutoModel.from_pretrained(
             self.model_name_or_path,
-            device_map=self.device,
-            torch_dtype=torch.float16 if self.device == "cuda" else torch.float32,
             trust_remote_code=True,
         )
-
-        self.processor = AutoProcessor.from_pretrained(
-            self.model_name_or_path, trust_remote_code=True
-        )
+        
+        # Move model to device using base class method
+        self.to(self.device)
         self.is_loaded = True
 
-    def preprocess(
-        self,
-        audios: List[torch.Tensor],
-        **kwargs,
-    ) -> Dict[str, torch.Tensor]:
-        """
-        Preprocess audio inputs for the model.
-
-        Args:
-            audios: List of audio tensors
-            **kwargs: Additional preprocessing arguments
-
-        Returns:
-            Preprocessed inputs ready for forward pass
-        """
-        # Process audio inputs
-        inputs = self.processor(
-            audios,
-            sampling_rate=16000,
-            return_tensors="pt",
-            padding=True,
-        )
-
-        return inputs.to(self.device)
-
+   
     def run(
         self,
-        inputs: Union[torch.Tensor, List[torch.Tensor], Any],
+        inputs: List[DataLoaderIterable],
         **kwargs,
-    ):
+    ) -> List[str]:
         """
         Forward pass through the ASR model.
 
         Args:
-            inputs: Audio inputs (tensors or file paths)
+            inputs: Audio inputs with DataLoaderIterable format
             **kwargs: Additional forward pass arguments
 
         Returns:
-            ASR outputs with transcriptions and optional timestamps
+            List of transcriptions
         """
         if not self.is_loaded:
             self.load_model()
+            
+        if self.model is None:
+            raise RuntimeError("Model is not loaded")
 
-        # Preprocess inputs
-        processed_inputs = self.preprocess(inputs)
-
-        # Generate transcriptions
-        with torch.no_grad():
-            predicted_ids = self.model.generate(
-                **processed_inputs,
-                language=self.language,
-                return_timestamps=self.return_timestamps,
-            )
-
-        # Decode predictions
-        transcriptions = self.processor.batch_decode(
-            predicted_ids, skip_special_tokens=True
-        )
+        transcriptions = []
+        
+        for input_item in inputs:
+            language = input_item.other_args["language"][:2].lower() if input_item.other_args is not None else self.language
+            decoding_method = kwargs.get("decoding_method", self.decoding_method)
+            
+            processed_audio = self.preprocess(input_item)
+            
+            processed_audio = processed_audio.to(self.device)
+            
+            with torch.no_grad():
+                transcription = self.model(processed_audio, language, decoding_method)
+            
+            transcriptions.append(transcription)
 
         return transcriptions
 
-    def postprocess(self, model_outputs: Dict[str, Any], **kwargs) -> List[str]:
+    def preprocess(
+        self,
+        input_item: DataLoaderIterable,
+        **kwargs,
+    ) -> torch.Tensor:
+        """
+        Preprocess inputs for compatibility with base class interface.
+        
+        Args:
+            inputs: List of DataLoaderIterable items
+            **kwargs: Additional preprocessing arguments
+            
+        Returns:
+            List of preprocessed audio tensors
+        """
+        wav_tensor = torch.tensor(input_item.audio, dtype=torch.float32).unsqueeze(0).to(self.device)
+        return wav_tensor
+
+    def postprocess(self, model_outputs: List[str], **kwargs) -> List[str]:
         """
         Postprocess model outputs into final format.
 
@@ -130,32 +122,31 @@ class IndicConformerASR(BaseHFModel):
             **kwargs: Additional postprocessing arguments
 
         Returns:
-            Processed transcriptions
+            Processed transcriptions (already strings in this case)
         """
-        return model_outputs["transcriptions"]
+        return model_outputs
 
 
 # Model configurations
 INDIC_CONFORMER_MULTILINGUAL_META = ModelMeta(
-    name="ai4bharat/conformer_multilingual",
+    name="ai4bharat/indic-conformer-600m-multilingual",
     model_type=ModelType.AUDIO_RECOGNITION,
     modalities=[ModalityType.AUDIO],
     description="Multilingual Conformer ASR model for Indian languages",
-    n_parameters=85_000_000,
-    framework=["PyTorch", "Transformers", "SpeechBrain"],
+    n_parameters=600_000_000,
+    framework=["PyTorch", "Transformers"],
     audio_sample_rate=16000,
     supported_audio_formats=["wav", "flac", "mp3"],
     loader_class="karma.models.indic_conformer.IndicConformerASR",
     loader_kwargs={
         "language": "hi",  # Hindi by default
-        "device": "auto",
-        "chunk_length_s": 30,
-        "stride_length_s": 5,
-        "return_timestamps": True,
+        "device": "cpu",
+        "decoding_method": "ctc",
+        "target_sample_rate": 16000,
     },
     default_eval_kwargs={
         "language": "hi",
-        "return_timestamps": True,
+        "decoding_method": "ctc",
     },
     languages=["hin-Deva", "ben-Beng", "tam-Taml", "tel-Telu", "mar-Deva"],
     medical_domains=[
@@ -167,7 +158,7 @@ INDIC_CONFORMER_MULTILINGUAL_META = ModelMeta(
     clinical_specialties=["primary_care", "psychiatry", "public_health"],
     license="MIT",
     open_weights=True,
-    reference="https://huggingface.co/ai4bharat/conformer_multilingual",
+    reference="https://huggingface.co/ai4bharat/indic-conformer-600m-multilingual",
     release_date="2023-06-15",
     version="1.0",
     revision=None,

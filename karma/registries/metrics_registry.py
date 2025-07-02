@@ -2,7 +2,7 @@ from typing import Dict, Type, List
 import pkgutil
 import importlib
 import logging
-
+from karma.metrics.base_metric_abs import BaseMetric
 logger = logging.getLogger(__name__)
 
 
@@ -65,7 +65,7 @@ class MetricRegistry:
         if name not in self.metrics:
             # check if it's supported by the hf-evaluate library.
             try:
-                from karma.metrics import HfMetric
+                from karma.metrics.common_metrics import HfMetric
 
                 # check if the class can be initalised.
                 metric = HfMetric(name)
