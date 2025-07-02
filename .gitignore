@@ -233,4 +233,5 @@ api_keys.txt
 **/examples/results/
 **/results/
 inference_results/
-evaluation_logs/ 
+evaluation_logs/
+*test.ipynb

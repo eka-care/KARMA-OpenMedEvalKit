@@ -32,5 +32,3 @@ class DataLoaderIterable(BaseModel):
         return {k: v for k, v in self.__dict__.items() if v is not None}
 
 
-d = DataLoaderIterable(input="this is the inptu")
-print(d.model_dump())

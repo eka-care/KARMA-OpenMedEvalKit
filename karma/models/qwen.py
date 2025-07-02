@@ -22,7 +22,7 @@ class QwenThinkingLLM(BaseHFModel):
         temperature: float = 0.7,
         top_p: float = 0.9,
         top_k: Optional[int] = None,
-        enable_thinking: bool = True,
+        enable_thinking: bool = False,
         **kwargs,
     ):
         """

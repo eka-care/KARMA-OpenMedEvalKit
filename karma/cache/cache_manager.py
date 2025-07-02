@@ -88,7 +88,6 @@ class CacheManager:
         # Use ThreadPoolExecutor for CPU-bound hash generation
         # executor.map() preserves order - results will be in same order as inputs
         max_workers = min(len(model_inputs), multiprocessing.cpu_count())
-
         # Prepare data for parallel processing
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             results = list(executor.map(self._generate_cache_key, model_inputs))
@@ -214,7 +213,7 @@ class CacheManager:
         Returns:
             Dictionary mapping model inputs to cached results (None if not found)
         """
-        model_inputs = [dict(input) for input in model_inputs]
+        model_inputs = [input.model_dump() for input in model_inputs]
         # Use centralized batch cache key generation
         _, cache_keys = self._batch_generate_cache_keys(model_inputs)
         # Batch fetch from database
@@ -244,7 +243,7 @@ class CacheManager:
         """
         # Prepare batch data for database
         inference_data_list = []
-        model_inputs = [data["sample"] for data in batch_data]
+        model_inputs = [data["sample"].model_dump() for data in batch_data]
         # Use centralized batch cache key generation
         input_hashes, cache_keys = self._batch_generate_cache_keys(model_inputs)
 

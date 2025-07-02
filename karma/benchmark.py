@@ -122,11 +122,6 @@ class Benchmark:
             - cache_hits: List of results found in cache
             - samples_to_generate: List of samples that need to be generated
         """
-        # if self.verbose_mode:
-        self.logger.info(
-            f"Attempting to fetch {len(samples)} samples from cache for samples: {samples}"
-        )
-
         results = []
         samples_to_generate = []
         # Step 1: Check cache for existing results
@@ -146,7 +141,6 @@ class Benchmark:
             else:
                 samples_to_generate.append(sample)
 
-        self.logger.info(f"Cache hits: {cache_results}")
         if self.verbose_mode:
             self.logger.info(f"Cache hits: {cache_hits}/{len(samples)}")
             self.logger.info(
@@ -197,7 +191,7 @@ class Benchmark:
                 result = {
                     "prediction": prediction,
                     "from_cache": False,
-                    "sample": sample.model_dump(exclude_none=True),
+                    "sample": sample,
                     "expected_output": expected,
                     "success": success,
                 }
