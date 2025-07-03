@@ -71,6 +71,7 @@ class MultiDatasetOrchestrator:
         self,
         dataset_names: Optional[List[str]] = None,
         dataset_args: Optional[Dict[str, Dict[str, Any]]] = None,
+        processor_args: Optional[Dict[str, Dict[str, Dict[str, Any]]]] = None,
         batch_size: int = 1,
         use_cache: bool = True,
         show_progress: bool = True,
@@ -81,6 +82,7 @@ class MultiDatasetOrchestrator:
         Args:
             dataset_names: List of dataset names to evaluate (None for all)
             dataset_args: Dictionary mapping dataset names to their arguments
+            processor_args: Dictionary mapping dataset names to processor names to their arguments
             batch_size: Batch size for evaluation
             use_cache: Whether to use caching for evaluation
             show_progress: Whether to show progress bars
@@ -158,6 +160,7 @@ class MultiDatasetOrchestrator:
                     self._evaluate_single_dataset(
                         dataset_name,
                         dataset_args.get(dataset_name, {}),
+                        processor_args.get(dataset_name, {}) if processor_args else {},
                         model,
                         batch_size,
                         use_cache,
@@ -171,6 +174,7 @@ class MultiDatasetOrchestrator:
                 self._evaluate_single_dataset(
                     dataset_name,
                     dataset_args.get(dataset_name, {}),
+                    processor_args.get(dataset_name, {}) if processor_args else {},
                     model,
                     batch_size,
                     use_cache,
@@ -249,6 +253,7 @@ class MultiDatasetOrchestrator:
         self,
         dataset_name: str,
         dataset_args: Dict[str, Any],
+        processor_args: Dict[str, Dict[str, Any]],
         model: Any,
         batch_size: int,
         use_cache: bool,
@@ -261,6 +266,7 @@ class MultiDatasetOrchestrator:
         Args:
             dataset_name: Name of the dataset
             dataset_args: Arguments for dataset creation
+            processor_args: Arguments for processor creation (mapping processor names to their args)
             model: Model instance
             batch_size: Batch size for evaluation
             use_cache: Whether to use caching for evaluation
@@ -285,9 +291,22 @@ class MultiDatasetOrchestrator:
             if processor_names:
                 for processor_name in processor_names:
                     try:
-                        processor_instance = processor_registry.get_processor(processor_name)
+                        # Get processor arguments if provided
+                        proc_args = processor_args.get(processor_name, {})
+                        
+                        if proc_args:
+                            # Validate processor arguments
+                            from karma.cli.utils import validate_processor_args
+                            validated_args = validate_processor_args(
+                                dataset_name, processor_name, proc_args, self.console
+                            )
+                            processor_instance = processor_registry.get_processor(processor_name, **validated_args)
+                            self.console.print(f"\nLoaded processor '{processor_name}' with arguments {validated_args} for dataset '{dataset_name}'")
+                        else:
+                            processor_instance = processor_registry.get_processor(processor_name)
+                            self.console.print(f"\nLoaded processor '{processor_name}' for dataset '{dataset_name}'")
+                            
                         processor_instances.append(processor_instance)
-                        self.console.print(f"\nLoaded processor '{processor_name}' for dataset '{dataset_name}'")
                     except ValueError as e:
                         self.console.print(f"\nCould not load processor '{processor_name}' for dataset '{dataset_name}': {e}")
 

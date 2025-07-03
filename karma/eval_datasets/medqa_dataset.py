@@ -6,11 +6,11 @@ multimodal dataset interface for use with the refactored benchmark system.
 """
 
 import logging
-from typing import Dict, Any, Tuple
+from typing import Any, Dict, Tuple
 
 from karma.data_models.dataloader_iterable import DataLoaderIterable
-from karma.registries.dataset_registry import register_dataset
 from karma.eval_datasets.base_dataset import BaseMultimodalDataset
+from karma.registries.dataset_registry import register_dataset
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +41,10 @@ class MedQADataset(BaseMultimodalDataset):
             **kwargs: Additional arguments passed to base class
         """
         super().__init__(
-            dataset_name=dataset_name, split=split, commit_hash=commit_hash, **kwargs
+            dataset_name=dataset_name,
+            split=split,
+            commit_hash=commit_hash,
+            **kwargs,
         )
 
     def format_item(self, sample: Dict[str, Any]) -> DataLoaderIterable:

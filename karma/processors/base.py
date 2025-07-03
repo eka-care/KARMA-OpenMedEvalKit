@@ -11,9 +11,18 @@ from typing import List
 class BaseProcessor:
     """Base class for all processors."""
     
-    def __init__(self):
-        """Initialize the processor with a default name."""
+    def __init__(self, **kwargs):
+        """
+        Initialize the processor with a default name and optional arguments.
+        
+        Args:
+            **kwargs: Optional keyword arguments for processor configuration
+        """
         self.name = self.__class__.__name__.lower()
+        
+        # Store any additional arguments provided
+        for key, value in kwargs.items():
+            setattr(self, key, value)
     
     def process(self, texts: List[str]) -> List[str]:
         """
