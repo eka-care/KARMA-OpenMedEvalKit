@@ -7,14 +7,14 @@ from PIL import Image
 from transformers import AutoModelForImageTextToText, AutoProcessor
 
 from karma.data_models.dataloader_iterable import DataLoaderIterable
-from karma.models.base_model_abs import BaseHFModel
+from karma.models.base_model_abs import BaseModel
 from karma.data_models.model_meta import ModelMeta, ModalityType, ModelType
 from karma.registries.model_registry import register_model_meta
 
 logger = logging.getLogger(__name__)
 
 
-class MedGemmaLLM(BaseHFModel):
+class MedGemmaLLM(BaseModel):
     """MedGemma language model with vision capabilities for medical applications."""
 
     def __init__(

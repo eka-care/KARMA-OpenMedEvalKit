@@ -123,8 +123,8 @@ def eval_cmd(
 
         # With dataset arguments
         karma eval --model qwen --model-path "path" --datasets "in22conv" \\
-          --dataset-args "in22conv:source_language=en,target_language=hi"
-          --postprocessor-args "in22conv:language=hindi"
+          --dataset-args "in22conv:source_language=en,target_language=hi;"
+          --postprocessor-args "indic_transliterator:language=hindi"
     """
     console = ctx.obj["console"]
     verbose = ctx.obj.get("verbose", False)

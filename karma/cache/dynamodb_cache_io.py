@@ -23,7 +23,7 @@ class DynamoDBCacheIO:
         """Initialize DynamoDB cache IO."""
         # Initialize DynamoDB
         self.table_name = "parrotlet_omni_benchmark_cache"
-        self.region_name = "ap-south-1"
+        self.region_name = os.getenv("AWS_REGION")
         
         self.dynamodb = boto3.resource('dynamodb', region_name=self.region_name)
         self.client = boto3.client('dynamodb', region_name=self.region_name)

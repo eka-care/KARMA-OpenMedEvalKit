@@ -3,7 +3,7 @@ from typing import Tuple, List, Optional, Union, Dict, Any
 import torch
 
 from karma.data_models.dataloader_iterable import DataLoaderIterable
-from karma.models.base_model_abs import BaseHFModel
+from karma.models.base_model_abs import BaseModel
 from karma.data_models.model_meta import ModelMeta, ModelType, ModalityType
 from karma.registries.model_registry import register_model_meta
 from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -11,7 +11,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 logger = logging.getLogger(__name__)
 
 
-class QwenThinkingLLM(BaseHFModel):
+class QwenThinkingLLM(BaseModel):
     """Qwen language model with specialized thinking capabilities."""
 
     def __init__(
