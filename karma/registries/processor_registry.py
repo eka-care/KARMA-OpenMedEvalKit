@@ -7,10 +7,11 @@ to register themselves automatically when imported.
 
 import importlib
 import pkgutil
-from typing import Dict, Type, List, Optional
+from typing import Dict, Type, List, Optional, Any
 import logging
 
 from karma.processors.base import BaseProcessor
+from karma.utils.argument_processing import validate_registry_args, prepare_registry_metadata
 
 logger = logging.getLogger(__name__)
 
@@ -19,22 +20,40 @@ class ProcessorRegistry:
     """Decorator-based processor registry for automatic processor discovery."""
     
     def __init__(self):
-        self.processors: Dict[str, Type] = {}
+        self.processors: Dict[str, Dict[str, Any]] = {}
         self._discovered = False
     
-    def register_processor(self, name: str):
+    def register_processor(
+        self, 
+        name: str,
+        required_args: Optional[List[str]] = None,
+        optional_args: Optional[List[str]] = None,
+        default_args: Optional[Dict[str, Any]] = None
+    ):
         """
-        Decorator to register a processor class.
+        Decorator to register a processor class with its argument metadata.
         
         Args:
             name: Name to register the processor under
+            required_args: List of required argument names for processor instantiation
+            optional_args: List of optional argument names for processor instantiation
+            default_args: Dictionary of default values for arguments
             
         Returns:
             Decorator function
             
-        Example:
+        Examples:
             @register_processor("devnagari_transliterator")
             class DevanagariTransliterator(BaseProcessor):
+                pass
+                
+            @register_processor(
+                "text_normalizer",
+                required_args=["language"],
+                optional_args=["case_sensitive", "remove_punctuation"],
+                default_args={"case_sensitive": True, "remove_punctuation": False}
+            )
+            class TextNormalizer(BaseProcessor):
                 pass
         """
         def decorator(processor_class: Type) -> Type:
@@ -44,23 +63,34 @@ class ProcessorRegistry:
             if name in self.processors:
                 logger.warning(f"Processor '{name}' is already registered. Overriding with {processor_class.__name__}")
             
-            self.processors[name] = processor_class
+            # Prepare argument metadata
+            metadata = prepare_registry_metadata(required_args, optional_args, default_args)
+            
+            self.processors[name] = {
+                'class': processor_class,
+                'module': processor_class.__module__,
+                'class_name': processor_class.__name__,
+                'required_args': metadata['required_args'],
+                'optional_args': metadata['optional_args'],
+                'default_args': metadata['default_args']
+            }
             logger.debug(f"Registered processor: {name} -> {processor_class.__name__}")
             return processor_class
         return decorator
     
-    def get_processor(self, name: str) -> BaseProcessor:
+    def get_processor(self, name: str, **kwargs) -> BaseProcessor:
         """
-        Get processor instance by name.
+        Get processor instance by name with optional arguments.
         
         Args:
             name: Name of the processor to retrieve
+            **kwargs: Arguments to pass to processor constructor
             
         Returns:
             Processor instance
             
         Raises:
-            ValueError: If processor is not found
+            ValueError: If processor is not found or arguments are invalid
         """
         if not self._discovered:
             self.discover_processors()
@@ -68,7 +98,24 @@ class ProcessorRegistry:
         if name not in self.processors:
             available = list(self.processors.keys())
             raise ValueError(f"Processor '{name}' not found. Available processors: {available}")
-        return self.processors[name]()
+        
+        processor_info = self.processors[name]
+        processor_class = processor_info['class']
+        
+        # Validate arguments if any are provided
+        if kwargs:
+            validated_args = validate_registry_args(
+                registry_name="processor",
+                item_name=name,
+                provided_args=kwargs,
+                required_args=processor_info['required_args'],
+                optional_args=processor_info['optional_args'],
+                default_args=processor_info['default_args']
+            )
+            return processor_class(**validated_args)
+        else:
+            # Use default arguments only
+            return processor_class(**processor_info['default_args'])
     
     def get_processor_class(self, name: str) -> Type:
         """
@@ -89,7 +136,7 @@ class ProcessorRegistry:
         if name not in self.processors:
             available = list(self.processors.keys())
             raise ValueError(f"Processor '{name}' not found. Available processors: {available}")
-        return self.processors[name]
+        return self.processors[name]['class']
     
     def list_processors(self) -> List[str]:
         """
@@ -165,6 +212,124 @@ class ProcessorRegistry:
         self.processors.clear()
         self._discovered = False
         logger.debug("Cleared processor registry")
+    
+    def get_processor_info(self, name: str) -> Dict[str, Any]:
+        """
+        Get processor information including metadata.
+        
+        Args:
+            name: Name of the processor
+            
+        Returns:
+            Dictionary containing processor metadata
+            
+        Raises:
+            ValueError: If processor is not found
+        """
+        if not self._discovered:
+            self.discover_processors()
+            
+        if name not in self.processors:
+            available = list(self.processors.keys())
+            raise ValueError(f"Processor '{name}' not found. Available processors: {available}")
+        
+        return self.processors[name].copy()
+    
+    def get_processor_required_args(self, name: str) -> List[str]:
+        """
+        Get required arguments for a processor.
+        
+        Args:
+            name: Name of the processor
+            
+        Returns:
+            List of required argument names
+            
+        Raises:
+            ValueError: If processor is not found
+        """
+        info = self.get_processor_info(name)
+        return info['required_args'].copy()
+    
+    def get_processor_optional_args(self, name: str) -> List[str]:
+        """
+        Get optional arguments for a processor.
+        
+        Args:
+            name: Name of the processor
+            
+        Returns:
+            List of optional argument names
+            
+        Raises:
+            ValueError: If processor is not found
+        """
+        info = self.get_processor_info(name)
+        return info['optional_args'].copy()
+    
+    def get_processor_default_args(self, name: str) -> Dict[str, Any]:
+        """
+        Get default arguments for a processor.
+        
+        Args:
+            name: Name of the processor
+            
+        Returns:
+            Dictionary of default argument values
+            
+        Raises:
+            ValueError: If processor is not found
+        """
+        info = self.get_processor_info(name)
+        return info['default_args'].copy()
+    
+    def get_processor_all_args(self, name: str) -> Dict[str, Any]:
+        """
+        Get all argument information for a processor.
+        
+        Args:
+            name: Name of the processor
+            
+        Returns:
+            Dictionary with 'required', 'optional', and 'defaults' argument info
+            
+        Raises:
+            ValueError: If processor is not found
+        """
+        info = self.get_processor_info(name)
+        return {
+            'required': info['required_args'].copy(),
+            'optional': info['optional_args'].copy(),
+            'defaults': info['default_args'].copy()
+        }
+    
+    def validate_processor_args(self, name: str, provided_args: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Validate provided arguments against processor requirements.
+        
+        Args:
+            name: Name of the processor
+            provided_args: Dictionary of arguments provided by user
+            
+        Returns:
+            Dictionary of validated and merged arguments (with defaults applied)
+            
+        Raises:
+            ValueError: If processor is not found or required arguments are missing
+        """
+        if not self._discovered:
+            self.discover_processors()
+            
+        info = self.get_processor_info(name)
+        
+        return validate_registry_args(
+            registry_name="processor",
+            item_name=name,
+            provided_args=provided_args,
+            required_args=info['required_args'],
+            optional_args=info['optional_args'],
+            default_args=info['default_args']
+        )
 
 
 # Global registry instance

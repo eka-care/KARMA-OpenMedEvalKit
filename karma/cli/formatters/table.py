@@ -195,7 +195,8 @@ class DatasetFormatter:
         table.add_column("Metrics", style="yellow")
         table.add_column("Processors", style="magenta")
         table.add_column("Required Args", style="green")
-        table.add_column("Status", style="bright_green")
+        table.add_column("Commit Hash", style="dim cyan")
+        table.add_column("Split", style="dim blue")
         
         for dataset_name in sorted(datasets_info.keys()):
             info = datasets_info[dataset_name]
@@ -203,6 +204,8 @@ class DatasetFormatter:
             metrics = ", ".join(info.get('metrics', []))
             processors = ", ".join(info.get('processors') or [])
             required_args = ", ".join(info.get('required_args', []))
+            commit_hash = info.get('commit_hash', '')
+            split = info.get('split', '')
             
             if not metrics:
                 metrics = "—"
@@ -210,6 +213,13 @@ class DatasetFormatter:
                 processors = "—"
             if not required_args:
                 required_args = "—"
+            if not commit_hash:
+                commit_hash = "—"
+            else:
+                # Truncate commit hash to first 8 characters for better display
+                commit_hash = commit_hash[:8]
+            if not split:
+                split = "—"
             
             table.add_row(
                 dataset_name,
@@ -217,7 +227,8 @@ class DatasetFormatter:
                 metrics,
                 processors,
                 required_args,
-                "✓ Available"
+                commit_hash,
+                split
             )
         
         return table

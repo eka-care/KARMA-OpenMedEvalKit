@@ -179,9 +179,13 @@ def list_datasets(ctx, task_type, metric, output_format, show_args):
                 processors_str = ", ".join(info.get("processors") or [])
 
                 if processors_str:
-                    console.print(f"  {dataset_name} ({task_type_str}) - Metrics: {metrics_str} - Processors: {processors_str}")
+                    console.print(
+                        f"  {dataset_name} ({task_type_str}) - Metrics: {metrics_str} - Processors: {processors_str}"
+                    )
                 else:
-                    console.print(f"  {dataset_name} ({task_type_str}) - Metrics: {metrics_str}")
+                    console.print(
+                        f"  {dataset_name} ({task_type_str}) - Metrics: {metrics_str}"
+                    )
 
         # Show summary
         filter_parts = []
@@ -202,6 +206,7 @@ def list_datasets(ctx, task_type, metric, output_format, show_args):
 
     except Exception as e:
         console.print(ClickFormatter.error(f"Failed to list datasets: {str(e)}"))
+        raise e
         raise click.Abort()
 
 
@@ -245,14 +250,16 @@ def list_metrics(ctx, output_format):
         # Display results
         if output_format == "table":
             from rich.table import Table
-            
-            table = Table(title="Available Metrics", show_header=True, header_style="bold cyan")
+
+            table = Table(
+                title="Available Metrics", show_header=True, header_style="bold cyan"
+            )
             table.add_column("Metric Name", style="green", width=20)
             table.add_column("Status", style="blue", width=15)
-            
+
             for metric in sorted(metrics):
                 table.add_row(metric, "✓ Available")
-            
+
             console.print("\n")
             console.print(table)
         else:
@@ -344,7 +351,9 @@ def _show_detailed_args(console: Console, datasets_info: dict) -> None:
             console.print(f"  [green]Defaults:[/green] {defaults_str}")
 
         if processors:
-            console.print(f"  [bright_magenta]Processors:[/bright_magenta] {', '.join(processors)}")
+            console.print(
+                f"  [bright_magenta]Processors:[/bright_magenta] {', '.join(processors)}"
+            )
 
         # Show example usage
         if required_args:

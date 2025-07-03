@@ -32,12 +32,9 @@ class Benchmark:
         self,
         model: BaseHFModel,
         dataset: BaseMultimodalDataset,
-        verbose_mode: bool = True,
+        verbose_mode: bool = False,
         use_weave: bool = False,
         project_name: str = "benchmark-evaluation",
-        enable_cache: bool = False,
-        cache_path: str = "",
-        console=None,
         progress=None,
         cache_manager: Optional[CacheManager] = None,
     ):
@@ -60,8 +57,9 @@ class Benchmark:
         self.verbose_mode = verbose_mode
         self.progress = progress
 
-        self.logger.info(f"Initializing benchmark with model: {model}")
-        self.logger.info(f"Dataset: {dataset.dataset_name}")
+        if self.verbose_mode:
+            self.logger.info(f"Initializing benchmark with model: {model}")
+            self.logger.info(f"Dataset: {dataset.dataset_name}")
 
         # Weave integration
         self.use_weave = use_weave
@@ -247,9 +245,12 @@ class Benchmark:
             Dictionary of metric scores or None if metric not found
         """
         scores = {}
-        references = self.dataset.postprocess([it["expected_output"] for it in prediction_results])
-        predictions = self.dataset.postprocess([it["prediction"] for it in prediction_results])
-        print(metrics)
+        references = self.dataset.postprocess(
+            [it["expected_output"] for it in prediction_results]
+        )
+        predictions = self.dataset.postprocess(
+            [it["prediction"] for it in prediction_results]
+        )
         for metric in metrics:
             score = metric.evaluate(predictions=predictions, references=references)
             if isinstance(score, dict):
@@ -259,12 +260,16 @@ class Benchmark:
         return scores
 
     def evaluate(
-        self, metrics: List[BaseMetric], batch_size: int = 1, dry_run: bool = False
+        self,
+        metrics: List[BaseMetric],
+        batch_size: int = 1,
+        dry_run: bool = False,
     ) -> Dict[str, Any]:
         """
         Generic evaluate function that works with any dataset.
 
         Args:
+            metrics:
             metric_config: Configuration dictionary containing metric name and processors
             batch_size: Batch size for evaluation
             dry_run: If True, only check cache status without running model inference
@@ -314,9 +319,6 @@ class Benchmark:
 
         # Process batches from dataloader
         for batch_idx, samples in enumerate(dataloader):
-            self.logger.info(batch_idx)
-            if batch_idx > 2:
-                break
             batch_results = []
             # samples = [
             #     dict(s) for s in samples
@@ -358,11 +360,8 @@ class Benchmark:
         if task:
             self.progress.remove_task(task)
 
-        overall_scores = self.compute_metrics(
-            all_prediction_results, metrics=metrics
-        )
+        overall_scores = self.compute_metrics(all_prediction_results, metrics=metrics)
 
-       
         # Create summary for Weave logging
         summary_data = {
             "overall_score": overall_scores,
@@ -376,8 +375,8 @@ class Benchmark:
                 "📊 Summary results logged to Weave - check UI for comparisons!"
             )
 
-        self.logger.info(f"\n🎯 Overall Score: {overall_scores}")
-        self.logger.info(f"⏱️  Total evaluation time: {time.time() - start_time:.2f}s")
+        # self.logger.info(f"\n🎯 Overall Score: {overall_scores}")
+        # self.logger.info(f"⏱️  Total evaluation time: {time.time() - start_time:.2f}s")
 
         if self.enable_cache:
             hit_rate = (

@@ -12,6 +12,7 @@ from rich.panel import Panel
 from karma.cli.orchestrator import MultiDatasetOrchestrator
 from karma.cli.utils import (
     parse_dataset_args,
+    parse_processor_args,
     parse_datasets_list,
     validate_model_path,
     get_cache_info,
@@ -40,6 +41,10 @@ import os
 @click.option(
     "--dataset-args",
     help="Dataset arguments in format 'dataset:key=val,key2=val2;dataset2:key=val'",
+)
+@click.option(
+    "--processor-args",
+    help="Processor arguments in format 'dataset.processor:key=val,key2=val2;dataset2.processor:key=val'",
 )
 @click.option(
     "--batch-size",
@@ -89,6 +94,14 @@ import os
     "--model-kwargs",
     help='Model parameter overrides as JSON string (e.g., \'{"temperature": 0.7, "top_p": 0.9}\')',
 )
+@click.option(
+    "--max-samples",
+    help="Maximum number of samples to use for evaluation, this is helpful for running on a few samples and checking if everything is working.",
+)
+@click.option(
+    "--verbose",
+    help="Pass this argument to have a verbose output",
+)
 @click.pass_context
 def eval_cmd(
     ctx,
@@ -96,6 +109,7 @@ def eval_cmd(
     model_path,
     datasets,
     dataset_args,
+    processor_args,
     batch_size,
     cache,
     output,
@@ -106,6 +120,8 @@ def eval_cmd(
     dry_run,
     model_config,
     model_kwargs,
+    max_samples,
+    verbose,
 ):
     """
     Evaluate a model on healthcare datasets.
@@ -121,10 +137,10 @@ def eval_cmd(
         # Evaluate specific datasets
         karma eval --model qwen --model-path "path/to/model" --datasets "pubmedqa,medmcqa"
 
-        # With dataset arguments
+        # With dataset and processor arguments
         karma eval --model qwen --model-path "path" --datasets "in22conv" \\
-          --dataset-args "in22conv:source_language=en,target_language=hi"
-          --postprocessor-args "in22conv:language=hindi"
+          --dataset-args "in22conv:source_language=en,target_language=hi" \\
+          --processor-args "in22conv.devnagari_transliterator:source_script=en,target_script=hi"
     """
     console = ctx.obj["console"]
     verbose = ctx.obj.get("verbose", False)
@@ -210,6 +226,11 @@ def eval_cmd(
         # Parse dataset arguments
         parsed_dataset_args = parse_dataset_args(dataset_args) if dataset_args else {}
 
+        # Parse processor arguments
+        parsed_processor_args = (
+            parse_processor_args(processor_args) if processor_args else {}
+        )
+
         # Interactive mode for missing arguments
         if interactive:
             parsed_dataset_args = _handle_interactive_args(
@@ -256,9 +277,12 @@ def eval_cmd(
         results = orchestrator.evaluate_all_datasets(
             dataset_names=dataset_names,
             dataset_args=parsed_dataset_args,
+            processor_args=parsed_processor_args,
             batch_size=batch_size,
             use_cache=cache,
             show_progress=progress,
+            max_samples=max_samples,
+            verbose=verbose,
         )
 
         # Display results
@@ -272,7 +296,6 @@ def eval_cmd(
         console.print(
             f"\n{ClickFormatter.success('Evaluation completed successfully!')}"
         )
-        
 
         if verbose:
             console.print(f"Results saved to: {output}")
@@ -280,7 +303,7 @@ def eval_cmd(
                 console.print("Cache: Enabled")
             else:
                 console.print("Cache: Disabled")
-        
+
     except KeyboardInterrupt:
         console.print("\n[yellow]Evaluation interrupted by user[/yellow]")
         raise click.Abort()

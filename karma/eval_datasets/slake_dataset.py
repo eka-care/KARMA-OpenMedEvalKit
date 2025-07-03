@@ -18,7 +18,13 @@ SPLIT = "test"
 COMMIT_HASH = "8d18b4d5a4eae47101c1d9f57b99fc58df66f17e"
 
 
-@register_dataset("slake", metrics=["exact_match"], task_type="vqa")
+@register_dataset(
+    DATASET_NAME,
+    commit_hash=COMMIT_HASH,
+    split=SPLIT,
+    metrics=["exact_match"],
+    task_type="vqa",
+)
 class SLAKEDataset(VQARADDataset):
     """
     SLAKE PyTorch Dataset inheriting from VQARADDataset.
@@ -27,9 +33,6 @@ class SLAKEDataset(VQARADDataset):
 
     def __init__(
         self,
-        dataset_name: str = DATASET_NAME,
-        split: str = SPLIT,
-        commit_hash: str = COMMIT_HASH,
         **kwargs,
     ):
         """
