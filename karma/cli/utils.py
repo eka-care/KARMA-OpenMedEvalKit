@@ -15,6 +15,7 @@ from rich.console import Console
 from rich.prompt import Prompt
 
 from karma.registries.dataset_registry import dataset_registry
+from karma.registries.processor_registry import processor_registry
 
 
 def parse_dataset_args(dataset_args_str: str) -> Dict[str, Dict[str, Any]]:
@@ -102,6 +103,100 @@ def parse_datasets_list(datasets_str: str) -> List[str]:
         return []
 
     return [name.strip() for name in datasets_str.split(",") if name.strip()]
+
+
+def parse_processor_args(processor_args_str: str) -> Dict[str, Dict[str, Dict[str, Any]]]:
+    """
+    Parse processor arguments from CLI string format.
+    
+    Args:
+        processor_args_str: String in format "dataset.processor:key=val,key2=val2;dataset2.processor:key=val"
+        
+    Returns:
+        Dictionary mapping dataset names to processor names to their arguments
+        
+    Examples:
+        >>> parse_processor_args("in22conv.devnagari_transliterator:source_script=en,target_script=hi")
+        {'in22conv': {'devnagari_transliterator': {'source_script': 'en', 'target_script': 'hi'}}}
+        
+        >>> parse_processor_args("ds1.proc1:arg1=val1;ds2.proc2:arg2=val2,arg3=val3")
+        {'ds1': {'proc1': {'arg1': 'val1'}}, 'ds2': {'proc2': {'arg2': 'val2', 'arg3': 'val3'}}}
+    """
+    processor_args = {}
+    if not processor_args_str:
+        return processor_args
+    
+    # Split by semicolon for different dataset.processor combinations
+    for processor_spec in processor_args_str.split(";"):
+        if ":" not in processor_spec:
+            continue
+            
+        dataset_processor, args_str = processor_spec.split(":", 1)
+        
+        # Split dataset.processor into dataset and processor names
+        if "." not in dataset_processor:
+            raise click.ClickException(
+                f"Invalid processor argument format: '{dataset_processor}'. "
+                f"Expected format: 'dataset.processor:key=val'"
+            )
+            
+        dataset_name, processor_name = dataset_processor.split(".", 1)
+        dataset_name = dataset_name.strip()
+        processor_name = processor_name.strip()
+        
+        args = {}
+        
+        # Split by comma for different arguments
+        for arg_pair in args_str.split(","):
+            if "=" in arg_pair:
+                key, value = arg_pair.split("=", 1)
+                args[key.strip()] = value.strip()
+        
+        # Initialize dataset dict if not exists
+        if dataset_name not in processor_args:
+            processor_args[dataset_name] = {}
+            
+        # Store processor arguments
+        processor_args[dataset_name][processor_name] = args
+    
+    return processor_args
+
+
+def validate_processor_args(
+    dataset_name: str,
+    processor_name: str, 
+    provided_args: Dict[str, Any], 
+    console: Optional[Console] = None
+) -> Dict[str, Any]:
+    """
+    Validate processor arguments against registry requirements.
+    
+    Args:
+        dataset_name: Name of the dataset (for error messages)
+        processor_name: Name of the processor
+        provided_args: Arguments provided by user
+        console: Console for output (optional)
+        
+    Returns:
+        Validated and merged arguments
+        
+    Raises:
+        click.ClickException: If validation fails
+    """
+    if console is None:
+        console = Console()
+        
+    try:
+        # Use the processor registry's validation
+        validated_args = processor_registry.validate_processor_args(
+            processor_name, provided_args
+        )
+        return validated_args
+    except ValueError as e:
+        # Convert to click exception for better CLI error handling
+        raise click.ClickException(
+            f"Processor argument error for '{dataset_name}.{processor_name}': {e}"
+        )
 
 
 def format_file_size(size_bytes: int) -> str:

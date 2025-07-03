@@ -18,16 +18,20 @@ from karma.registries.processor_registry import register_processor
 logger = logging.getLogger(__name__)
 
 
-@register_processor("devnagari_transliterator")
+@register_processor(
+    "devnagari_transliterator",
+    optional_args=["normalize", "fallback_scheme"],
+    default_args={"normalize": True, "fallback_scheme": None}
+)
 class DevanagariTransliterator(BaseProcessor):
     """
     Simple transliterator that converts any Indic text to Devanagari script
     using automatic script detection.
     """
     
-    def __init__(self):
+    def __init__(self, **kwargs):
         """Initialize the transliterator."""
-        super().__init__()
+        super().__init__(**kwargs)
         self.name = "devnagari_transliterator"
     
     def process(self, texts: List[str]) -> List[str]:
@@ -45,8 +49,9 @@ class DevanagariTransliterator(BaseProcessor):
         
         for text in texts:
             try:
-                # Apply Unicode normalization
-                text = unicodedata.normalize('NFC', text)
+                # Apply Unicode normalization if enabled
+                if getattr(self, 'normalize', True):
+                    text = unicodedata.normalize('NFC', text)
                 
                 # Detect the script/scheme of input text
                 detected_scheme = detect(text)
@@ -56,17 +61,23 @@ class DevanagariTransliterator(BaseProcessor):
                     results.append(text.strip())
                     continue
                 
-                # If detection fails or unsupported, try to transliterate from common schemes
+                # If detection fails or unsupported, try fallback scheme if provided
                 if detected_scheme is None:
-                    logger.debug(f"Could not detect scheme for text: {text[:50]}...")
-                    results.append(text.strip())
-                    continue
+                    fallback = getattr(self, 'fallback_scheme', None)
+                    if fallback:
+                        logger.debug(f"Using fallback scheme '{fallback}' for text: {text[:50]}...")
+                        detected_scheme = fallback
+                    else:
+                        logger.debug(f"Could not detect scheme for text: {text[:50]}...")
+                        results.append(text.strip())
+                        continue
                 
                 # Transliterate to Devanagari
                 transliterated = sanscript.transliterate(text, detected_scheme, sanscript.DEVANAGARI)
                 
-                # Apply Unicode normalization to result
-                transliterated = unicodedata.normalize('NFC', transliterated)
+                # Apply Unicode normalization to result if enabled
+                if getattr(self, 'normalize', True):
+                    transliterated = unicodedata.normalize('NFC', transliterated)
                 
                 results.append(transliterated)
                 

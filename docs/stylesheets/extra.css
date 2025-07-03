@@ -1,0 +1,82 @@
+/* Custom KARMA Documentation Styles - Inspired by developer.eka.care */
+
+:root {
+  /* Custom purple color scheme matching eka.care */
+  --md-primary-fg-color: #6B5CE0;
+  --md-primary-fg-color--light: #8A7EE8;
+  --md-primary-fg-color--dark: #5A4DD3;
+  --md-accent-fg-color: #8A7EE8;
+  --md-accent-fg-color--transparent: rgba(138, 126, 232, 0.1);
+}
+
+/* Improve sidebar navigation readability */
+.md-nav__item .md-nav__link {
+  color: var(--md-default-fg-color--light);
+  border-radius: 4px;
+  margin: 2px 0;
+  padding: 4px 12px;
+}
+
+.md-nav__item .md-nav__link:hover {
+  background-color: var(--md-accent-fg-color--transparent);
+  color: var(--md-accent-fg-color);
+}
+
+.md-nav__item .md-nav__link--active {
+  background-color: var(--md-accent-fg-color--transparent);
+  color: var(--md-accent-fg-color);
+  font-weight: 500;
+}
+
+/* Improve code block styling */
+.highlight .hll {
+  background-color: var(--md-accent-fg-color--transparent);
+}
+
+/* Enhance table of contents */
+.md-nav--secondary .md-nav__link {
+  font-size: 0.85rem;
+  padding: 2px 12px;
+}
+
+/* Better header styling */
+.md-header {
+  background: linear-gradient(135deg, var(--md-primary-fg-color) 0%, var(--md-primary-fg-color--dark) 100%);
+}
+
+/* Improve button styling */
+.md-button {
+  background-color: var(--md-primary-fg-color);
+  border-color: var(--md-primary-fg-color);
+}
+
+.md-button:hover {
+  background-color: var(--md-primary-fg-color--light);
+  border-color: var(--md-primary-fg-color--light);
+}
+
+/* Better admonition styling */
+.md-typeset .admonition.tip {
+  border-color: var(--md-accent-fg-color);
+}
+
+.md-typeset .admonition.tip > .admonition-title {
+  background-color: var(--md-accent-fg-color--transparent);
+}
+
+/* Improve search styling */
+.md-search__input {
+  border-radius: 6px;
+}
+
+/* Better spacing for documentation content */
+.md-content__inner {
+  padding-top: 1.2rem;
+}
+
+/* Dark mode adjustments */
+[data-md-color-scheme="slate"] {
+  --md-primary-fg-color: #8A7EE8;
+  --md-primary-fg-color--light: #A294F0;
+  --md-primary-fg-color--dark: #6B5CE0;
+}

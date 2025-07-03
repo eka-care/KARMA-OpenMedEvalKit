@@ -33,6 +33,12 @@ dependencies = [
 dev = [
     "ruff>=0.12.0",
 ]
+docs = [
+    "mkdocs>=1.5.0",
+    "mkdocs-material>=9.0.0",
+    "mkdocstrings[python]>=0.24.0",
+    "mkdocs-llmstxt>=0.1.0",
+]
 
 # Install the current package in editable mode
 [build-system]
@@ -47,4 +53,10 @@ audio = [
     "jiwer>=4.0.0",
     "num2words>=0.5.14",
     "torchaudio>=2.7.1",
+]
+docs = [
+    "mkdocs>=1.6.1",
+    "mkdocs-llmstxt>=0.2.0",
+    "mkdocs-material>=9.6.15",
+    "mkdocstrings[python]>=0.29.1",
 ]
