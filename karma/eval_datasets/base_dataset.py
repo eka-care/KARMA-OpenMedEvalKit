@@ -10,6 +10,7 @@ from typing import Dict, Any, Tuple, Generator, Optional, List
 from torch.utils.data import IterableDataset
 from datasets import load_dataset
 
+
 class BaseMultimodalDataset(IterableDataset, ABC):
     """
     Base class for multimodal eval_datasets.
@@ -25,7 +26,8 @@ class BaseMultimodalDataset(IterableDataset, ABC):
         config: Optional[str] = None,
         stream: bool = True,
         commit_hash: Optional[str] = None,
-        processors: Optional[List] = [],
+        processors=None,
+        max_samples: Optional[int] = None,
         **kwargs,
     ):
         """
@@ -40,6 +42,8 @@ class BaseMultimodalDataset(IterableDataset, ABC):
             **kwargs: Additional dataset-specific arguments
         """
         super().__init__()
+        if processors is None:
+            processors = []
         self.dataset_name = f"{dataset_name}_{config}" if config else dataset_name
         self.kwargs = kwargs
         self.dataset = (
@@ -62,6 +66,9 @@ class BaseMultimodalDataset(IterableDataset, ABC):
         )
         self.config = config
         self.processors = processors
+        # check if max samples is None then set it max integer
+        self.max_samples = max_samples if max_samples is not None else float("inf")
+
     def __iter__(self) -> Generator[Dict[str, Any], None, None]:
         """
         Get a single sample from the dataset.
@@ -73,6 +80,8 @@ class BaseMultimodalDataset(IterableDataset, ABC):
             Dictionary containing the sample data including 'expected_output'
         """
         for idx, sample in enumerate(self.dataset):
+            if idx >= self.max_samples:
+                break
             item = self.format_item(sample)
             yield item
             # if isinstance(sample, dict):
@@ -117,6 +126,7 @@ class BaseMultimodalDataset(IterableDataset, ABC):
             for processor in self.processors:
                 responses = processor.process(responses)
         return responses
+
 
 # def worker_init_fn(worker_id):
 # """

@@ -9,7 +9,6 @@ import json
 import time
 import logging
 from typing import List, Dict, Any, Optional
-from pathlib import Path
 
 from rich.console import Console
 from rich.progress import (
@@ -19,8 +18,6 @@ from rich.progress import (
     BarColumn,
     TimeElapsedColumn,
 )
-from rich.panel import Panel
-from rich.text import Text
 
 from karma.benchmark import Benchmark
 from karma.registries.model_registry import model_registry
@@ -76,6 +73,7 @@ class MultiDatasetOrchestrator:
         use_cache: bool = True,
         show_progress: bool = True,
         max_samples: Optional[int] = None,
+        verbose: bool = False,
     ) -> Dict[str, Any]:
         """
         Evaluate model on multiple datasets with enhanced CLI support.
@@ -168,6 +166,7 @@ class MultiDatasetOrchestrator:
                         progress,
                         cache_manager,
                         max_samples,
+                        verbose,
                     )
 
                     progress.advance(main_task)
@@ -263,6 +262,7 @@ class MultiDatasetOrchestrator:
         progress: Optional[Progress] = None,
         cache_manager: Optional[CacheManager] = None,
         max_samples: Optional[int] = None,
+        verbose: bool = False,
     ) -> None:
         """
         Evaluate model on a single dataset.
@@ -330,6 +330,16 @@ class MultiDatasetOrchestrator:
             if processor_instances:
                 final_dataset_args["processors"] = processor_instances
 
+            if max_samples:
+                try:
+                    final_dataset_args["max_samples"] = int(max_samples)
+                    if int(final_dataset_args["max_samples"]) < 0:
+                        raise ValueError
+                except ValueError:
+                    self.console.print(
+                        f"[red]Invalid max_samples argument: {max_samples}, needs to be a positive integer[/red]"
+                    )
+
             # Create dataset with validated arguments
             dataset = dataset_registry.create_dataset(
                 dataset_name, validate_args=True, **final_dataset_args
@@ -349,15 +359,12 @@ class MultiDatasetOrchestrator:
                 dataset=dataset,
                 cache_manager=cache_manager,
                 progress=progress,
-                console=self.console,
+                # console=self.console,
+                verbose_mode=verbose,
             )
-
-            # Configure metric
 
             # Run evaluation
-            result = benchmark.evaluate(
-                metrics=metrics_classes, batch_size=batch_size, max_samples=max_samples
-            )
+            result = benchmark.evaluate(metrics=metrics_classes, batch_size=batch_size)
 
             for metric_key, score in result["overall_score"].items():
                 dataset_results[metric_key] = {

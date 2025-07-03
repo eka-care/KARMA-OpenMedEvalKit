@@ -98,6 +98,10 @@ import os
     "--max-samples",
     help="Maximum number of samples to use for evaluation, this is helpful for running on a few samples and checking if everything is working.",
 )
+@click.option(
+    "--verbose",
+    help="Pass this argument to have a verbose output",
+)
 @click.pass_context
 def eval_cmd(
     ctx,
@@ -117,6 +121,7 @@ def eval_cmd(
     model_config,
     model_kwargs,
     max_samples,
+    verbose,
 ):
     """
     Evaluate a model on healthcare datasets.
@@ -277,6 +282,7 @@ def eval_cmd(
             use_cache=cache,
             show_progress=progress,
             max_samples=max_samples,
+            verbose=verbose,
         )
 
         # Display results

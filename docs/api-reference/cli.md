@@ -74,21 +74,6 @@ Enhanced orchestrator for multi-dataset evaluation with CLI support.
 
 ## Output and Formatting
 
-### OutputAdapter
-
-Adapter for handling different output formats and destinations.
-
-::: karma.cli.output_adapter.OutputAdapter
-    options:
-      show_source: false
-      show_root_heading: true
-      show_category_heading: true
-      members_order: source
-      filters: ["!^_"]
-      merge_init_into_class: true
-
-### Table Formatters
-
 #### ResultsFormatter
 
 Rich table formatter for evaluation results.

@@ -20,7 +20,13 @@ CONFIG = "MM"
 COMMIT_HASH = "7186bd593752a47d6bd72ccf99ca67df69be18bd"
 
 
-@register_dataset("medxpertqa", metrics=["exact_match"], task_type="mcqa")
+@register_dataset(
+    DATASET_NAME,
+    commit_hash=COMMIT_HASH,
+    split=SPLIT,
+    metrics=["exact_match"],
+    task_type="mcqa",
+)
 class MedXpertQADataset(BaseMultimodalDataset):
     """
     MedXpertQA MM PyTorch Dataset implementing the new multimodal interface.
@@ -30,9 +36,7 @@ class MedXpertQADataset(BaseMultimodalDataset):
     def __init__(
         self,
         dataset_name: str = DATASET_NAME,
-        split: str = SPLIT,
         config: str = CONFIG,
-        commit_hash: str = COMMIT_HASH,
         **kwargs,
     ):
         """
@@ -43,9 +47,7 @@ class MedXpertQADataset(BaseMultimodalDataset):
         """
         super().__init__(
             dataset_name=dataset_name,
-            split=split,
             config=config,
-            commit_hash=commit_hash,
             **kwargs,
         )
 

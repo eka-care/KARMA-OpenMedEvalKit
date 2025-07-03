@@ -9,7 +9,6 @@ from typing import Dict, Any, Tuple, List, Optional
 
 from karma.eval_datasets.base_dataset import BaseMultimodalDataset
 from karma.registries.dataset_registry import register_dataset
-from karma.cli.output_adapter import OutputAdapter
 from karma.data_models.dataloader_iterable import DataLoaderIterable
 
 CONFINEMENT_INSTRUCTIONS = "Translate the given English text to the target language. Output only the translation without any additional text."
@@ -67,10 +66,13 @@ CODE_TO_NAME = {
     "urd_Arab": "Urdu",
 }
 
+
 @register_dataset(
-    "in22conv",
+    dataset_name=DATASET_NAME,
     metrics=["bleu"],
     task_type="translation",
+    commit_hash=COMMIT_HASH,
+    split=SPLIT,
     processors=["devnagari_transliterator"],
     required_args=["source_language", "target_language"],
     optional_args=["domain", "processors"],
@@ -88,9 +90,6 @@ class IN22ConvDataset(BaseMultimodalDataset):
         target_language: str,
         domain: str = "conversational",
         processors: Optional[List] = None,
-        dataset_name: str = DATASET_NAME,
-        split: str = SPLIT,
-        commit_hash: str = COMMIT_HASH,
         **kwargs,
     ):
         """
@@ -125,7 +124,8 @@ class IN22ConvDataset(BaseMultimodalDataset):
         self.target_language = ID_TO_CODE[target_language]
         self.domain = domain
         super().__init__(
-            dataset_name=dataset_name, split=split, commit_hash=commit_hash, processors=processors, **kwargs
+            processors=processors,
+            **kwargs,
         )
         self.dataset_name = (
             f"{DATASET_NAME}-{self.source_language}-{self.target_language}"
@@ -183,4 +183,3 @@ class IN22ConvDataset(BaseMultimodalDataset):
                 break
 
         return response, True
-

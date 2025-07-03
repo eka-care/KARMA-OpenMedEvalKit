@@ -21,7 +21,13 @@ SPLIT = "test"
 COMMIT_HASH = "153e61cdd129eb79d3c27f82cdf3bc5e018c11b0"
 
 
-@register_dataset("medqa", metrics=["exact_match"], task_type="mcqa")
+@register_dataset(
+    DATASET_NAME,
+    commit_hash=COMMIT_HASH,
+    split=SPLIT,
+    metrics=["exact_match"],
+    task_type="mcqa",
+)
 class MedQADataset(BaseMultimodalDataset):
     """
     MedQA PyTorch Dataset implementing the new multimodal interface.
@@ -29,9 +35,6 @@ class MedQADataset(BaseMultimodalDataset):
 
     def __init__(
         self,
-        dataset_name: str = DATASET_NAME,
-        split: str = SPLIT,
-        commit_hash: str = COMMIT_HASH,
         **kwargs,
     ):
         """
@@ -41,9 +44,6 @@ class MedQADataset(BaseMultimodalDataset):
             **kwargs: Additional arguments passed to base class
         """
         super().__init__(
-            dataset_name=dataset_name,
-            split=split,
-            commit_hash=commit_hash,
             **kwargs,
         )
 

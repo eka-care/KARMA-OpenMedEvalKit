@@ -11,6 +11,7 @@ from typing import Dict, Any
 from karma.eval_datasets.base_dataset import BaseMultimodalDataset
 from karma.registries.dataset_registry import register_dataset
 from karma.data_models.dataloader_iterable import DataLoaderIterable
+
 logger = logging.getLogger(__name__)
 
 # Hardcoded confinement instructions for VQA
@@ -19,7 +20,13 @@ SPLIT = "test"
 COMMIT_HASH = "bcf91e7654fb9d51c8ab6a5b82cacf3fafd2fae9"
 
 
-@register_dataset("vqa_rad", metrics=["exact_match"], task_type="vqa")
+@register_dataset(
+    DATASET_NAME,
+    split=SPLIT,
+    commit_hash=COMMIT_HASH,
+    metrics=["exact_match"],
+    task_type="vqa",
+)
 class VQARADDataset(BaseMultimodalDataset):
     """
     VQA-RAD PyTorch Dataset implementing the new multimodal interface.
@@ -28,9 +35,6 @@ class VQARADDataset(BaseMultimodalDataset):
 
     def __init__(
         self,
-        dataset_name: str = DATASET_NAME,
-        split: str = SPLIT,
-        commit_hash: str = COMMIT_HASH,
         **kwargs,
     ):
         """
@@ -39,9 +43,7 @@ class VQARADDataset(BaseMultimodalDataset):
         Args:
             **kwargs: Additional arguments passed to base class
         """
-        super().__init__(
-            dataset_name=dataset_name, split=split, commit_hash=commit_hash, **kwargs
-        )
+        super().__init__(**kwargs)
 
     def format_item(self, sample: Dict[str, Any]) -> DataLoaderIterable:
         """
