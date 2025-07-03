@@ -74,7 +74,6 @@ class MedGemmaLLM(BaseHFModel):
         )
 
     def run(self, inputs, **kwargs):
-        print(inputs)
         model_inputs = self.preprocess(inputs)
         results = self.model.generate(
             **model_inputs,
@@ -136,7 +135,7 @@ MedGemmaModel = ModelMeta(
     description="Medgemma model",
     loader_class="karma.models.medgemma.MedGemmaLLM",
     loader_kwargs={
-        "device": "cpu",
+        "device": "cuda" if torch.cuda.is_available() else "mps" if torch.mps.is_available() else "cpu",
         "max_tokens": 256,  # Sufficient for translation outputs
         "temperature": 0.01,  # Lower temperature for more consistent translations
         "top_p": 0.9,  # Nucleus sampling
