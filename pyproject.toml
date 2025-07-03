@@ -27,6 +27,7 @@ dependencies = [
     "numpy>=2.2.6",
     "librosa>=0.11.0",
     "onnxruntime>=1.22.0",
+    "indic-nlp-library>=0.92",
 ]
 
 [dependency-groups]

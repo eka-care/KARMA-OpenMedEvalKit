@@ -20,7 +20,7 @@ COMMIT_HASH = "5f4495c91d500742a58d1be2ab07d77f73c0acf8"
     task_type="transcription",
     required_args=["language"],
     default_args={"language": "hindi"},
-    processors=["asr_wer_preprocessor"],
+    processors=["general_text_processor", "multilingual_text_processor"],
 )
 class IndicVoicesRDataset(BaseMultimodalDataset):
     def __init__(
