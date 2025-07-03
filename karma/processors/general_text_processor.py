@@ -1,8 +1,8 @@
 import re
 from num2words import num2words
 from jiwer import Compose, ToLowerCase, RemoveMultipleSpaces, RemovePunctuation
-
-from karma.processors.base_processor import BaseProcessor
+import unicodedata
+from karma.processors.base import BaseProcessor
 from karma.registries.processor_registry import register_processor
 
 
@@ -61,3 +61,7 @@ class GeneralTextProcessor(BaseProcessor):
         normalize = Compose([ToLowerCase()])
         texts_normalized = [GeneralTextProcessor._ensure_str(normalize(text)) for text in texts]
         return texts_normalized
+    
+    def multilingual_normalization(self, texts: list[str]) -> list[str]:
+        texts = [unicodedata.normalize('NFD', text) for text in texts]
+

@@ -1,7 +1,7 @@
 import re
 from pathlib import Path
 from typing import List, Tuple, Dict
-from karma.processors.base_processor import BaseProcessor
+from karma.processors.base import BaseProcessor
 from karma.registries.processor_registry import register_processor
 from indicnlp.normalize.indic_normalize import IndicNormalizerFactory
 
