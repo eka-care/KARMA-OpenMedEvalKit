@@ -247,8 +247,12 @@ class Benchmark:
             Dictionary of metric scores or None if metric not found
         """
         scores = {}
-        references = self.dataset.postprocess([it["expected_output"] for it in prediction_results])
-        predictions = self.dataset.postprocess([it["prediction"] for it in prediction_results])
+        references = self.dataset.postprocess(
+            [it["expected_output"] for it in prediction_results]
+        )
+        predictions = self.dataset.postprocess(
+            [it["prediction"] for it in prediction_results]
+        )
         print(metrics)
         for metric in metrics:
             score = metric.evaluate(predictions=predictions, references=references)
@@ -259,7 +263,11 @@ class Benchmark:
         return scores
 
     def evaluate(
-        self, metrics: List[BaseMetric], batch_size: int = 1, dry_run: bool = False
+        self,
+        metrics: List[BaseMetric],
+        batch_size: int = 1,
+        dry_run: bool = False,
+        max_samples: int = None,
     ) -> Dict[str, Any]:
         """
         Generic evaluate function that works with any dataset.
@@ -315,8 +323,7 @@ class Benchmark:
         # Process batches from dataloader
         for batch_idx, samples in enumerate(dataloader):
             self.logger.info(batch_idx)
-            if batch_idx > 2:
-                break
+
             batch_results = []
             # samples = [
             #     dict(s) for s in samples
@@ -358,11 +365,8 @@ class Benchmark:
         if task:
             self.progress.remove_task(task)
 
-        overall_scores = self.compute_metrics(
-            all_prediction_results, metrics=metrics
-        )
+        overall_scores = self.compute_metrics(all_prediction_results, metrics=metrics)
 
-       
         # Create summary for Weave logging
         summary_data = {
             "overall_score": overall_scores,

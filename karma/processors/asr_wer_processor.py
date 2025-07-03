@@ -3,25 +3,42 @@ from num2words import num2words
 from karma.metrics.glm_processor import GLMProcessor
 from jiwer import Compose, ToLowerCase, RemoveMultipleSpaces, RemovePunctuation
 
+from karma.processors.base import BaseProcessor
+from karma.registries.processor_registry import register_processor
+
+
 def replace_digits_with_words(text):
     def repl(match):
         return num2words(int(match.group()))
-    return re.sub(r'\b\d+\b', repl, text)
+
+    return re.sub(r"\b\d+\b", repl, text)
+
 
 def _ensure_str(text):
     if isinstance(text, list):
         return " ".join(str(t) for t in text)
     return str(text)
 
-class ASRTextProcessor:
-    def __init__(self, use_glm=False, use_num2text=False, use_punc=False, use_lowercasing=False, language: str = "en"):
+
+@register_processor(name="asr_wer_preprocessor", required_args=["language"])
+class ASRTextProcessor(BaseProcessor):
+    def __init__(
+        self,
+        use_glm=False,
+        use_num2text=False,
+        use_punc=False,
+        use_lowercasing=False,
+        language: str = "en",
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
         self.use_glm = use_glm
         self.use_lowercasing = use_lowercasing
         self.use_num2text = use_num2text
         self.use_punc = use_punc
         self.language = language
 
-    def normalize(self, transcription: list[str]) -> list[str]:
+    def process(self, transcription: list[str]) -> list[str]:
         if self.use_glm:
             glm_processor = GLMProcessor(glm_dir="./metrics/glm")
             transcription = glm_processor.apply(transcription, lang=self.language)

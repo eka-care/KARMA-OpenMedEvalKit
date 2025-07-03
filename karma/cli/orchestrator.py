@@ -71,9 +71,11 @@ class MultiDatasetOrchestrator:
         self,
         dataset_names: Optional[List[str]] = None,
         dataset_args: Optional[Dict[str, Dict[str, Any]]] = None,
+        processor_args: Optional[Dict[str, Dict[str, Dict[str, Any]]]] = None,
         batch_size: int = 1,
         use_cache: bool = True,
         show_progress: bool = True,
+        max_samples: Optional[int] = None,
     ) -> Dict[str, Any]:
         """
         Evaluate model on multiple datasets with enhanced CLI support.
@@ -81,6 +83,7 @@ class MultiDatasetOrchestrator:
         Args:
             dataset_names: List of dataset names to evaluate (None for all)
             dataset_args: Dictionary mapping dataset names to their arguments
+            processor_args: Dictionary mapping dataset names to processor names to their arguments
             batch_size: Batch size for evaluation
             use_cache: Whether to use caching for evaluation
             show_progress: Whether to show progress bars
@@ -158,11 +161,13 @@ class MultiDatasetOrchestrator:
                     self._evaluate_single_dataset(
                         dataset_name,
                         dataset_args.get(dataset_name, {}),
+                        processor_args.get(dataset_name, {}) if processor_args else {},
                         model,
                         batch_size,
                         use_cache,
                         progress,
                         cache_manager,
+                        max_samples,
                     )
 
                     progress.advance(main_task)
@@ -171,11 +176,13 @@ class MultiDatasetOrchestrator:
                 self._evaluate_single_dataset(
                     dataset_name,
                     dataset_args.get(dataset_name, {}),
+                    processor_args.get(dataset_name, {}) if processor_args else {},
                     model,
                     batch_size,
                     use_cache,
                     None,
                     cache_manager,
+                    max_samples,
                 )
 
         # Add summary
@@ -249,11 +256,13 @@ class MultiDatasetOrchestrator:
         self,
         dataset_name: str,
         dataset_args: Dict[str, Any],
+        processor_args: Dict[str, Dict[str, Any]],
         model: Any,
         batch_size: int,
         use_cache: bool,
         progress: Optional[Progress] = None,
         cache_manager: Optional[CacheManager] = None,
+        max_samples: Optional[int] = None,
     ) -> None:
         """
         Evaluate model on a single dataset.
@@ -261,6 +270,7 @@ class MultiDatasetOrchestrator:
         Args:
             dataset_name: Name of the dataset
             dataset_args: Arguments for dataset creation
+            processor_args: Arguments for processor creation (mapping processor names to their args)
             model: Model instance
             batch_size: Batch size for evaluation
             use_cache: Whether to use caching for evaluation
@@ -279,22 +289,46 @@ class MultiDatasetOrchestrator:
             dataset_info = dataset_registry.get_dataset_info(dataset_name)
 
             # Get processors from dataset registry metadata and processor registry
-            processor_names = dataset_info.get('processors', [])
+            processor_names = dataset_info.get("processors", [])
             processor_instances = []
-            
+
             if processor_names:
                 for processor_name in processor_names:
                     try:
-                        processor_instance = processor_registry.get_processor(processor_name)
+                        # Get processor arguments if provided
+                        proc_args = processor_args.get(processor_name, {})
+
+                        if proc_args:
+                            # Validate processor arguments
+                            from karma.cli.utils import validate_processor_args
+
+                            validated_args = validate_processor_args(
+                                dataset_name, processor_name, proc_args, self.console
+                            )
+                            processor_instance = processor_registry.get_processor(
+                                processor_name, **validated_args
+                            )
+                            self.console.print(
+                                f"\nLoaded processor '{processor_name}' with arguments {validated_args} for dataset '{dataset_name}'"
+                            )
+                        else:
+                            processor_instance = processor_registry.get_processor(
+                                processor_name
+                            )
+                            self.console.print(
+                                f"\nLoaded processor '{processor_name}' for dataset '{dataset_name}'"
+                            )
+
                         processor_instances.append(processor_instance)
-                        self.console.print(f"\nLoaded processor '{processor_name}' for dataset '{dataset_name}'")
                     except ValueError as e:
-                        self.console.print(f"\nCould not load processor '{processor_name}' for dataset '{dataset_name}': {e}")
+                        self.console.print(
+                            f"\nCould not load processor '{processor_name}' for dataset '{dataset_name}': {e}"
+                        )
 
             # Pass processors to dataset creation
             final_dataset_args = dataset_args.copy()
             if processor_instances:
-                final_dataset_args['processors'] = processor_instances
+                final_dataset_args["processors"] = processor_instances
 
             # Create dataset with validated arguments
             dataset = dataset_registry.create_dataset(
@@ -319,29 +353,25 @@ class MultiDatasetOrchestrator:
             )
 
             # Configure metric
-            
 
             # Run evaluation
             result = benchmark.evaluate(
-                metrics=metrics_classes, batch_size=batch_size
+                metrics=metrics_classes, batch_size=batch_size, max_samples=max_samples
             )
 
             for metric_key, score in result["overall_score"].items():
-
                 dataset_results[metric_key] = {
                     "score": score,
                     "evaluation_time": result["summary"]["evaluation_time"],
                     "num_samples": len(result["predictions"]),
-                    }
+                }
 
                 if progress:
                     metric_task = progress.add_task(f"Computing {metric_key}", total=1)
                     progress.remove_task(metric_task)
                 else:
                     self.console.print(f"  Computing [yellow]{metric_key}[/yellow]...")
-                    self.console.print(
-                        f"    [green]{metric_key}: {score:.3f}[/green]"
-                    )
+                    self.console.print(f"    [green]{metric_key}: {score:.3f}[/green]")
 
             # Store results
             self.results[dataset_name] = {
