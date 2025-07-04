@@ -25,6 +25,8 @@ import json
 import yaml
 import os
 
+from karma.registries.processor_registry import processor_registry
+
 
 @click.command(name="eval")
 @click.option(
@@ -237,6 +239,11 @@ def eval_cmd(
                 dataset_names, parsed_dataset_args, console
             )
 
+            # Interactive mode for processor arguments
+            parsed_processor_args = _handle_interactive_processor_args(
+                dataset_names, parsed_processor_args, console
+            )
+
         # Show evaluation plan
         _show_evaluation_plan(
             console,
@@ -244,6 +251,7 @@ def eval_cmd(
             final_model_path,
             dataset_names,
             parsed_dataset_args,
+            parsed_processor_args,
             model_overrides,
             batch_size,
             cache,
@@ -366,12 +374,112 @@ def _handle_interactive_args(
     return complete_args
 
 
+def _handle_interactive_processor_args(
+    dataset_names: list, existing_processor_args: dict, console: Console
+) -> dict:
+    """
+    Handle interactive processor argument collection for datasets.
+
+    Args:
+        dataset_names: List of dataset names
+        existing_processor_args: Already provided processor arguments
+        console: Rich console for output
+
+    Returns:
+        Complete processor arguments dictionary
+    """
+    from karma.cli.utils import prompt_for_missing_processor_args
+
+    complete_processor_args = existing_processor_args.copy()
+
+    for dataset_name in dataset_names:
+        try:
+            # Get dataset info to find associated processors
+            dataset_info = dataset_registry.get_dataset_info(dataset_name)
+            processor_names = dataset_info.get("processors", [])
+
+            if processor_names:
+                # Check if user wants to configure processors
+                if not click.confirm(
+                    f"\nDataset '{dataset_name}' uses processors: {', '.join(processor_names)}. "
+                    f"Configure processor arguments?"
+                ):
+                    continue
+
+                # Initialize dataset processor args if not exists
+                if dataset_name not in complete_processor_args:
+                    complete_processor_args[dataset_name] = {}
+
+                for processor_name in processor_names:
+                    try:
+                        # Get processor argument information
+                        processor_info = processor_registry.get_processor_all_args(
+                            processor_name
+                        )
+                        required_args = processor_info["required"]
+                        optional_args = processor_info["optional"]
+                        default_args = processor_info["defaults"]
+
+                        # Check what arguments are already provided
+                        provided_args = complete_processor_args[dataset_name].get(
+                            processor_name, {}
+                        )
+                        missing_required = [
+                            arg for arg in required_args if arg not in provided_args
+                        ]
+
+                        # Prompt for arguments if needed
+                        if missing_required or (
+                            optional_args
+                            and click.confirm(
+                                f"Configure optional arguments for processor '{processor_name}'?"
+                            )
+                        ):
+                            new_args = prompt_for_missing_processor_args(
+                                dataset_name,
+                                processor_name,
+                                missing_required,
+                                optional_args,
+                                default_args,
+                                console,
+                            )
+
+                            if new_args:
+                                if (
+                                    processor_name
+                                    not in complete_processor_args[dataset_name]
+                                ):
+                                    complete_processor_args[dataset_name][
+                                        processor_name
+                                    ] = {}
+                                complete_processor_args[dataset_name][
+                                    processor_name
+                                ].update(new_args)
+
+                    except Exception as e:
+                        console.print(
+                            ClickFormatter.warning(
+                                f"Could not get requirements for processor '{processor_name}': {e}"
+                            )
+                        )
+
+        except Exception as e:
+            console.print(
+                ClickFormatter.warning(
+                    f"Could not get processor info for dataset '{dataset_name}': {e}"
+                )
+            )
+
+    return complete_processor_args
+
+
 def _show_evaluation_plan(
     console: Console,
     model: str,
     model_path: str,
     dataset_names: list,
     dataset_args: dict,
+    processor_args: dict,
     model_overrides: dict,
     batch_size: int,
     use_cache: bool,
@@ -386,6 +494,8 @@ def _show_evaluation_plan(
         model_path: Model path
         dataset_names: List of dataset names
         dataset_args: Dataset arguments
+        processor_args: Processor arguments
+        model_overrides: Model overrides
         batch_size: Batch size
         use_cache: Whether to use caching
         output: Output file path
@@ -415,6 +525,15 @@ def _show_evaluation_plan(
             if args:
                 args_str = ", ".join([f"{k}={v}" for k, v in args.items()])
                 console.print(f"  {dataset_name}: {args_str}")
+
+    # Show processor arguments if any
+    if processor_args:
+        console.print(f"[cyan]Processor Arguments:[/cyan]")
+        for dataset_name, processors in processor_args.items():
+            for processor_name, args in processors.items():
+                if args:
+                    args_str = ", ".join([f"{k}={v}" for k, v in args.items()])
+                    console.print(f"  {dataset_name}.{processor_name}: {args_str}")
 
     # Show model overrides if any
     if model_overrides:

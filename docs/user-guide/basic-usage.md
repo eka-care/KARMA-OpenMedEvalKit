@@ -22,10 +22,10 @@ karma list models
 karma list datasets
 
 # Get detailed information about a model
-karma info model qwen
+karma info model Qwen/Qwen3-0.6B
 
 # Get detailed information about a dataset
-karma info dataset pubmedqa
+karma info dataset openlifescienceai/pubmedqa
 ```
 
 ## Running Evaluations
@@ -35,7 +35,7 @@ karma info dataset pubmedqa
 The most basic evaluation requires specifying a model and model path:
 
 ```bash
-karma eval --model qwen --model-path "Qwen/Qwen3-0.6B"
+karma eval --model Qwen/Qwen3-0.6B
 ```
 
 This will:
@@ -48,20 +48,20 @@ This will:
 
 ```bash
 # Single dataset
-karma eval --model qwen --model-path "Qwen/Qwen3-0.6B" --datasets pubmedqa
+karma eval --model Qwen/Qwen3-0.6B --datasets openlifescienceai/pubmedqa
 
 # Multiple datasets
-karma eval --model qwen --model-path "Qwen/Qwen3-0.6B" --datasets "pubmedqa,medmcqa,medqa"
+karma eval --model Qwen/Qwen3-0.6B --datasets "openlifescienceai/pubmedqa,openlifescienceai/medmcqa,openlifescienceai/medqa"
 ```
 
 ### Save Results
 
 ```bash
 # Save to JSON file
-karma eval --model qwen --model-path "Qwen/Qwen3-0.6B" --output results.json
+karma eval --model Qwen/Qwen3-0.6B --output results.json
 
 # Save to custom path
-karma eval --model qwen --model-path "Qwen/Qwen3-0.6B" --output /path/to/results.json
+karma eval --model Qwen/Qwen3-0.6B --output /path/to/results.json
 ```
 
 ## Working with Different Models
@@ -72,8 +72,8 @@ KARMA includes several pre-configured models:
 
 ```bash
 # Qwen models
-karma eval --model qwen --model-path "Qwen/Qwen3-0.6B"
-karma eval --model qwen --model-path "Qwen/Qwen3-1.7B"
+karma eval --model Qwen/Qwen3-0.6B
+karma eval --model Qwen/Qwen3-0.6B --model-path "Qwen/Qwen3-1.7B"
 
 # MedGemma models
 karma eval --model medgemma --model-path "google/medgemma-4b-it"
@@ -83,11 +83,11 @@ karma eval --model medgemma --model-path "google/medgemma-4b-it"
 
 ```bash
 # Adjust generation parameters
-karma eval --model qwen --model-path "Qwen/Qwen3-0.6B" \
+karma eval --model Qwen/Qwen3-0.6B \
   --model-kwargs '{"temperature":0.5,"max_tokens":512,"top_p":0.9}'
 
 # Disable thinking mode (for Qwen)
-karma eval --model qwen --model-path "Qwen/Qwen3-0.6B" \
+karma eval --model Qwen/Qwen3-0.6B \
   --model-kwargs '{"enable_thinking":false}'
 ```
 
@@ -99,27 +99,28 @@ Some datasets require additional configuration:
 
 ```bash
 # Translation datasets with language pairs
-karma eval --model qwen --model-path "Qwen/Qwen3-0.6B" --datasets "in22conv" \
-  --dataset-args "in22conv:source_language=en,target_language=hi"
+karma eval --model Qwen/Qwen3-0.6B \
+    --datasets "ai4bharat/IN22-Conv" \
+    --dataset-args "ai4bharat/IN22-Conv:source_language=en,target_language=hi"
 
 # Datasets with specific splits
-karma eval --model qwen --model-path "Qwen/Qwen3-0.6B" --datasets "medmcqa" \
-  --dataset-args "medmcqa:split=validation"
+karma eval --model Qwen/Qwen3-0.6B --datasets "openlifescienceai/medmcqa" \
+  --dataset-args "openlifescienceai/medmcqa:split=validation"
 ```
 
 ### Supported Datasets
 
 KARMA supports 12+ medical datasets:
 
-- **pubmedqa** - PubMed Question Answering
-- **medmcqa** - Medical Multiple Choice QA
-- **medqa** - Medical Question Answering
-- **medxpertqa** - Medical Expert QA
-- **slake** - Structured Language And Knowledge Extraction
-- **vqa_rad** - Visual Question Answering for Radiology
-- **in22conv** - Indic Language Conversation Translation
-- **indicvoices_r** - Indic Voices Recognition
-- **mmlu_medical** - Medical MMLU benchmarks
+- **openlifescienceai/pubmedqa** - PubMed Question Answering
+- **openlifescienceai/medmcqa** - Medical Multiple Choice QA
+- **openlifescienceai/medqa** - Medical Question Answering
+- **ChuGyouk/MedXpertQA** - Medical Expert QA
+- **mdwiratathya/SLAKE-vqa-english** - Structured Language And Knowledge Extraction
+- **flaviagiammarino/vqa-rad** - Visual Question Answering for Radiology
+- **ai4bharat/IN22-Conv** - Indic Language Conversation Translation
+- **ai4bharat/indicvoices_r** - Indic Voices Recognition
+- **openlifescienceai/mmlu_professional_medicine** - Medical MMLU benchmarks
 
 ## Performance Optimization
 
@@ -127,13 +128,13 @@ KARMA supports 12+ medical datasets:
 
 ```bash
 # Adjust batch size for your hardware
-karma eval --model qwen --model-path "Qwen/Qwen3-0.6B" --batch-size 8
+karma eval --model Qwen/Qwen3-0.6B --batch-size 8
 
 # Smaller batch for limited memory
-karma eval --model qwen --model-path "Qwen/Qwen3-0.6B" --batch-size 2
+karma eval --model Qwen/Qwen3-0.6B --batch-size 2
 
 # Larger batch for high-end hardware
-karma eval --model qwen --model-path "Qwen/Qwen3-0.6B" --batch-size 16
+karma eval --model Qwen/Qwen3-0.6B --batch-size 16
 ```
 
 ### Caching
@@ -142,13 +143,13 @@ KARMA uses intelligent caching to speed up repeated evaluations:
 
 ```bash
 # Use cache (default)
-karma eval --model qwen --model-path "Qwen/Qwen3-0.6B" --cache
+karma eval --model Qwen/Qwen3-0.6B --cache
 
 # Force fresh evaluation
-karma eval --model qwen --model-path "Qwen/Qwen3-0.6B" --no-cache
+karma eval --model Qwen/Qwen3-0.6B --no-cache
 
 # Clear cache before evaluation
-karma eval --model qwen --model-path "Qwen/Qwen3-0.6B" --clear-cache
+karma eval --model Qwen/Qwen3-0.6B --clear-cache
 ```
 
 ## Understanding Results
@@ -162,7 +163,7 @@ KARMA outputs comprehensive evaluation results:
   "model": "qwen",
   "model_path": "Qwen/Qwen3-0.6B",
   "results": {
-    "pubmedqa": {
+    "openlifescienceai/pubmedqa": {
       "metrics": {
         "exact_match": 0.745,
         "accuracy": 0.745
@@ -171,7 +172,7 @@ KARMA outputs comprehensive evaluation results:
       "runtime_seconds": 45.2,
       "cache_hit_rate": 0.8
     },
-    "medmcqa": {
+    "openlifescienceai/medmcqa": {
       "metrics": {
         "exact_match": 0.623,
         "accuracy": 0.623
@@ -200,11 +201,11 @@ KARMA outputs comprehensive evaluation results:
 
 ```bash
 # Compare different model sizes
-karma eval --model qwen --model-path "Qwen/Qwen3-0.6B" --output qwen_0.6b.json
-karma eval --model qwen --model-path "Qwen/Qwen3-1.7B" --output qwen_1.7b.json
+karma eval --model Qwen/Qwen3-0.6B --output qwen_0.6b.json
+karma eval --model Qwen/Qwen3-0.6B --model-path "Qwen/Qwen3-1.7B" --output qwen_1.7b.json
 
 # Compare different models
-karma eval --model qwen --model-path "Qwen/Qwen3-0.6B" --output qwen_results.json
+karma eval --model Qwen/Qwen3-0.6B --output qwen_results.json
 karma eval --model medgemma --model-path "google/medgemma-4b-it" --output medgemma_results.json
 ```
 
@@ -212,24 +213,24 @@ karma eval --model medgemma --model-path "google/medgemma-4b-it" --output medgem
 
 ```bash
 # Focus on specific medical domains
-karma eval --model qwen --model-path "Qwen/Qwen3-0.6B" \
-  --datasets "pubmedqa,medmcqa,medqa"  # Text-based QA
+karma eval --model Qwen/Qwen3-0.6B \
+  --datasets "openlifescienceai/pubmedqa,openlifescienceai/medmcqa,openlifescienceai/medqa"  # Text-based QA
 
-karma eval --model qwen --model-path "Qwen/Qwen3-0.6B" \
-  --datasets "slake,vqa_rad"  # Vision-language tasks
+karma eval --model Qwen/Qwen3-0.6B \
+  --datasets "mdwiratathya/SLAKE-vqa-english,flaviagiammarino/vqa-rad"  # Vision-language tasks
 ```
 
 ### Parameter Tuning
 
 ```bash
 # Test different temperature settings
-karma eval --model qwen --model-path "Qwen/Qwen3-0.6B" \
+karma eval --model Qwen/Qwen3-0.6B \
   --model-kwargs '{"temperature":0.1}' --output temp_0.1.json
 
-karma eval --model qwen --model-path "Qwen/Qwen3-0.6B" \
+karma eval --model Qwen/Qwen3-0.6B \
   --model-kwargs '{"temperature":0.7}' --output temp_0.7.json
 
-karma eval --model qwen --model-path "Qwen/Qwen3-0.6B" \
+karma eval --model Qwen/Qwen3-0.6B \
   --model-kwargs '{"temperature":1.0}' --output temp_1.0.json
 ```
 
@@ -244,27 +245,27 @@ karma eval --model qwen --model-path "Qwen/Qwen3-0.6B" \
 karma info model qwen
 
 # Verify model path
-karma eval --model qwen --model-path "Qwen/Qwen3-0.6B" --dry-run
+karma eval --model Qwen/Qwen3-0.6B --dry-run
 ```
 
 #### Dataset Loading Errors
 
 ```bash
 # Check dataset availability
-karma info dataset pubmedqa
+karma info dataset openlifescienceai/pubmedqa
 
 # Verify dataset arguments
-karma eval --model qwen --model-path "Qwen/Qwen3-0.6B" --datasets pubmedqa --dry-run
+karma eval --model Qwen/Qwen3-0.6B --datasets openlifescienceai/pubmedqa --dry-run
 ```
 
 #### Memory Issues
 
 ```bash
 # Reduce batch size
-karma eval --model qwen --model-path "Qwen/Qwen3-0.6B" --batch-size 1
+karma eval --model Qwen/Qwen3-0.6B --batch-size 1
 
 # Use smaller model
-karma eval --model qwen --model-path "Qwen/Qwen3-0.6B" --datasets pubmedqa
+karma eval --model Qwen/Qwen3-0.6B --datasets openlifescienceai/pubmedqa
 ```
 
 ## Next Steps

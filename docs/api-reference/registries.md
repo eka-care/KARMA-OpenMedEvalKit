@@ -116,7 +116,6 @@ Decorator for registering processors.
       show_source: false
       show_root_heading: true
 
-
 ## Usage Examples
 
 ### Model Registration
@@ -311,98 +310,145 @@ class MedicalTextNormalizer(BaseProcessor):
         return text
 
 # Use the registered processor
-from karma.registries.processor_registry import get_processor
+from karma.registries.processor_registry import processor_registry
 
-processor = get_processor("medical_text_normalizer", 
-                         normalize_units=True, 
-                         expand_abbreviations=True)
+processor = processor_registry.get_processor("medical_text_normalizer", 
+                                           normalize_units=True, 
+                                           expand_abbreviations=True)
 
 processed_text = processor.process("Patient needs 500mg w/ meals")
+print(processed_text)  # "Patient needs 500 milligrams with meals"
 ```
 
 ### Discovery and Introspection
 
 ```python
-from karma.registries.model_registry import discover_models
-from karma.registries.dataset_registry import discover_datasets
-from karma.registries.metrics_registry import discover_metrics
+from karma.registries.model_registry import model_registry
+from karma.registries.dataset_registry import dataset_registry
+from karma.registries.metrics_registry import metrics_registry
+from karma.registries.processor_registry import processor_registry
 
 # Discover all registered components
-models = discover_models()
-datasets = discover_datasets()
-metrics = discover_metrics()
+models = model_registry.list_models()
+datasets = dataset_registry.list_datasets()
+metrics = metrics_registry.list_metrics()
+processors = processor_registry.list_processors()
 
 print("Available Models:")
-for model_name, model_meta in models.items():
-    print(f"  {model_name}: {model_meta.description}")
+for model_name in models:
+    print(f"  {model_name}")
 
 print("\nAvailable Datasets:")
-for dataset_name, dataset_info in datasets.items():
+for dataset_name in datasets:
+    dataset_info = dataset_registry.get_dataset_info(dataset_name)
     print(f"  {dataset_name}: {dataset_info['task_type']} - {dataset_info['metrics']}")
 
-print("\nAvailable Metrics:")
-for metric_name, metric_class in metrics.items():
-    print(f"  {metric_name}: {metric_class.__doc__}")
+print("\nAvailable Processors:")
+for processor_name in processors:
+    processor_info = processor_registry.get_processor_info(processor_name)
+    print(f"  {processor_name}: {processor_info['class_name']}")
+```
+
+### Built-in Processor Usage Examples
+
+#### ASR Text Processor
+
+```python
+from karma.registries.processor_registry import processor_registry
+
+# Create ASR processor for Hindi
+asr_processor = processor_registry.get_processor(
+    "asr_wer_preprocessor",
+    language="hi",
+    use_lowercasing=True,
+    use_punc=False,
+    use_num2text=True
+)
+
+# Process transcriptions
+transcriptions = ["मुझे 5 किताबें चाहिए।", "वह 10 बजे आएगा।"]
+processed = asr_processor.process(transcriptions)
+print(processed)
+```
+
+#### Devanagari Transliterator
+
+```python
+# Create transliterator
+transliterator = processor_registry.get_processor(
+    "devnagari_transliterator",
+    normalize=True,
+    fallback_scheme="Bengali"
+)
+
+# Transliterate text from various Indic scripts
+texts = ["আমি ভাত খাই।", "ನಾನು ಅನ್ನ ತಿನ್ನುತ್ತೇನೆ।"]
+devanagari_texts = transliterator.process(texts)
+print(devanagari_texts)
 ```
 
 ### Advanced Registry Usage
 
 ```python
-from karma.registries.model_registry import ModelRegistry
-from karma.registries.dataset_registry import DatasetRegistry
-
-# Access registry instances directly
-model_registry = ModelRegistry()
-dataset_registry = DatasetRegistry()
+from karma.registries.dataset_registry import dataset_registry
+from karma.registries.processor_registry import processor_registry
 
 # Get detailed information
-model_info = model_registry.get_model_info("qwen")
-print(f"Model: {model_info['name']}")
-print(f"Type: {model_info['model_type']}")
-print(f"Modalities: {model_info['modalities']}")
+processor_info = processor_registry.get_processor_info("asr_wer_preprocessor")
+print(f"Processor: {processor_info['class_name']}")
+print(f"Required args: {processor_info['required_args']}")
+print(f"Optional args: {processor_info['optional_args']}")
 
 # Validate dataset arguments
 valid_args = dataset_registry.validate_dataset_args(
-    dataset_name="pubmedqa",
+    dataset_name="openlifescienceai/pubmedqa",
     provided_args={"split": "test"}
 )
 print(f"Validation result: {valid_args}")
 
-# List models by type
-text_models = model_registry.list_models_by_type("TEXT_GENERATION")
-print(f"Text generation models: {text_models}")
+# List datasets by task type
+mcqa_datasets = dataset_registry.list_datasets_by_task_type("mcqa")
+print(f"MCQA datasets: {mcqa_datasets}")
 ```
 
 ### Runtime Registration
 
 ```python
-# Register components at runtime
-from karma.registries.model_registry import register_model_meta
-from karma.data_models.model_meta import ModelMeta, ModelType, ModalityType
+# Register processor at runtime
+from karma.processors.base import BaseProcessor
+from karma.registries.processor_registry import processor_registry
 
-def register_runtime_model(name, loader_class, **kwargs):
-    """Register a model at runtime."""
+class RuntimeTextProcessor(BaseProcessor):
+    """Custom processor registered at runtime."""
     
-    model_meta = ModelMeta(
-        name=name,
-        description=f"Runtime registered model: {name}",
-        loader_class=loader_class,
-        loader_kwargs=kwargs,
-        model_type=ModelType.TEXT_GENERATION,
-        modalities=[ModalityType.TEXT],
-        framework=["PyTorch"],
-    )
+    def __init__(self, transform_type="uppercase", **kwargs):
+        super().__init__(**kwargs)
+        self.transform_type = transform_type
     
-    register_model_meta(model_meta)
-    print(f"Registered model: {name}")
+    def process(self, texts):
+        if self.transform_type == "uppercase":
+            return [text.upper() for text in texts]
+        elif self.transform_type == "lowercase":
+            return [text.lower() for text in texts]
+        return texts
 
-# Usage
-register_runtime_model(
-    name="my_runtime_model",
-    loader_class="myproject.models.RuntimeModel",
-    temperature=0.8,
-    max_tokens=1024
+# Register the processor
+processor_registry.processors["runtime_text_processor"] = {
+    'class': RuntimeTextProcessor,
+    'module': 'custom_module',
+    'class_name': 'RuntimeTextProcessor',
+    'required_args': [],
+    'optional_args': ['transform_type'],
+    'default_args': {'transform_type': 'uppercase'}
+}
+
+# Use the registered processor
+processor = processor_registry.get_processor(
+    "runtime_text_processor",
+    transform_type="lowercase"
 )
+result = processor.process(["Hello World"])
+print(result)  # ['hello world']
 ```
 
 ## Registry Features
@@ -411,21 +457,25 @@ register_runtime_model(
 - Automatic component discovery at import time
 - Dynamic loading of classes and modules
 - Support for plugin-style architecture
+- Processor discovery from karma.processors package
 
 ### Validation
-- Argument validation for datasets
+- Argument validation for datasets and processors
 - Type checking for model metadata
 - Consistency checks across registries
+- Required/optional argument enforcement
 
 ### Flexibility
 - Runtime registration support
 - Decorator-based registration
 - Programmatic API access
+- Custom processor creation
 
 ### Integration
 - Seamless CLI integration
 - Cross-component dependency handling
 - Extensible architecture
+- Processor integration with datasets
 
 ## Best Practices
 
@@ -455,7 +505,8 @@ model_meta = ModelMeta(
 ### Error Handling
 
 ```python
-from karma.registries.dataset_registry import create_dataset
+from karma.registries.dataset_registry import dataset_registry
+from karma.registries.processor_registry import processor_registry
 import logging
 
 logger = logging.getLogger(__name__)
@@ -463,12 +514,23 @@ logger = logging.getLogger(__name__)
 def safe_create_dataset(name, **kwargs):
     """Safely create dataset with error handling."""
     try:
-        return create_dataset(name, **kwargs)
+        return dataset_registry.create_dataset(name, **kwargs)
     except ValueError as e:
         logger.error(f"Invalid arguments for {name}: {e}")
         return None
     except KeyError as e:
         logger.error(f"Dataset {name} not found: {e}")
+        return None
+
+def safe_get_processor(name, **kwargs):
+    """Safely get processor with error handling."""
+    try:
+        return processor_registry.get_processor(name, **kwargs)
+    except ValueError as e:
+        logger.error(f"Invalid processor or arguments for {name}: {e}")
+        return None
+    except Exception as e:
+        logger.error(f"Unexpected error getting processor {name}: {e}")
         return None
 ```
 

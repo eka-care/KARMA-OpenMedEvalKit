@@ -1,0 +1,142 @@
+site_name: KARMA - Medical AI Evaluation Framework
+site_description: High-performance evaluation framework for medical AI models
+site_url: https://karma-docs.example.com
+repo_url: https://github.com/eka-care/KARMA-OpenMedEvalKit
+repo_name: eka-care/KARMA-OpenMedEvalKit
+
+theme:
+  name: material
+  palette:
+    # Palette toggle for light mode
+    - scheme: default
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/brightness-7 
+        name: Switch to dark mode
+    # Palette toggle for dark mode
+    - scheme: slate
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.sections
+    - navigation.expand
+    - navigation.indexes
+    - navigation.top
+    - navigation.instant
+    - navigation.tracking
+    - search.highlight
+    - search.share
+    - search.suggest
+    - content.code.copy
+    - content.code.annotate
+    - content.tabs.link
+    - content.action.edit
+    - content.action.view
+  font:
+    text: Inter
+    code: JetBrains Mono
+  icon:
+    logo: material/heart-pulse
+    repo: fontawesome/brands/github
+    edit: material/pencil
+    view: material/eye
+  highlightjs: true
+  hljs_languages:
+    - bash
+    - python
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            show_source: false
+            show_root_heading: true
+            show_category_heading: true
+            show_if_no_docstring: true
+            inherited_members: true
+            members_order: source
+            separate_signature: true
+            unwrap_annotated: true
+            filters: ["!^_"]
+            merge_init_into_class: true
+            docstring_style: google
+            docstring_options:
+              ignore_init_summary: true
+            show_symbol_type_heading: true
+            show_symbol_type_toc: true
+  - llmstxt:
+      markdown_description: |
+        KARMA is a comprehensive, high-performance evaluation framework for medical AI models with Python 3.12+ based on PyTorch.
+        
+        Key features:
+        - Fast evaluation capable of processing thousands of medical examples
+        - Support for 12+ medical datasets across multiple modalities
+        - Model agnostic - works with Qwen, MedGemma, or custom architectures
+        - Smart caching with DuckDB/DynamoDB backends
+        - Registry-based auto-discovery of models and datasets
+        - Production-ready CLI with progress tracking
+      sections:
+        Getting Started:
+          - getting-started.md
+        User Guide:
+          - user-guide/installation.md
+          - user-guide/basic-usage.md
+          - user-guide/advanced-usage.md
+        API Reference:
+          - api-reference/models.md
+          - api-reference/datasets.md
+          - api-reference/metrics.md
+          - api-reference/registries.md
+          - api-reference/cli.md
+        Contributing:
+          - contributing.md
+      full_output: "llms-full.txt"
+
+nav:
+  - Home: index.md
+  - Getting Started: getting-started.md
+  - User Guide:
+    - Installation: user-guide/installation.md
+    - Basic Usage: user-guide/basic-usage.md
+    - Advanced Usage: user-guide/advanced-usage.md
+    - Adding HuggingFace Datasets: user-guide/adding-datasets-from-huggingface.md
+  - API Reference:
+    - Models: api-reference/models.md
+    - Datasets: api-reference/datasets.md
+    - Metrics: api-reference/metrics.md
+    - Registries: api-reference/registries.md
+    - CLI: api-reference/cli.md
+  - Contributing: contributing.md
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - attr_list
+  - md_in_html
+  - toc:
+      anchorlink: true
+      anchorlink_class: "toclink"
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/eka-care/KARMA-OpenMedEvalKit
+    - icon: fontawesome/brands/python
+      link: https://pypi.org/project/karma/
+
+extra_css:
+  - stylesheets/extra.css

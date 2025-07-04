@@ -142,7 +142,7 @@ karma list datasets
 karma info model qwen
 
 # Get dataset information
-karma info dataset pubmedqa
+karma info dataset openlifescienceai/pubmedqa
 ```
 
 ### Evaluation Commands
@@ -152,7 +152,7 @@ karma info dataset pubmedqa
 karma eval --model qwen --model-path "Qwen/Qwen3-0.6B"
 
 # Evaluate specific datasets
-karma eval --model qwen --model-path "Qwen/Qwen3-0.6B" --datasets "pubmedqa,medmcqa"
+karma eval --model qwen --model-path "Qwen/Qwen3-0.6B" --datasets "openlifescienceai/pubmedqa,openlifescienceai/medmcqa"
 
 # Save results to file
 karma eval --model qwen --model-path "Qwen/Qwen3-0.6B" --output results.json
@@ -172,8 +172,8 @@ karma eval --model qwen --model-path "Qwen/Qwen3-0.6B" --clear-cache
 ```bash
 # Dataset-specific arguments
 karma eval --model qwen --model-path "Qwen/Qwen3-0.6B" \
-  --datasets "in22conv" \
-  --dataset-args "in22conv:source_language=en,target_language=hi"
+  --datasets "ai4bharat/IN22-Conv" \
+  --dataset-args "ai4bharat/IN22-Conv:source_language=en,target_language=hi"
 
 # Custom model parameters
 karma eval --model qwen --model-path "Qwen/Qwen3-0.6B" \
@@ -181,9 +181,9 @@ karma eval --model qwen --model-path "Qwen/Qwen3-0.6B" \
 
 # Multiple dataset arguments
 karma eval --model qwen --model-path "Qwen/Qwen3-0.6B" \
-  --datasets "medmcqa,pubmedqa" \
-  --dataset-args "medmcqa:split=validation" \
-  --dataset-args "pubmedqa:subset=pqa_labeled"
+  --datasets "openlifescienceai/medmcqa,openlifescienceai/pubmedqa" \
+  --dataset-args "openlifescienceai/medmcqa:split=validation" \
+  --dataset-args "openlifescienceai/pubmedqa:subset=pqa_labeled"
 
 # Verbose output with logging
 karma eval --model qwen --model-path "Qwen/Qwen3-0.6B" --verbose
@@ -206,10 +206,10 @@ orchestrator = MultiDatasetOrchestrator(
 results = orchestrator.evaluate_all_datasets(
     model_name="qwen",
     model_path="Qwen/Qwen3-0.6B",
-    datasets=["pubmedqa", "medmcqa"],
+    datasets=["openlifescienceai/pubmedqa", "openlifescienceai/medmcqa"],
     dataset_args={
-        "medmcqa": {"split": "validation"},
-        "pubmedqa": {"subset": "pqa_labeled"}
+        "openlifescienceai/medmcqa": {"split": "validation"},
+        "openlifescienceai/pubmedqa": {"subset": "pqa_labeled"}
     },
     model_kwargs={"temperature": 0.7}
 )
@@ -293,7 +293,7 @@ models = {
     "qwen_1.7b": "Qwen/Qwen3-1.7B",
 }
 
-datasets = ["pubmedqa", "medmcqa", "medqa"]
+datasets = ["openlifescienceai/pubmedqa", "openlifescienceai/medmcqa", "openlifescienceai/medqa"]
 
 results = run_batch_evaluation(models, datasets, "batch_results")
 ```
@@ -402,7 +402,7 @@ safe_cli_execution([
     "eval",
     "--model", "qwen",
     "--model-path", "Qwen/Qwen3-0.6B",
-    "--datasets", "pubmedqa"
+    "--datasets", "openlifescienceai/pubmedqa"
 ])
 ```
 
@@ -448,10 +448,10 @@ models:
     
 # Dataset-specific settings
 datasets:
-  pubmedqa:
+  openlifescienceai/pubmedqa:
     default_args:
       split: test
-  medmcqa:
+  openlifescienceai/medmcqa:
     default_args:
       split: validation
 
@@ -492,10 +492,30 @@ output:
 
 ### info Command Options
 
+#### Model Information
 - `model <name>`: Get model information
+- `model <name> --show-code`: Show model class code location and basic info
+
+#### Dataset Information  
 - `dataset <name>`: Get dataset information
-- `--detailed`: Show detailed information
-- `--format`: Output format
+- `dataset <name> --show-examples`: Show usage examples with arguments
+- `dataset <name> --show-code`: Show dataset class code location
+
+#### System Information
+- `system`: Get system information and status
+- `system --cache-path <path>`: Path to cache database to check
+
+#### Examples
+```bash
+# Get model information with code location
+karma info model qwen --show-code
+
+# Get dataset information with usage examples
+karma info dataset openlifescienceai/pubmedqa --show-examples
+
+# Get system information with custom cache path
+karma info system --cache-path /path/to/cache.db
+```
 
 ## See Also
 

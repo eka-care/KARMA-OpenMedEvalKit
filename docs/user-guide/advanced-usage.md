@@ -24,6 +24,9 @@ class MyCustomModel(BaseHFModel):
         # Custom preprocessing
         return f"[INST] {prompt} [/INST]"
     
+    def run():
+        pass
+    
     def postprocess(self, response: str, **kwargs) -> str:
         # Custom postprocessing
         return response.strip()
@@ -32,7 +35,7 @@ class MyCustomModel(BaseHFModel):
 custom_model_meta = ModelMeta(
     name="my_custom_model",
     description="My custom medical AI model",
-    loader_class="path.to.MyCustomModel",
+    loader_class="karma.models.mycustom_model.MyCustomModel",
     loader_kwargs={"temperature": 0.7},
     model_type=ModelType.TEXT_GENERATION,
     modalities=[ModalityType.TEXT],
@@ -45,7 +48,7 @@ register_model_meta(custom_model_meta)
 
 ```bash
 # Use your custom model
-karma eval --model my_custom_model --model-path "path/to/model" --datasets pubmedqa
+karma eval --model my_custom_model --model-path "path/to/model" --datasets openlifescienceai/pubmedqa
 ```
 
 ## Custom Dataset Integration
@@ -129,44 +132,11 @@ from karma.cache.cache_manager import CacheManager
 cache_manager = CacheManager()
 
 # Clear specific cache entries
-cache_manager.clear_cache(model_name="qwen", dataset_name="pubmedqa")
+cache_manager.clear_cache(model_name="qwen", dataset_name="openlifescienceai/pubmedqa")
 
 # Get cache statistics
 stats = cache_manager.get_cache_stats()
 print(f"Cache hit rate: {stats['hit_rate']:.2%}")
-```
-
-## Batch Processing and Parallel Evaluation
-
-### Multi-GPU Evaluation
-
-```bash
-# Specify GPU device
-CUDA_VISIBLE_DEVICES=0,1 karma eval --model qwen --model-path "Qwen/Qwen3-0.6B"
-
-# Use specific GPU
-karma eval --model qwen --model-path "Qwen/Qwen3-0.6B" \
-  --model-kwargs '{"device":"cuda:1"}'
-```
-
-### Distributed Evaluation
-
-```python
-from karma.cli.orchestrator import MultiDatasetOrchestrator
-from karma.registries.model_registry import get_model
-from karma.registries.dataset_registry import get_dataset
-
-# Initialize orchestrator
-orchestrator = MultiDatasetOrchestrator()
-
-# Run distributed evaluation
-results = orchestrator.evaluate_all_datasets(
-    model_name="qwen",
-    model_path="Qwen/Qwen3-0.6B",
-    datasets=["pubmedqa", "medmcqa", "medqa"],
-    batch_size=16,
-    num_workers=4
-)
 ```
 
 ## Custom Metrics
@@ -201,7 +171,7 @@ class CustomAccuracyMetric(BaseMetric):
 
 ```bash
 # The metric will be automatically discovered and used
-karma eval --model qwen --model-path "Qwen/Qwen3-0.6B" --datasets pubmedqa
+karma eval --model qwen --model-path "Qwen/Qwen3-0.6B" --datasets openlifescienceai/pubmedqa
 ```
 
 ## Advanced Configuration
@@ -228,192 +198,6 @@ LOG_LEVEL=INFO
 LOG_FILE=karma.log
 ```
 
-### Configuration Files
-
-Create a `karma.yaml` configuration file:
-
-```yaml
-models:
-  qwen:
-    default_kwargs:
-      temperature: 0.7
-      max_tokens: 512
-      top_p: 0.9
-    
-datasets:
-  pubmedqa:
-    default_args:
-      split: test
-    custom_metrics:
-      - exact_match
-      - custom_accuracy
-
-cache:
-  type: duckdb
-  path: ./cache.db
-  ttl: 604800
-
-evaluation:
-  default_batch_size: 8
-  timeout: 300
-  max_retries: 3
-```
-
-## Monitoring and Logging
-
-### Detailed Logging
-
-```python
-import logging
-from karma.benchmark import Benchmark
-
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('karma.log'),
-        logging.StreamHandler()
-    ]
-)
-
-# Run evaluation with detailed logging
-benchmark = Benchmark(
-    model_name="qwen",
-    model_path="Qwen/Qwen3-0.6B",
-    use_cache=True,
-    verbose=True
-)
-
-results = benchmark.evaluate(dataset_name="pubmedqa")
-```
-
-### Performance Monitoring
-
-```python
-from karma.benchmark import Benchmark
-import time
-
-class MonitoredBenchmark(Benchmark):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.start_time = None
-        self.metrics = {}
-    
-    def evaluate(self, dataset_name, **kwargs):
-        self.start_time = time.time()
-        
-        # Monitor memory usage
-        import psutil
-        process = psutil.Process()
-        initial_memory = process.memory_info().rss / 1024 / 1024  # MB
-        
-        results = super().evaluate(dataset_name, **kwargs)
-        
-        # Record metrics
-        self.metrics.update({
-            "evaluation_time": time.time() - self.start_time,
-            "memory_usage_mb": process.memory_info().rss / 1024 / 1024,
-            "memory_increase_mb": process.memory_info().rss / 1024 / 1024 - initial_memory
-        })
-        
-        return results
-```
-
-## Integration with External Tools
-
-### Weights & Biases Integration
-
-```python
-import wandb
-from karma.benchmark import Benchmark
-
-# Initialize wandb
-wandb.init(project="karma-medical-eval")
-
-# Run evaluation
-benchmark = Benchmark(
-    model_name="qwen",
-    model_path="Qwen/Qwen3-0.6B"
-)
-
-results = benchmark.evaluate(dataset_name="pubmedqa")
-
-# Log results
-wandb.log({
-    "accuracy": results["metrics"]["accuracy"],
-    "exact_match": results["metrics"]["exact_match"],
-    "runtime": results["runtime_seconds"]
-})
-```
-
-### MLflow Integration
-
-```python
-import mlflow
-from karma.benchmark import Benchmark
-
-# Start MLflow run
-with mlflow.start_run():
-    # Log parameters
-    mlflow.log_param("model_name", "qwen")
-    mlflow.log_param("model_path", "Qwen/Qwen3-0.6B")
-    mlflow.log_param("dataset", "pubmedqa")
-    
-    # Run evaluation
-    benchmark = Benchmark(
-        model_name="qwen",
-        model_path="Qwen/Qwen3-0.6B"
-    )
-    
-    results = benchmark.evaluate(dataset_name="pubmedqa")
-    
-    # Log metrics
-    mlflow.log_metric("accuracy", results["metrics"]["accuracy"])
-    mlflow.log_metric("runtime", results["runtime_seconds"])
-```
-
-## Troubleshooting Advanced Issues
-
-### Memory Management
-
-```python
-# Clear model cache between evaluations
-import gc
-import torch
-
-def clear_memory():
-    gc.collect()
-    if torch.cuda.is_available():
-        torch.cuda.empty_cache()
-
-# Use in evaluation loops
-for model_path in model_paths:
-    # Run evaluation
-    clear_memory()
-```
-
-### Error Recovery
-
-```python
-from karma.benchmark import Benchmark
-import time
-
-class RobustBenchmark(Benchmark):
-    def __init__(self, *args, max_retries=3, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.max_retries = max_retries
-    
-    def evaluate(self, dataset_name, **kwargs):
-        for attempt in range(self.max_retries):
-            try:
-                return super().evaluate(dataset_name, **kwargs)
-            except Exception as e:
-                if attempt == self.max_retries - 1:
-                    raise
-                print(f"Attempt {attempt + 1} failed: {e}")
-                time.sleep(2 ** attempt)  # Exponential backoff
-```
 
 ## Next Steps
 

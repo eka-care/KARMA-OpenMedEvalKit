@@ -1,12 +1,22 @@
-/* Custom KARMA Documentation Styles - Inspired by developer.eka.care */
+/* Custom KARMA Documentation Styles - Matching Eka Care Brand */
 
 :root {
-  /* Custom purple color scheme matching eka.care */
-  --md-primary-fg-color: #6B5CE0;
-  --md-primary-fg-color--light: #8A7EE8;
-  --md-primary-fg-color--dark: #5A4DD3;
-  --md-accent-fg-color: #8A7EE8;
-  --md-accent-fg-color--transparent: rgba(138, 126, 232, 0.1);
+  /* Eka Care purple gradient brand colors */
+  --md-primary-fg-color: #6366f1;
+  --md-primary-fg-color--light: #8b5cf6;
+  --md-primary-fg-color--dark: #4f46e5;
+  --md-accent-fg-color: #8b5cf6;
+  --md-accent-fg-color--transparent: rgba(139, 92, 246, 0.1);
+  
+  /* Additional brand colors */
+  --eka-gradient-start: #6366f1;
+  --eka-gradient-end: #8b5cf6;
+  --eka-purple-light: #a78bfa;
+  --eka-purple-dark: #5b21b6;
+  
+  /* Enhanced spacing and typography */
+  --md-text-font: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+  --md-code-font: "JetBrains Mono", monospace;
 }
 
 /* Improve sidebar navigation readability */
@@ -39,9 +49,57 @@
   padding: 2px 12px;
 }
 
-/* Better header styling */
+/* Beautiful gradient header matching Eka Care */
 .md-header {
-  background: linear-gradient(135deg, var(--md-primary-fg-color) 0%, var(--md-primary-fg-color--dark) 100%);
+  background: linear-gradient(135deg, var(--eka-gradient-start) 0%, var(--eka-gradient-end) 100%);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
+}
+
+/* Hero section styling for landing page */
+.md-typeset h1:first-child {
+  background: linear-gradient(135deg, var(--eka-gradient-start), var(--eka-gradient-end));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 700;
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+}
+
+/* Enhance CLI code blocks to look more professional */
+.md-typeset pre[data-lang*="console"] {
+  background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  border-radius: 12px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.md-typeset pre[data-lang*="console"] code {
+  color: #e2e8f0;
+}
+
+/* Style CLI prompt differently */
+.md-typeset pre[data-lang*="console"] code .gp {
+  color: var(--eka-purple-light);
+  font-weight: 600;
+}
+
+/* Highlight CLI output */
+.md-typeset pre[data-lang*="console"] code .go {
+  color: #94a3b8;
+}
+
+/* Make tables more modern */
+.md-typeset table:not([class]) {
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.md-typeset table:not([class]) th {
+  background: linear-gradient(135deg, var(--eka-gradient-start), var(--eka-gradient-end));
+  color: white;
+  font-weight: 600;
 }
 
 /* Improve button styling */
@@ -74,9 +132,77 @@
   padding-top: 1.2rem;
 }
 
+/* Cards and sections styling */
+.md-typeset .highlight {
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+/* Feature list styling */
+.md-typeset ul li strong {
+  color: var(--md-primary-fg-color);
+  font-weight: 600;
+}
+
+/* Enhance admonitions */
+.md-typeset .admonition {
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+/* Landing page specific improvements */
+.md-content article > p:first-of-type em {
+  display: block;
+  text-align: center;
+  font-size: 1.25rem;
+  color: var(--md-default-fg-color--light);
+  margin: 2rem 0;
+  font-style: normal;
+  background: linear-gradient(135deg, var(--eka-gradient-start), var(--eka-gradient-end));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 500;
+}
+
+/* Make the "See It In Action" section stand out */
+.md-typeset h2:has(+ p:contains("KARMA provides a rich CLI")) {
+  background: linear-gradient(135deg, var(--eka-gradient-start), var(--eka-gradient-end));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 600;
+}
+
+/* Improve link styling */
+.md-typeset a {
+  color: var(--md-primary-fg-color);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.2s ease;
+}
+
+.md-typeset a:hover {
+  border-bottom-color: var(--md-primary-fg-color);
+}
+
 /* Dark mode adjustments */
 [data-md-color-scheme="slate"] {
-  --md-primary-fg-color: #8A7EE8;
-  --md-primary-fg-color--light: #A294F0;
-  --md-primary-fg-color--dark: #6B5CE0;
+  --md-primary-fg-color: #8b5cf6;
+  --md-primary-fg-color--light: #a78bfa;
+  --md-primary-fg-color--dark: #7c3aed;
+  --eka-gradient-start: #8b5cf6;
+  --eka-gradient-end: #a78bfa;
+}
+
+/* Responsive improvements */
+@media screen and (max-width: 76.1875em) {
+  .md-typeset h1:first-child {
+    font-size: 2rem;
+  }
+}
+
+/* Smooth animations */
+* {
+  transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
 }
