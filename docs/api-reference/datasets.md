@@ -21,7 +21,7 @@ The foundation for all multimodal evaluation datasets in KARMA.
 
 ### Medical Question Answering
 
-#### MedQADataset
+#### MedQADataset (openlifescienceai/medqa)
 
 Medical Question Answering dataset.
 
@@ -34,7 +34,7 @@ Medical Question Answering dataset.
       filters: ["!^_"]
       merge_init_into_class: true
 
-#### PubMedMCQADataset
+#### PubMedMCQADataset (openlifescienceai/pubmedqa)
 
 PubMed Multiple Choice Question Answering dataset.
 
@@ -47,7 +47,7 @@ PubMed Multiple Choice Question Answering dataset.
       filters: ["!^_"]
       merge_init_into_class: true
 
-#### MedMCQADataset
+#### MedMCQADataset (openlifescienceai/medmcqa)
 
 Medical Multiple Choice Question Answering dataset.
 
@@ -60,7 +60,7 @@ Medical Multiple Choice Question Answering dataset.
       filters: ["!^_"]
       merge_init_into_class: true
 
-#### MedXpertQADataset
+#### MedXpertQADataset (ChuGyouk/MedXpertQA)
 
 Medical Expert Question Answering dataset.
 
@@ -75,7 +75,7 @@ Medical Expert Question Answering dataset.
 
 ### Vision-Language Datasets
 
-#### SLAKEDataset
+#### SLAKEDataset (mdwiratathya/SLAKE-vqa-english)
 
 Structured Language And Knowledge Extraction dataset for medical VQA.
 
@@ -88,7 +88,7 @@ Structured Language And Knowledge Extraction dataset for medical VQA.
       filters: ["!^_"]
       merge_init_into_class: true
 
-#### VQARADDataset
+#### VQARADDataset (flaviagiammarino/vqa-rad)
 
 Visual Question Answering for Radiology dataset.
 
@@ -103,7 +103,7 @@ Visual Question Answering for Radiology dataset.
 
 ### Language and Speech Datasets
 
-#### IN22ConvDataset
+#### IN22ConvDataset (ai4bharat/IN22-Conv)
 
 Indic Language Conversation Translation dataset.
 
@@ -116,7 +116,7 @@ Indic Language Conversation Translation dataset.
       filters: ["!^_"]
       merge_init_into_class: true
 
-#### IndicVoicesRDataset
+#### IndicVoicesRDataset (ai4bharat/indicvoices_r)
 
 Indic Voices Recognition dataset for ASR evaluation.
 
@@ -133,11 +133,63 @@ Indic Voices Recognition dataset for ASR evaluation.
 
 Medical benchmarks from the MMLU suite.
 
-#### MMLUProfessionalMedicineDataset
+#### MMLUProfessionalMedicineDataset (openlifescienceai/mmlu_professional_medicine)
 
 MMLU Professional Medicine dataset.
 
 ::: karma.eval_datasets.mmlu_medical_datasets.MMLUProfessionalMedicineDataset
+    options:
+      show_source: false
+      show_root_heading: true
+      show_category_heading: true
+      members_order: source
+      filters: ["!^_"]
+      merge_init_into_class: true
+
+#### MMLUAnatomyDataset (openlifescienceai/mmlu_anatomy)
+
+MMLU Anatomy dataset.
+
+::: karma.eval_datasets.mmlu_medical_datasets.MMLUAnatomyDataset
+    options:
+      show_source: false
+      show_root_heading: true
+      show_category_heading: true
+      members_order: source
+      filters: ["!^_"]
+      merge_init_into_class: true
+
+#### MMLUCollegeBiologyDataset (openlifescienceai/mmlu_college_biology)
+
+MMLU College Biology dataset.
+
+::: karma.eval_datasets.mmlu_medical_datasets.MMLUCollegeBiologyDataset
+    options:
+      show_source: false
+      show_root_heading: true
+      show_category_heading: true
+      members_order: source
+      filters: ["!^_"]
+      merge_init_into_class: true
+
+#### MMLUClinicalKnowledgeDataset (openlifescienceai/mmlu_clinical_knowledge)
+
+MMLU Clinical Knowledge dataset.
+
+::: karma.eval_datasets.mmlu_medical_datasets.MMLUClinicalKnowledgeDataset
+    options:
+      show_source: false
+      show_root_heading: true
+      show_category_heading: true
+      members_order: source
+      filters: ["!^_"]
+      merge_init_into_class: true
+
+#### MMLUCollegeMedicineDataset (openlifescienceai/mmlu_college_medicine)
+
+MMLU College Medicine dataset.
+
+::: karma.eval_datasets.mmlu_medical_datasets.MMLUCollegeMedicineDataset
     options:
       show_source: false
       show_root_heading: true
@@ -166,10 +218,10 @@ Pydantic model for multimodal dataset samples.
 ### Basic Dataset Usage
 
 ```python
-from karma.eval_datasets.pubmedmcqa_dataset import PubMedMCQADataset
+from karma.registries.dataset_registry import dataset_registry
 
-# Initialize dataset
-dataset = PubMedMCQADataset(split="test")
+# Initialize dataset using registry
+dataset = dataset_registry.create_dataset("openlifescienceai/pubmedmcqa")
 
 # Load data
 data = dataset.load_data()
@@ -363,7 +415,7 @@ except Exception as e:
 from torch.utils.data import DataLoader
 
 # Use DataLoader for efficient batching
-dataset = MedMCQADataset(split="test")
+dataset = dataset_registry.create_dataset("openlifescienceai/medmcqa")
 dataloader = DataLoader(
     dataset,
     batch_size=16,

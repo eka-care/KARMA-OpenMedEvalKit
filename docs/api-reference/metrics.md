@@ -101,20 +101,6 @@ Comprehensive ASR evaluation metrics including WER, CER, and language-specific h
       filters: ["!^_"]
       merge_init_into_class: true
 
-## GLM Processor
-
-### GLMProcessor
-
-Processor for GLM-based evaluation metrics.
-
-::: karma.metrics.glm_processor.GLMProcessor
-    options:
-      show_source: false
-      show_root_heading: true
-      show_category_heading: true
-      members_order: source
-      filters: ["!^_"]
-      merge_init_into_class: true
 
 ## Usage Examples
 

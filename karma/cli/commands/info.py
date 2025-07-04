@@ -44,7 +44,7 @@ def info_model(ctx, model_name, show_code):
     including its class details, module location, and implementation info.
 
     Examples:
-        karma info model qwen
+        karma info model "Qwen/Qwen3-0.6B"
         karma info model medgemma --show-code
     """
     console = ctx.obj["console"]
@@ -62,8 +62,9 @@ def info_model(ctx, model_name, show_code):
             console.print(f"Available models: {', '.join(available_models)}")
             raise click.Abort()
 
-        # Get model class
-        model_class = model_registry.get_model(model_name)
+        # Get model meta and class
+        model_meta = model_registry.get_model_meta(model_name)
+        model_class = model_meta.get_loader_class()
 
         # Prepare model info
         model_info = {
@@ -110,12 +111,16 @@ def info_model(ctx, model_name, show_code):
         except Exception:
             pass
 
+        # Show usage examples
+        _show_model_examples(console, model_name)
+
         console.print(
             f"\n{ClickFormatter.success('Model information retrieved successfully')}"
         )
 
     except Exception as e:
         console.print(ClickFormatter.error(f"Failed to get model info: {str(e)}"))
+        raise e
         raise click.Abort()
 
 
@@ -134,7 +139,7 @@ def info_dataset(ctx, dataset_name, show_examples, show_code):
     including its requirements, supported metrics, and usage examples.
 
     Examples:
-        karma info dataset pubmedqa
+        karma info dataset openlifescienceai/pubmedqa
         karma info dataset in22conv --show-examples
         karma info dataset slake --show-code
     """
@@ -258,6 +263,9 @@ def info_system(ctx, cache_path):
         console.print(f"\n[cyan]Dependencies:[/cyan]")
         _check_dependencies(console)
 
+        # Show usage examples
+        _show_system_examples(console)
+
         console.print(
             f"\n{ClickFormatter.success('System information retrieved successfully')}"
         )
@@ -265,6 +273,70 @@ def info_system(ctx, cache_path):
     except Exception as e:
         console.print(ClickFormatter.error(f"Failed to get system info: {str(e)}"))
         raise click.Abort()
+
+
+def _show_model_examples(console: Console, model_name: str) -> None:
+    """
+    Show usage examples for a model.
+
+    Args:
+        console: Rich console for output
+        model_name: Name of the model
+    """
+    console.print(f"\n[cyan]Usage Examples:[/cyan]")
+
+    # Basic evaluation
+    console.print(f"\n[green]Basic evaluation:[/green]")
+    console.print(
+        f'  karma eval --model "{model_name}" --datasets openlifescienceai/pubmedqa'
+    )
+
+    # With multiple datasets
+    console.print(f"\n[blue]With multiple datasets:[/blue]")
+    console.print(f'  karma eval --model "{model_name}" \\')
+    console.print(
+        f"    --datasets openlifescienceai/pubmedqa,openlifescienceai/mmlu_professional_medicine"
+    )
+
+    # With custom arguments
+    console.print(f"\n[yellow]With custom arguments:[/yellow]")
+    console.print(f'  karma eval --model "{model_name}" \\')
+    console.print(f"    --datasets openlifescienceai/pubmedqa \\")
+    console.print(f"    --max-samples 100 --batch-size 4")
+
+    # Interactive mode
+    console.print(f"\n[magenta]Interactive mode:[/magenta]")
+    console.print(f'  karma eval --model "{model_name}" --interactive')
+
+
+def _show_system_examples(console: Console) -> None:
+    """
+    Show usage examples for system commands.
+
+    Args:
+        console: Rich console for output
+    """
+    console.print(f"\n[cyan]Usage Examples:[/cyan]")
+
+    # List available resources
+    console.print(f"\n[green]List available resources:[/green]")
+    console.print(f"  karma list models")
+    console.print(f"  karma list datasets")
+
+    # Get detailed information
+    console.print(f"\n[blue]Get detailed information:[/blue]")
+    console.print(f'  karma info model "Qwen/Qwen3-0.6B"')
+    console.print(f"  karma info dataset openlifescienceai/pubmedqa")
+
+    # Run evaluation
+    console.print(f"\n[yellow]Run evaluation:[/yellow]")
+    console.print(
+        f'  karma eval --model "Qwen/Qwen3-0.6B" --datasets openlifescienceai/pubmedqa'
+    )
+
+    # Check cache status
+    console.print(f"\n[magenta]Check cache status:[/magenta]")
+    console.print(f"  karma info system --cache-path ./cache.db")
 
 
 def _show_dataset_examples(
@@ -288,7 +360,7 @@ def _show_dataset_examples(
     if not required_args:
         console.print(f"\n[green]Basic usage:[/green]")
         console.print(
-            f'  karma eval --model qwen --model-path "path/to/model" --datasets {dataset_name}'
+            f'  karma eval --model "Qwen/Qwen3-0.6B"  --datasets {dataset_name}'
         )
 
     # Usage with required arguments
@@ -304,7 +376,7 @@ def _show_dataset_examples(
                 example_args.append(f"{arg}=<value>")
 
         args_str = ",".join(example_args)
-        console.print(f'  karma eval --model qwen --model-path "path/to/model" \\')
+        console.print(f'  karma eval --model "Qwen/Qwen3-0.6B"  \\')
         console.print(f"    --datasets {dataset_name} \\")
         console.print(f'    --dataset-args "{dataset_name}:{args_str}"')
 
@@ -329,14 +401,14 @@ def _show_dataset_examples(
 
         if all_args:
             args_str = ",".join(all_args)
-            console.print(f'  karma eval --model qwen --model-path "path/to/model" \\')
+            console.print(f'  karma eval --model "Qwen/Qwen3-0.6B" \\')
             console.print(f"    --datasets {dataset_name} \\")
             console.print(f'    --dataset-args "{dataset_name}:{args_str}"')
 
     # Show interactive mode
     if required_args:
         console.print(f"\n[magenta]Interactive mode (prompts for arguments):[/magenta]")
-        console.print(f'  karma eval --model qwen --model-path "path/to/model" \\')
+        console.print(f'  karma eval --model "Qwen/Qwen3-0.6B" \\')
         console.print(f"    --datasets {dataset_name} --interactive")
 
 

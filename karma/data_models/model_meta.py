@@ -193,11 +193,10 @@ class ModelMeta(BaseModel):
         """
         return {
             "name": self.name,
-            "type": self.model_type.value,
-            "modalities": [m.value for m in self.modalities],
+            "type": self.model_type,
+            "modalities": [m for m in self.modalities],
             "parameters": self.n_parameters,
             "languages": self.languages,
-            "medical_domains": self.medical_domains,
             "framework": self.framework,
             "version": self.version or self.revision,
         }

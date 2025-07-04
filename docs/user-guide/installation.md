@@ -2,14 +2,6 @@
 
 This guide provides detailed installation instructions for KARMA on different platforms and environments.
 
-## System Requirements
-
-- **Python**: 3.12 or higher
-- **Operating System**: Linux, macOS, or Windows
-- **Memory**: 8GB RAM minimum, 16GB recommended
-- **Storage**: 10GB free space for models and cache
-- **GPU**: Optional but recommended for faster inference
-
 ## Installation Methods
 
 ### Method 1: Using uv (Recommended)
@@ -93,77 +85,7 @@ For building documentation locally:
 uv install --group docs
 
 # With pip
-pip install mkdocs mkdocs-material mkdocstrings[python] mkdocs-llmstxt
-```
-
-## Platform-Specific Instructions
-
-### macOS
-
-```bash
-# Install Homebrew if you haven't already
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-
-# Install Python 3.12
-brew install python@3.12
-
-# Install uv
-brew install uv
-
-# Follow standard installation
-git clone https://github.com/eka-care/KARMA-OpenMedEvalKit.git
-cd KARMA-OpenMedEvalKit
-uv install
-```
-
-### Linux (Ubuntu/Debian)
-
-```bash
-# Update package list
-sudo apt update
-
-# Install Python 3.12
-sudo apt install python3.12 python3.12-venv python3.12-dev
-
-# Install uv
-curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# Follow standard installation
-git clone https://github.com/eka-care/KARMA-OpenMedEvalKit.git
-cd KARMA-OpenMedEvalKit
-uv install
-```
-
-### Windows
-
-```powershell
-# Install Python 3.12 from python.org or Microsoft Store
-
-# Install uv
-powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
-
-# Follow standard installation
-git clone https://github.com/eka-care/KARMA-OpenMedEvalKit.git
-cd KARMA-OpenMedEvalKit
-uv install
-```
-
-## GPU Support
-
-KARMA automatically detects and uses available GPUs. For optimal performance:
-
-### NVIDIA GPUs
-
-```bash
-# Install CUDA-enabled PyTorch (if not already installed)
-pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
-```
-
-### Apple Silicon (M1/M2/M3)
-
-```bash
-# PyTorch with Metal Performance Shaders support is included by default
-# No additional installation needed
+pip install "karma[docs]"
 ```
 
 ## Environment Configuration
@@ -190,50 +112,10 @@ OPENAI_API_KEY=your_openai_key
 # DYNAMODB_TABLE_NAME=karma-cache
 ```
 
-## Verification
+#### HuggingFace Token
+To access gated models or datasets, set this environment variable with your Huggingface token.
 
-Test your installation:
-
-```bash
-# Check version
-karma --version
-
-# List available models
-karma list models
-
-# List available datasets
-karma list datasets
-
-# Run a quick test evaluation
-karma eval --model qwen --model-path "Qwen/Qwen3-0.6B" --datasets pubmedqa --batch-size 1
-```
-
-## Troubleshooting
-
-### Common Issues
-
-#### ImportError: No module named 'karma'
-
-```bash
-# Make sure you're in the correct directory
-cd KARMA-OpenMedEvalKit
-
-# Reinstall in editable mode
-pip install -e .
-```
-
-#### CUDA/GPU Issues
-
-```bash
-# Check PyTorch GPU availability
-python -c "import torch; print(torch.cuda.is_available())"
-
-# For Apple Silicon
-python -c "import torch; print(torch.backends.mps.is_available())"
-```
-
-#### HuggingFace Token Issues
-
+You can see the guide to create tokens [here](https://huggingface.co/docs/hub/en/security-tokens) 
 ```bash
 # Login to HuggingFace
 huggingface-cli login
@@ -241,28 +123,6 @@ huggingface-cli login
 # Or set environment variable
 export HUGGINGFACE_TOKEN=your_token_here
 ```
-
-#### Permission Errors
-
-```bash
-# On Linux/macOS, ensure proper permissions
-chmod +x karma
-
-# If using pip, try with --user flag
-pip install --user -e .
-```
-
-### Getting Help
-
-If you encounter issues:
-
-1. Check the [FAQ](https://github.com/eka-care/KARMA-OpenMedEvalKit/wiki/FAQ)
-2. Search existing [Issues](https://github.com/eka-care/KARMA-OpenMedEvalKit/issues)
-3. Create a new issue with:
-   - Your operating system
-   - Python version
-   - Installation method used
-   - Full error message
 
 ## Next Steps
 
