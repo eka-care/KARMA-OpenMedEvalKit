@@ -4,9 +4,9 @@ This section documents KARMA's model system, including base classes, built-in mo
 
 ## Base Classes
 
-### BaseHFModel
+### BaseModel
 
-The foundation for all HuggingFace-based models in KARMA.
+The foundation for all models in KARMA.
 
 ::: karma.models.base_model_abs.BaseModel
     options:
@@ -32,11 +32,11 @@ Qwen language model with specialized thinking capabilities.
       filters: ["!^_"]
       merge_init_into_class: true
 
-### MedGemmaModel
+### MedGemmaLLM
 
 Google's MedGemma model for medical applications.
 
-::: karma.models.medgemma.MedGemmaModel
+::: karma.models.medgemma.MedGemmaLLM
     options:
       show_source: false
       show_root_heading: true
@@ -118,11 +118,11 @@ print(response)
 ### Custom Model Integration
 
 ```python
-from karma.models.base_model_abs import BaseHFModel
+from karma.models.base_model_abs import BaseModel
 from karma.data_models.model_meta import ModelMeta, ModelType, ModalityType
 from karma.registries.model_registry import register_model_meta
 
-class CustomMedicalModel(BaseHFModel):
+class CustomMedicalModel(BaseModel):
     """Custom medical AI model."""
     
     def __init__(self, model_name_or_path: str, **kwargs):

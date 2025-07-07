@@ -235,7 +235,8 @@ print(f"English WER: {results_en['wer']:.3f}")
 ### Batch Evaluation
 
 ```python
-from karma.metrics.common_metrics import ExactMatchMetric, BleuMetric, AccuracyMetric
+from karma.metrics.common_metrics import ExactMatchMetric, BleuMetric
+from karma.registries.metrics_registry import get_metric
 
 class BatchEvaluator:
     """Utility class for batch evaluation with multiple metrics."""
@@ -244,7 +245,7 @@ class BatchEvaluator:
         self.metrics = {
             'exact_match': ExactMatchMetric(),
             'bleu': BleuMetric(),
-            'accuracy': AccuracyMetric()
+            'accuracy': get_metric('accuracy')  # Uses HuggingFace accuracy metric
         }
     
     def evaluate_all(self, predictions, references):

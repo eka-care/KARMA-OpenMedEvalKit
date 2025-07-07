@@ -87,7 +87,6 @@ plugins:
         User Guide:
           - user-guide/installation.md
           - user-guide/basic-usage.md
-          - user-guide/advanced-usage.md
           - user-guide/processor-usage.md
         API Reference:
           - api-reference/models.md
@@ -104,8 +103,20 @@ nav:
   - Getting Started: getting-started.md
   - User Guide:
     - Installation: user-guide/installation.md
-    - Basic Usage: user-guide/basic-usage.md
-    - Advanced Usage: user-guide/advanced-usage.md
+    - Basic Usage:
+      - user-guide/basic-usage/index.md
+      - CLI Basics: user-guide/basic-usage/cli-basics.md
+      - Running Evaluations: user-guide/basic-usage/running-evaluations.md
+      - Performance Optimization: user-guide/basic-usage/performance-optimization.md
+      - Troubleshooting: user-guide/basic-usage/troubleshooting.md
+    - Models:
+      - user-guide/models/index.md
+      - user-guide/models/overview.md
+      - user-guide/models/built-in-models.md
+      - user-guide/models/model-configuration.md
+    - Metrics:
+      - user-guide/metrics/index.md
+      - user-guide/metrics/overview.md
     - Adding HuggingFace Datasets: user-guide/adding-datasets-from-huggingface.md
     - Processor Usage: user-guide/processor-usage.md
   - API Reference:

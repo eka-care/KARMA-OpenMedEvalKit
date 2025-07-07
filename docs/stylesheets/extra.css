@@ -45,8 +45,9 @@
 
 /* Enhance table of contents */
 .md-nav--secondary .md-nav__link {
-  font-size: 0.85rem;
-  padding: 2px 12px;
+  font-size: 0.75rem;
+  padding: 1px 8px;
+  line-height: 1.2;
 }
 
 /* Beautiful gradient header matching Eka Care */

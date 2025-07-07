@@ -125,15 +125,15 @@ test/add-integration-tests
 
 ### Adding a New Model
 
-1. Create your model class by inheriting from `BaseHFModel`:
+1. Create your model class by inheriting from `BaseModel`:
 
 ```python
 # karma/models/my_model.py
-from karma.models.base_model_abs import BaseHFModel
+from karma.models.base_model_abs import BaseModel
 from karma.data_models.model_meta import ModelMeta, ModelType, ModalityType
 from karma.registries.model_registry import register_model_meta
 
-class MyMedicalModel(BaseHFModel):
+class MyMedicalModel(BaseModel):
     """My custom medical model."""
     
     def __init__(self, model_name_or_path: str, **kwargs):

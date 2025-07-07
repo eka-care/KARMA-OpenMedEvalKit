@@ -141,7 +141,9 @@ The output is saved in results.json and also in the printed to the console.
 
 
 ```json
->$ karma eval --model Qwen/Qwen3-0.6B  --datasets "openlifescienceai/pubmedqa" --batch-size 1 --model-kwargs '{"temperature":0.5, "enable_thinking": false}' --max-samples 3
+>$ karma eval --model qwen --model-path "Qwen/Qwen3-0.6B" \
+  --datasets "openlifescienceai/pubmedqa" --batch-size 1 \
+  --model-kwargs '{"temperature":0.5, "enable_thinking": false}' --max-samples 3
 
 
                                        Evaluation Results                                        
@@ -193,5 +195,4 @@ The results.json file will look like this.
 
 - **Explore datasets**: Check out our [Dataset Guide](user-guide/basic-usage.md) to learn about available medical datasets
 - **Add custom models**: See the [API Reference](api-reference/models.md) for integrating your own models
-- **Advanced features**: Learn about caching, batch processing, and more in [Advanced Usage](user-guide/advanced-usage.md)
 - **Contributing**: Help improve KARMA by reading our [Contributing Guide](contributing.md)

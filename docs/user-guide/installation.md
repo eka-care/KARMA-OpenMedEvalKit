@@ -88,6 +88,12 @@ uv install --group docs
 pip install "karma[docs]"
 ```
 
+### Install with all dependencies in developer mode
+```bash
+With uv
+uv sync --all-extras
+```
+
 ## Environment Configuration
 
 Create a `.env` file in your project root:
@@ -127,5 +133,4 @@ export HUGGINGFACE_TOKEN=your_token_here
 ## Next Steps
 
 - **First time user?** Continue to [Basic Usage](basic-usage.md)
-- **Need advanced features?** Check out [Advanced Usage](advanced-usage.md)
 - **Want to contribute?** See our [Contributing Guide](../contributing.md)
