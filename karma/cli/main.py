@@ -12,6 +12,7 @@ from rich.traceback import install
 from karma.cli.commands.eval import eval_cmd
 from karma.cli.commands.list import list_cmd
 from karma.cli.commands.info import info_cmd
+from karma.cli.commands.interactive import interactive_cmd
 
 import logging
 from rich.logging import RichHandler
@@ -62,6 +63,7 @@ def karma(ctx, verbose, quiet):
 karma.add_command(eval_cmd)
 karma.add_command(list_cmd)
 karma.add_command(info_cmd)
+karma.add_command(interactive_cmd, name="interactive")
 
 
 def main():

@@ -16,6 +16,8 @@ from rich.prompt import Prompt
 
 from karma.registries.dataset_registry import dataset_registry
 from karma.registries.processor_registry import processor_registry
+from karma.registries.model_registry import model_registry
+from karma.data_models.model_meta import ModalityType
 
 
 def parse_dataset_args(dataset_args_str: str) -> Dict[str, Dict[str, Any]]:
@@ -339,12 +341,12 @@ def prompt_for_missing_args(
 
 
 def prompt_for_missing_processor_args(
-    dataset_name: str, 
-    processor_name: str, 
-    missing_args: List[str], 
-    optional_args: List[str], 
+    dataset_name: str,
+    processor_name: str,
+    missing_args: List[str],
+    optional_args: List[str],
     default_args: Dict[str, Any],
-    console: Optional[Console] = None
+    console: Optional[Console] = None,
 ) -> Dict[str, str]:
     """
     Interactively prompt user for missing processor arguments.
@@ -368,14 +370,14 @@ def prompt_for_missing_processor_args(
     )
 
     args = {}
-    
+
     # Prompt for required arguments
     if missing_args:
         console.print(f"[red]Required arguments:[/red]")
         for arg_name in missing_args:
             value = Prompt.ask(f"Enter value for [cyan]{arg_name}[/cyan]")
             args[arg_name] = value
-    
+
     # Prompt for optional arguments
     if optional_args:
         console.print(f"[blue]Optional arguments (press Enter to use default):[/blue]")
@@ -383,12 +385,11 @@ def prompt_for_missing_processor_args(
             default_value = default_args.get(arg_name, "")
             default_display = f" (default: {default_value})" if default_value else ""
             value = Prompt.ask(
-                f"Enter value for [cyan]{arg_name}[/cyan]{default_display}",
-                default=""
+                f"Enter value for [cyan]{arg_name}[/cyan]{default_display}", default=""
             )
             if value:  # Only add if user provided a value
                 args[arg_name] = value
-    
+
     return args
 
 
@@ -476,3 +477,247 @@ class ClickFormatter:
     def highlight(text: str) -> str:
         """Highlight important text."""
         return f"[cyan]{text}[/cyan]"
+
+
+def get_compatible_datasets_for_model(model_name: str) -> List[str]:
+    """
+    Get datasets compatible with the selected model based on modalities.
+
+    Args:
+        model_name: Name of the model
+
+    Returns:
+        List of compatible dataset names
+    """
+    if not model_name or not model_registry.is_registered(model_name):
+        return dataset_registry.list_datasets()
+
+    try:
+        model_meta = model_registry.get_model_meta(model_name)
+        model_modalities = set(model_meta.modalities)
+
+        # Get all datasets and filter by compatibility
+        all_datasets = dataset_registry.list_datasets()
+        compatible_datasets = set()  # Use set to avoid duplicates
+
+        for dataset_name in all_datasets:
+            try:
+                dataset_info = dataset_registry.get_dataset_info(dataset_name)
+                task_type = dataset_info.get("task_type", "")
+
+                is_compatible = False
+
+                # Basic compatibility rules
+                # Text models can handle text-based tasks (mcqa, qa, translation, etc.)
+                if ModalityType.TEXT in model_modalities:
+                    if task_type in [
+                        "mcqa",
+                        "qa",
+                        "translation",
+                        "text_classification",
+                        "summarization",
+                    ]:
+                        is_compatible = True
+
+                # Vision models can handle image-based tasks
+                if ModalityType.IMAGE in model_modalities:
+                    if task_type in ["vqa", "image_classification", "object_detection"]:
+                        is_compatible = True
+
+                # Audio models can handle audio-based tasks
+                if ModalityType.AUDIO in model_modalities:
+                    if task_type in [
+                        "asr",
+                        "audio_classification",
+                        "speech_translation",
+                    ]:
+                        is_compatible = True
+
+                # Multi-modal models can handle various tasks
+                if len(model_modalities) > 1:
+                    is_compatible = True
+
+                if is_compatible:
+                    compatible_datasets.add(dataset_name)
+
+            except Exception:
+                # If we can't determine compatibility, include it anyway
+                compatible_datasets.add(dataset_name)
+
+        # Convert set back to list, maintaining original order from registry
+        return [dataset for dataset in all_datasets if dataset in compatible_datasets]
+
+    except Exception:
+        # If there's any error, return all datasets
+        return dataset_registry.list_datasets()
+
+
+def get_compatible_processors_for_datasets(dataset_names: List[str]) -> List[str]:
+    """
+    Get processors compatible with the selected datasets based on task types.
+
+    Args:
+        dataset_names: List of dataset names
+
+    Returns:
+        List of compatible processor names
+    """
+    if not dataset_names:
+        return processor_registry.list_processors()
+
+    try:
+        task_types = set()
+
+        # Gather all task types from selected datasets
+        for dataset_name in dataset_names:
+            try:
+                dataset_info = dataset_registry.get_dataset_info(dataset_name)
+                task_type = dataset_info.get("task_type", "")
+                if task_type:
+                    task_types.add(task_type)
+            except Exception:
+                continue
+
+        # Get all processors - for now, return all since processor compatibility
+        # with specific task types isn't explicitly defined in the current schema
+        # This can be enhanced by adding task_type compatibility to processor metadata
+        all_processors = processor_registry.list_processors()
+
+        # Basic filtering based on processor names and task types
+        compatible_processors = []
+
+        for processor_name in all_processors:
+            # General text processors are compatible with text-based tasks
+            if any(
+                task in ["mcqa", "qa", "translation", "text_classification"]
+                for task in task_types
+            ):
+                if (
+                    "text" in processor_name.lower()
+                    or "general" in processor_name.lower()
+                ):
+                    compatible_processors.append(processor_name)
+
+            # Language-specific processors
+            if "translation" in task_types:
+                if (
+                    "transliterat" in processor_name.lower()
+                    or "multilingual" in processor_name.lower()
+                ):
+                    compatible_processors.append(processor_name)
+
+            # Always include general processors
+            if "general" in processor_name.lower():
+                compatible_processors.append(processor_name)
+
+        # If no specific matches, return all processors
+        if not compatible_processors:
+            return all_processors
+
+        # Remove duplicates while preserving order
+        return list(dict.fromkeys(compatible_processors))
+
+    except Exception:
+        # If there's any error, return all processors
+        return processor_registry.list_processors()
+
+
+def get_model_compatibility_info(model_name: str) -> Dict[str, Any]:
+    """
+    Get detailed compatibility information for a model.
+
+    Args:
+        model_name: Name of the model
+
+    Returns:
+        Dictionary with compatibility information
+    """
+    if not model_registry.is_registered(model_name):
+        return {
+            "model_exists": False,
+            "modalities": [],
+            "model_type": None,
+            "compatible_datasets": [],
+            "compatible_task_types": [],
+        }
+
+    try:
+        model_meta = model_registry.get_model_meta(model_name)
+        compatible_datasets = get_compatible_datasets_for_model(model_name)
+
+        # Determine compatible task types
+        compatible_task_types = set()
+        for dataset_name in compatible_datasets:
+            try:
+                dataset_info = dataset_registry.get_dataset_info(dataset_name)
+                task_type = dataset_info.get("task_type")
+                if task_type:
+                    compatible_task_types.add(task_type)
+            except Exception:
+                continue
+
+        return {
+            "model_exists": True,
+            "modalities": [mod.value for mod in model_meta.modalities],
+            "model_type": model_meta.model_type.value,
+            "compatible_datasets": compatible_datasets,
+            "compatible_task_types": list(compatible_task_types),
+        }
+
+    except Exception as e:
+        return {
+            "model_exists": True,
+            "modalities": [],
+            "model_type": None,
+            "compatible_datasets": [],
+            "compatible_task_types": [],
+            "error": str(e),
+        }
+
+
+def filter_datasets_by_task_type(datasets: List[str], task_type: str) -> List[str]:
+    """
+    Filter datasets by task type.
+
+    Args:
+        datasets: List of dataset names to filter
+        task_type: Task type to filter by
+
+    Returns:
+        Filtered list of dataset names
+    """
+    filtered_datasets = []
+
+    for dataset_name in datasets:
+        try:
+            dataset_info = dataset_registry.get_dataset_info(dataset_name)
+            if dataset_info.get("task_type") == task_type:
+                filtered_datasets.append(dataset_name)
+        except Exception:
+            continue
+
+    return filtered_datasets
+
+
+def get_dataset_task_types(datasets: List[str]) -> List[str]:
+    """
+    Get unique task types from a list of datasets.
+
+    Args:
+        datasets: List of dataset names
+
+    Returns:
+        List of unique task types
+    """
+    task_types = set()
+
+    for dataset_name in datasets:
+        try:
+            dataset_info = dataset_registry.get_dataset_info(dataset_name)
+            task_type = dataset_info.get("task_type")
+            if task_type:
+                task_types.add(task_type)
+        except Exception:
+            continue
+
+    return sorted(list(task_types))
