@@ -1,8 +1,8 @@
 import logging
-from typing import List, Dict, Union, Any, Optional
+import os
+from typing import List
 import torch
-import librosa  # type: ignore
-import numpy as np
+import librosa
 from transformers import AutoModel
 from io import BytesIO
 from karma.models.base_model_abs import BaseModel
@@ -48,6 +48,14 @@ class IndicConformerASR(BaseModel):
 
     def load_model(self) -> None:
         """Load the ASR model."""
+        # login to HF
+        from huggingface_hub import login
+
+        try:
+            login(os.getenv("HUGGINGFACE_TOKEN"))
+        except ValueError:
+            logger.warning("HF token not found, will not login.")
+
         self.model = AutoModel.from_pretrained(
             self.model_name_or_path,
             trust_remote_code=True,
@@ -115,7 +123,9 @@ class IndicConformerASR(BaseModel):
             List of preprocessed audio tensors
         """
         audio, _ = librosa.load(BytesIO(input_item.audio), sr=self.target_sample_rate)
-        wav_tensor = torch.tensor(audio, dtype=torch.float32).unsqueeze(0).to(self.device)
+        wav_tensor = (
+            torch.tensor(audio, dtype=torch.float32).unsqueeze(0).to(self.device)
+        )
         return wav_tensor
 
     def postprocess(self, model_outputs: List[str], **kwargs) -> List[str]:
