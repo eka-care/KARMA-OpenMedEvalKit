@@ -88,6 +88,7 @@ plugins:
           - user-guide/installation.md
           - user-guide/basic-usage.md
           - user-guide/advanced-usage.md
+          - user-guide/processor-usage.md
         API Reference:
           - api-reference/models.md
           - api-reference/datasets.md
@@ -106,6 +107,7 @@ nav:
     - Basic Usage: user-guide/basic-usage.md
     - Advanced Usage: user-guide/advanced-usage.md
     - Adding HuggingFace Datasets: user-guide/adding-datasets-from-huggingface.md
+    - Processor Usage: user-guide/processor-usage.md
   - API Reference:
     - Models: api-reference/models.md
     - Datasets: api-reference/datasets.md

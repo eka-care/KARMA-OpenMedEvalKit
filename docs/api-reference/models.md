@@ -8,7 +8,7 @@ This section documents KARMA's model system, including base classes, built-in mo
 
 The foundation for all HuggingFace-based models in KARMA.
 
-::: karma.models.base_model_abs.BaseHFModel
+::: karma.models.base_model_abs.BaseModel
     options:
       show_source: false
       show_root_heading: true

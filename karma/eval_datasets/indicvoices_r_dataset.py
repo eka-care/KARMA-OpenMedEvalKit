@@ -21,8 +21,7 @@ COMMIT_HASH = "5f4495c91d500742a58d1be2ab07d77f73c0acf8"
     task_type="transcription",
     required_args=["language"],
     default_args={"language": "hindi"},
-    # processors=["general_text_processor", "multilingual_text_processor"],
-    processors=["asr_wer_preprocessor"],
+    processors=["multilingual_text_processor"],
 )
 class IndicVoicesRDataset(BaseMultimodalDataset):
     def __init__(
@@ -42,11 +41,12 @@ class IndicVoicesRDataset(BaseMultimodalDataset):
         )
         self.language = language
         self.dataset_name = f"{DATASET_NAME}-{self.language}"
-        self.dataset =  self.dataset.cast_column("audio", Audio(sampling_rate=16000, decode=False))
-
+        self.dataset = self.dataset.cast_column(
+            "audio", Audio(sampling_rate=16000, decode=False)
+        )
 
     def format_item(self, sample: Dict[str, Any]) -> DataLoaderIterable:
-        audio_info = sample.get("audio",{})
+        audio_info = sample.get("audio", {})
         audio_data = audio_info.get("bytes")
 
         return DataLoaderIterable(
