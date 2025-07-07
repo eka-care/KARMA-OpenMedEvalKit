@@ -4,8 +4,8 @@ import torch
 import librosa  # type: ignore
 import numpy as np
 from transformers import AutoModel
-
-from karma.models.base_model_abs import BaseHFModel
+from io import BytesIO
+from karma.models.base_model_abs import BaseModel
 from karma.data_models.model_meta import ModelMeta, ModelType, ModalityType
 from karma.registries.model_registry import register_model_meta
 from karma.data_models.dataloader_iterable import DataLoaderIterable
@@ -13,7 +13,7 @@ from karma.data_models.dataloader_iterable import DataLoaderIterable
 logger = logging.getLogger(__name__)
 
 
-class IndicConformerASR(BaseHFModel):
+class IndicConformerASR(BaseModel):
     """Indic Conformer ASR model for multilingual speech recognition."""
 
     def __init__(
@@ -114,11 +114,8 @@ class IndicConformerASR(BaseHFModel):
         Returns:
             List of preprocessed audio tensors
         """
-        wav_tensor = (
-            torch.tensor(input_item.audio, dtype=torch.float32)
-            .unsqueeze(0)
-            .to(self.device)
-        )
+        audio, _ = librosa.load(BytesIO(input_item.audio), sr=self.target_sample_rate)
+        wav_tensor = torch.tensor(audio, dtype=torch.float32).unsqueeze(0).to(self.device)
         return wav_tensor
 
     def postprocess(self, model_outputs: List[str], **kwargs) -> List[str]:

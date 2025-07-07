@@ -1,11 +1,12 @@
-from typing import Any, Dict, List, Optional
-
-import numpy as np
-
+from tkinter.constants import FALSE
+import torch
+from typing import Dict, Any, Generator, Optional, List
 from karma.data_models.dataloader_iterable import DataLoaderIterable
 from karma.eval_datasets.base_dataset import BaseMultimodalDataset
 from karma.registries.dataset_registry import register_dataset
 from karma.utils.audio import resample_audio
+import numpy as np
+from datasets import Audio
 
 DATASET_NAME = "ai4bharat/indicvoices_r"
 SPLIT = "test"
@@ -20,7 +21,8 @@ COMMIT_HASH = "5f4495c91d500742a58d1be2ab07d77f73c0acf8"
     task_type="transcription",
     required_args=["language"],
     default_args={"language": "hindi"},
-    processors=["general_text_processor", "multilingual_text_processor"],
+    # processors=["general_text_processor", "multilingual_text_processor"],
+    processors=["asr_wer_preprocessor"],
 )
 class IndicVoicesRDataset(BaseMultimodalDataset):
     def __init__(
@@ -40,19 +42,15 @@ class IndicVoicesRDataset(BaseMultimodalDataset):
         )
         self.language = language
         self.dataset_name = f"{DATASET_NAME}-{self.language}"
+        self.dataset =  self.dataset.cast_column("audio", Audio(sampling_rate=16000, decode=False))
+
 
     def format_item(self, sample: Dict[str, Any]) -> DataLoaderIterable:
-        audio_info = sample.get("audio", {})
-        sampling_rate = audio_info.get("sampling_rate")
-
-        audio_array = np.array(audio_info.get("array"), dtype=np.float32)
-        if sampling_rate != 16000:
-            audio_array = resample_audio(
-                audio_array, orig_sr=sampling_rate, target_sr=16000
-            )
+        audio_info = sample.get("audio",{})
+        audio_data = audio_info.get("bytes")
 
         return DataLoaderIterable(
-            audio=audio_array,
+            audio=audio_data,
             expected_output=sample.get("text", ""),
             other_args={"language": sample.get("lang", "unknown")},
         )

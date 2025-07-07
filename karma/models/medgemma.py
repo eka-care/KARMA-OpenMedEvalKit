@@ -5,16 +5,16 @@ from typing import Optional, List, Dict, Union
 import torch
 from PIL import Image
 from transformers import AutoModelForImageTextToText, AutoProcessor
-
+from io import BytesIO
 from karma.data_models.dataloader_iterable import DataLoaderIterable
-from karma.models.base_model_abs import BaseHFModel
+from karma.models.base_model_abs import BaseModel
 from karma.data_models.model_meta import ModelMeta, ModalityType, ModelType
 from karma.registries.model_registry import register_model_meta
 
 logger = logging.getLogger(__name__)
 
 
-class MedGemmaLLM(BaseHFModel):
+class MedGemmaLLM(BaseModel):
     """MedGemma language model with vision capabilities for medical applications."""
 
     def __init__(
@@ -56,6 +56,10 @@ class MedGemmaLLM(BaseHFModel):
         self.temperature = temperature
         self.top_p = top_p
         self.top_k = top_k
+
+    @staticmethod
+    def decode_image(image: bytes) -> Image.Image:
+        return Image.open(BytesIO(image))
 
     def load_model(self):
         # authenticate HF
@@ -110,7 +114,7 @@ class MedGemmaLLM(BaseHFModel):
             # Add image if provided
             if data_point.images:
                 for image in data_point.images:
-                    user_content.append({"type": "image", "image": image})
+                    user_content.append({"type": "image", "image": MedGemmaLLM.decode_image(image)})
 
             messages.append({"role": "user", "content": user_content})
 

@@ -7,7 +7,7 @@ multimodal dataset interface for visual question answering on radiology images.
 
 import logging
 from typing import Dict, Any
-
+from datasets import Image
 from karma.eval_datasets.base_dataset import BaseMultimodalDataset
 from karma.registries.dataset_registry import register_dataset
 from karma.data_models.dataloader_iterable import DataLoaderIterable
@@ -44,6 +44,7 @@ class VQARADDataset(BaseMultimodalDataset):
             **kwargs: Additional arguments passed to base class
         """
         super().__init__(**kwargs)
+        self.dataset = self.dataset.cast_column("image", Image(decode=False))
 
     def format_item(self, sample: Dict[str, Any]) -> DataLoaderIterable:
         """
@@ -57,7 +58,7 @@ class VQARADDataset(BaseMultimodalDataset):
         """
         question = sample.get("question", "")
         answer = sample.get("answer", "").lower()
-        image = sample["image"]
+        image = sample["image"]["bytes"]
 
         # Create VQA prompt
         if answer in ["yes", "no"]:

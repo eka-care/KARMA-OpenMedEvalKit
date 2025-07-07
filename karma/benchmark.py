@@ -20,7 +20,7 @@ from weave import EvaluationLogger
 from karma.cache import CacheManager
 from karma.data_models.dataloader_iterable import DataLoaderIterable
 from karma.eval_datasets.base_dataset import BaseMultimodalDataset
-from karma.models.base_model_abs import BaseHFModel
+from karma.models.base_model_abs import BaseModel
 from karma.metrics.base_metric_abs import BaseMetric
 import logging
 
@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 class Benchmark:
     def __init__(
         self,
-        model: BaseHFModel,
+        model: BaseModel,
         dataset: BaseMultimodalDataset,
         verbose_mode: bool = False,
         use_weave: bool = False,
@@ -203,7 +203,7 @@ class Benchmark:
             # Step 3: Save new results to cache
             if self.enable_cache:
                 self.logger.info(
-                    f"Starting asynchronous cache update for datapoint {results}"
+                    f"Starting asynchronous cache update for datapoint"
                 )
                 cache_thread = threading.Thread(
                     target=self.cache_manager.batch_save_rows,
@@ -245,12 +245,8 @@ class Benchmark:
             Dictionary of metric scores or None if metric not found
         """
         scores = {}
-        references = self.dataset.postprocess(
-            [it["expected_output"] for it in prediction_results]
-        )
-        predictions = self.dataset.postprocess(
-            [it["prediction"] for it in prediction_results]
-        )
+        references = self.dataset.postprocess([it["expected_output"] for it in prediction_results])
+        predictions = self.dataset.postprocess([it["prediction"] for it in prediction_results])
         for metric in metrics:
             score = metric.evaluate(predictions=predictions, references=references)
             if isinstance(score, dict):
@@ -297,7 +293,6 @@ class Benchmark:
             )
 
         if self.progress:
-            print("here")
             task = self.progress.add_task(
                 f"[cyan]Processing batches for {self.dataset.dataset_name}", total=None
             )

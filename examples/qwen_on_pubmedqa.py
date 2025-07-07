@@ -32,4 +32,3 @@ benchmark = Benchmark(
 results = benchmark.evaluate(
     {"metric": HfMetric("exact_match"), "processors": []}, batch_size=1, dry_run=False
 )
-print(results)

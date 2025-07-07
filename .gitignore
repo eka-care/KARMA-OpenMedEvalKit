@@ -235,3 +235,4 @@ api_keys.txt
 inference_results/
 evaluation_logs/
 *test.ipynb
+*.wal

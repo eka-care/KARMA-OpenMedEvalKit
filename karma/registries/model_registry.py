@@ -12,7 +12,7 @@ from typing import Dict, List, Any
 import logging
 import time
 
-from karma.models.base_model_abs import BaseHFModel
+from karma.models.base_model_abs import BaseModel
 from karma.data_models.model_meta import ModelMeta, ModelType, ModalityType
 
 logger = logging.getLogger(__name__)
@@ -68,7 +68,7 @@ class ModelRegistry:
 
         logger.debug(f"Registered ModelMeta: {name} -> {model_meta.model_type}")
 
-    def get_model(self, name: str, **override_kwargs) -> BaseHFModel:
+    def get_model(self, name: str, **override_kwargs) -> BaseModel:
         """
         Get and instantiate model by name with optional parameter overrides.
 
@@ -114,7 +114,7 @@ class ModelRegistry:
             raise ValueError(f"ModelMeta '{name}' not found. Available: {available}")
         return self.model_metas[name]
 
-    def _get_model_from_meta(self, name: str, **override_kwargs) -> BaseHFModel:
+    def _get_model_from_meta(self, name: str, **override_kwargs) -> BaseModel:
         """
         Load model using ModelMeta configuration with parameter overrides.
 

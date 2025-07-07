@@ -6,7 +6,7 @@ from PIL import Image
 from transformers import PreTrainedModel, PreTrainedTokenizer
 
 
-class BaseHFModel(ABC):
+class BaseModel(ABC):
     """
     Abstract base class for HuggingFace-based models supporting LLM, Audio, and Embedding models.
 
@@ -135,7 +135,7 @@ class BaseHFModel(ABC):
             return 0
         return sum(p.numel() for p in self.model.parameters() if p.requires_grad)
 
-    def to(self, device: str) -> "BaseHFModel":
+    def to(self, device: str) -> "BaseModel":
         """
         Move model to specified device.
 
@@ -150,7 +150,7 @@ class BaseHFModel(ABC):
         self.device = device
         return self
 
-    def eval(self) -> "BaseHFModel":
+    def eval(self) -> "BaseModel":
         """
         Set model to evaluation mode.
 
