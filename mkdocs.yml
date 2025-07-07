@@ -116,7 +116,7 @@ nav:
       - user-guide/models/model-configuration.md
     - Metrics:
       - user-guide/metrics/index.md
-      - user-guide/metrics/overview.md
+      - Overview: user-guide/metrics/overview.md
     - Adding HuggingFace Datasets: user-guide/adding-datasets-from-huggingface.md
     - Processor Usage: user-guide/processor-usage.md
   - API Reference:

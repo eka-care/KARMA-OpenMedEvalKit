@@ -128,10 +128,3 @@ karma info model qwen
 # - Usage examples
 # - Available configurations
 ```
-
-## Next Steps
-
-- **Configure models**: Learn [Model Configuration](model-configuration.md)
-- **Optimize performance**: Check [Performance Optimization](performance-optimization.md)
-- **Create custom models**: See [Custom Models](custom-models.md)
-- **Run evaluations**: Go to [Running Evaluations](../basic-usage/running-evaluations.md)

@@ -112,10 +112,3 @@ karma eval --model openai-whisper \
     "compression_ratio_threshold": 2.4
   }'
 ```
-
-## Next Steps
-
-- **Optimize performance**: See [Performance Optimization](performance-optimization.md)
-- **Create custom models**: Check [Custom Models](custom-models.md)
-- **Run evaluations**: Go to [Running Evaluations](../basic-usage/running-evaluations.md)
-- **Explore built-in models**: Return to [Built-in Models](built-in-models.md)
