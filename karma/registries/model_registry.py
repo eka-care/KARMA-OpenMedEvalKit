@@ -10,6 +10,7 @@ import importlib
 import pkgutil
 from typing import Dict, List, Any
 import logging
+import time
 
 from karma.models.base_model_abs import BaseHFModel
 from karma.data_models.model_meta import ModelMeta, ModelType, ModalityType
@@ -192,16 +193,31 @@ class ModelRegistry:
 
         return models_info
 
-    def discover_models(self):
+    def discover_models(self, use_cache: bool = True):
         """
         Automatically discover and import all model modules.
 
         This method imports all modules in the karma.models package,
-        which triggers the decorator registration.
+        which triggers the decorator registration. Uses caching for performance.
+        
+        Args:
+            use_cache: Whether to use cached discovery results (default: True)
         """
         if self._discovered:
             return
 
+        # Try to load from cache first
+        if use_cache:
+            cached_data = self._load_from_cache()
+            if cached_data:
+                logger.debug("Loaded model registry from cache")
+                self._discovered = True
+                return
+
+        # Perform discovery
+        start_time = time.time()
+        logger.debug("Starting model discovery...")
+        
         try:
             import karma.models
 
@@ -220,7 +236,62 @@ class ModelRegistry:
         except ImportError as e:
             logger.error(f"Could not import karma.models package: {e}")
 
+        discovery_time = time.time() - start_time
+        logger.debug(f"Model discovery completed in {discovery_time:.2f}s")
+        
         self._discovered = True
+        
+        # Cache the results
+        if use_cache:
+            self._save_to_cache()
+    
+    def _load_from_cache(self) -> bool:
+        """
+        Load registry data from cache.
+        
+        Returns:
+            True if cache was loaded successfully, False otherwise
+        """
+        try:
+            from karma.registries.cache_manager import get_cache_manager
+            
+            cache_manager = get_cache_manager()
+            cached_data = cache_manager.get_cached_discovery("model")
+            
+            if cached_data:
+                self.model_metas = cached_data.get("model_metas", {})
+                self.models_by_type = cached_data.get("models_by_type", {
+                    model_type: [] for model_type in ModelType
+                })
+                self.models_by_modality = cached_data.get("models_by_modality", {
+                    modality: [] for modality in ModalityType
+                })
+                return True
+                
+        except Exception as e:
+            logger.debug(f"Failed to load model registry from cache: {e}")
+            
+        return False
+    
+    def _save_to_cache(self) -> None:
+        """
+        Save current registry data to cache.
+        """
+        try:
+            from karma.registries.cache_manager import get_cache_manager
+            
+            cache_manager = get_cache_manager()
+            cache_data = {
+                "model_metas": self.model_metas,
+                "models_by_type": self.models_by_type,
+                "models_by_modality": self.models_by_modality
+            }
+            
+            cache_manager.set_cached_discovery("model", cache_data)
+            logger.debug("Saved model registry to cache")
+            
+        except Exception as e:
+            logger.debug(f"Failed to save model registry to cache: {e}")
 
     def is_registered(self, name: str) -> bool:
         """

@@ -43,7 +43,6 @@ class CacheManager:
 
         self.initialize_run(model_config, dataset_name)
 
-
     def _generate_cache_key(self, model_input: Dict[str, Any]) -> Tuple[str, str]:
         """
         Centralized cache key generation to eliminate redundancy.
@@ -205,7 +204,10 @@ class CacheManager:
         Returns:
             Dictionary mapping model inputs to cached results (None if not found)
         """
-        model_inputs = [input.model_dump() for input in model_inputs]
+        model_inputs = [
+            input.model_dump() if not isinstance(input, dict) else input
+            for input in model_inputs
+        ]
         # Use centralized batch cache key generation
         _, cache_keys = self._batch_generate_cache_keys(model_inputs)
         # Batch fetch from database

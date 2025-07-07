@@ -15,6 +15,7 @@ from karma.cli.utils import ClickFormatter
 from karma.registries.model_registry import model_registry
 from karma.registries.dataset_registry import dataset_registry
 from karma.registries.metrics_registry import metric_registry
+from karma.registries.registry_manager import discover_all_registries
 
 
 @click.group(name="list")
@@ -51,9 +52,9 @@ def list_models(ctx, output_format):
     console = ctx.obj["console"]
 
     try:
-        # Discover models
+        # Discover all registries for better performance
         console.print("[cyan]Discovering models...[/cyan]")
-        model_registry.discover_models()
+        discover_all_registries(use_cache=True, parallel=True)
 
         # Get models list
         models = model_registry.list_models()
@@ -113,9 +114,9 @@ def list_datasets(ctx, task_type, metric, output_format, show_args):
     console = ctx.obj["console"]
 
     try:
-        # Discover datasets
+        # Discover all registries for better performance  
         console.print("[cyan]Discovering datasets...[/cyan]")
-        dataset_registry.discover_datasets()
+        discover_all_registries(use_cache=True, parallel=True)
 
         # Get datasets list
         all_datasets = dataset_registry.list_datasets()
@@ -233,9 +234,9 @@ def list_metrics(ctx, output_format):
     console = ctx.obj["console"]
 
     try:
-        # Discover metrics
+        # Discover all registries for better performance
         console.print("[cyan]Discovering metrics...[/cyan]")
-        metric_registry.discover_metrics()
+        discover_all_registries(use_cache=True, parallel=True)
 
         # Get metrics list
         metrics = metric_registry.list_metrics()

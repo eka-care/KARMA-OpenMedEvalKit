@@ -160,15 +160,6 @@ INDIC_CONFORMER_MULTILINGUAL_META = ModelMeta(
     reference="https://huggingface.co/ai4bharat/indic-conformer-600m-multilingual",
     release_date="2023-06-15",
     version="1.0",
-    revision=None,
-    memory_usage_mb=None,
-    max_tokens=None,
-    embed_dim=None,
-    vision_encoder_dim=None,
-    max_image_size=None,
-    public_training_code=None,
-    public_training_data=None,
-    inference_speed_ms=None,
 )
 
 # Register model configurations

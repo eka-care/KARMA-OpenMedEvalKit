@@ -21,6 +21,7 @@ from karma.cli.utils import (
 from dotenv import load_dotenv
 from karma.registries.model_registry import model_registry
 from karma.registries.dataset_registry import dataset_registry
+from karma.registries.registry_manager import discover_all_registries
 import json
 import yaml
 import os
@@ -158,10 +159,9 @@ def eval_cmd(
     )
 
     try:
-        # Discover available models and datasets
+        # Discover available models and datasets using optimized registry manager
         console.print("[cyan]Discovering models and datasets...[/cyan]")
-        model_registry.discover_models()
-        dataset_registry.discover_datasets()
+        discover_all_registries(use_cache=True, parallel=True)
 
         # Validate model (check by ModelMeta name, not short alias)
         model_names = model_registry.list_models()

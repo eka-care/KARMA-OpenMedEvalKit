@@ -8,6 +8,7 @@ multimodal dataset interface for use with the refactored benchmark system.
 import logging
 from typing import Dict, Any, Tuple
 
+from karma.data_models.dataloader_iterable import DataLoaderIterable
 from karma.eval_datasets.base_dataset import BaseMultimodalDataset
 from karma.registries.dataset_registry import register_dataset
 
@@ -44,7 +45,7 @@ class MedMCQADataset(BaseMultimodalDataset):
         """
         super().__init__(**kwargs)
 
-    def format_item(self, sample: Dict[str, Any]) -> Dict[str, Any]:
+    def format_item(self, sample: Dict[str, Any]):
         """
         Format a sample into a text prompt for MedMCQA.
 
@@ -62,10 +63,16 @@ class MedMCQADataset(BaseMultimodalDataset):
         correct_answer = choice_labels[cop]
         prompt = f"{input_text}\n\n{CONFINEMENT_INSTRUCTIONS}"
 
-        processed_sample = {
-            "input": prompt,
-            "expected_output": correct_answer,  # Change it to Label
-        }
+        # processed_sample = {
+        #     "input": prompt,
+        #     "expected_output": correct_answer,  # Change it to Label
+        # }
+
+        processed_sample = DataLoaderIterable(
+            input=prompt,
+            expected_output=correct_answer,
+        )
+
         # Add confinement instructions to the question and options
 
         return processed_sample

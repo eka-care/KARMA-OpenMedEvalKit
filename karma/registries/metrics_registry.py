@@ -2,6 +2,7 @@ from typing import Dict, Type, List
 import pkgutil
 import importlib
 import logging
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -92,16 +93,31 @@ class MetricRegistry:
             self.discover_metrics()
         return list(self.metrics.keys())
 
-    def discover_metrics(self):
+    def discover_metrics(self, use_cache: bool = True):
         """
         Automatically discover and import all metric modules.
 
         This method imports all modules in the karma.metrics package,
-        which triggers the decorator registration.
+        which triggers the decorator registration. Uses caching for performance.
+        
+        Args:
+            use_cache: Whether to use cached discovery results (default: True)
         """
         if self._discovered:
             return
 
+        # Try to load from cache first
+        if use_cache:
+            cached_data = self._load_from_cache()
+            if cached_data:
+                logger.debug("Loaded metrics registry from cache")
+                self._discovered = True
+                return
+
+        # Perform discovery
+        start_time = time.time()
+        logger.debug("Starting metrics discovery...")
+        
         try:
             import karma.metrics
 
@@ -119,7 +135,54 @@ class MetricRegistry:
         except ImportError as e:
             logger.error(f"Could not import karma.metrics package: {e}")
 
+        discovery_time = time.time() - start_time
+        logger.debug(f"Metrics discovery completed in {discovery_time:.2f}s")
+        
         self._discovered = True
+        
+        # Cache the results
+        if use_cache:
+            self._save_to_cache()
+    
+    def _load_from_cache(self) -> bool:
+        """
+        Load registry data from cache.
+        
+        Returns:
+            True if cache was loaded successfully, False otherwise
+        """
+        try:
+            from karma.registries.cache_manager import get_cache_manager
+            
+            cache_manager = get_cache_manager()
+            cached_data = cache_manager.get_cached_discovery("metrics")
+            
+            if cached_data:
+                self.metrics = cached_data.get("metrics", {})
+                return True
+                
+        except Exception as e:
+            logger.debug(f"Failed to load metrics registry from cache: {e}")
+            
+        return False
+    
+    def _save_to_cache(self) -> None:
+        """
+        Save current registry data to cache.
+        """
+        try:
+            from karma.registries.cache_manager import get_cache_manager
+            
+            cache_manager = get_cache_manager()
+            cache_data = {
+                "metrics": self.metrics
+            }
+            
+            cache_manager.set_cached_discovery("metrics", cache_data)
+            logger.debug("Saved metrics registry to cache")
+            
+        except Exception as e:
+            logger.debug(f"Failed to save metrics registry to cache: {e}")
 
     def is_registered(self, name: str) -> bool:
         """

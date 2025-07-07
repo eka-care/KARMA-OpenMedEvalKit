@@ -9,6 +9,7 @@ import importlib
 import pkgutil
 from typing import Dict, Type, List, Optional, Any
 import logging
+import time
 
 from karma.processors.base import BaseProcessor
 from karma.utils.argument_processing import validate_registry_args, prepare_registry_metadata
@@ -149,16 +150,31 @@ class ProcessorRegistry:
             self.discover_processors()
         return list(self.processors.keys())
     
-    def discover_processors(self):
+    def discover_processors(self, use_cache: bool = True):
         """
         Automatically discover and import all processor modules.
         
         This method imports all modules in the karma.processors package,
-        which triggers the decorator registration.
+        which triggers the decorator registration. Uses caching for performance.
+        
+        Args:
+            use_cache: Whether to use cached discovery results (default: True)
         """
         if self._discovered:
             return
-            
+
+        # Try to load from cache first
+        if use_cache:
+            cached_data = self._load_from_cache()
+            if cached_data:
+                logger.debug("Loaded processor registry from cache")
+                self._discovered = True
+                return
+
+        # Perform discovery
+        start_time = time.time()
+        logger.debug("Starting processor discovery...")
+        
         try:
             import karma.processors
             
@@ -174,8 +190,55 @@ class ProcessorRegistry:
                     logger.warning(f"Could not import processor module {name}: {e}")
         except ImportError as e:
             logger.error(f"Could not import karma.processors package: {e}")
-            
+        
+        discovery_time = time.time() - start_time
+        logger.debug(f"Processor discovery completed in {discovery_time:.2f}s")
+        
         self._discovered = True
+        
+        # Cache the results
+        if use_cache:
+            self._save_to_cache()
+    
+    def _load_from_cache(self) -> bool:
+        """
+        Load registry data from cache.
+        
+        Returns:
+            True if cache was loaded successfully, False otherwise
+        """
+        try:
+            from karma.registries.cache_manager import get_cache_manager
+            
+            cache_manager = get_cache_manager()
+            cached_data = cache_manager.get_cached_discovery("processor")
+            
+            if cached_data:
+                self.processors = cached_data.get("processors", {})
+                return True
+                
+        except Exception as e:
+            logger.debug(f"Failed to load processor registry from cache: {e}")
+            
+        return False
+    
+    def _save_to_cache(self) -> None:
+        """
+        Save current registry data to cache.
+        """
+        try:
+            from karma.registries.cache_manager import get_cache_manager
+            
+            cache_manager = get_cache_manager()
+            cache_data = {
+                "processors": self.processors
+            }
+            
+            cache_manager.set_cached_discovery("processor", cache_data)
+            logger.debug("Saved processor registry to cache")
+            
+        except Exception as e:
+            logger.debug(f"Failed to save processor registry to cache: {e}")
     
     def is_registered(self, name: str) -> bool:
         """

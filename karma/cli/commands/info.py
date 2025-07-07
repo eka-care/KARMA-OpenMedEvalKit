@@ -17,6 +17,7 @@ from karma.cli.formatters.table import ModelFormatter, DatasetFormatter, SystemF
 from karma.cli.utils import ClickFormatter, get_cache_info
 from karma.registries.model_registry import model_registry
 from karma.registries.dataset_registry import dataset_registry
+from karma.registries.registry_manager import discover_all_registries
 
 
 @click.group(name="info")
@@ -50,8 +51,8 @@ def info_model(ctx, model_name, show_code):
     console = ctx.obj["console"]
 
     try:
-        # Discover models
-        model_registry.discover_models()
+        # Discover all registries for better performance
+        discover_all_registries(use_cache=True, parallel=True)
 
         # Check if model exists
         if not model_registry.is_registered(model_name):
@@ -146,8 +147,8 @@ def info_dataset(ctx, dataset_name, show_examples, show_code):
     console = ctx.obj["console"]
 
     try:
-        # Discover datasets
-        dataset_registry.discover_datasets()
+        # Discover all registries for better performance
+        discover_all_registries(use_cache=True, parallel=True)
 
         # Check if dataset exists
         if not dataset_registry.is_registered(dataset_name):
@@ -222,10 +223,9 @@ def info_system(ctx, cache_path):
     console = ctx.obj["console"]
 
     try:
-        # Discover resources
+        # Discover resources using optimized registry manager
         console.print("[cyan]Discovering system resources...[/cyan]")
-        model_registry.discover_models()
-        dataset_registry.discover_datasets()
+        discover_all_registries(use_cache=True, parallel=True)
 
         # Get counts
         models_count = len(model_registry.list_models())

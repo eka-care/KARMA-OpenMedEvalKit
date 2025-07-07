@@ -31,6 +31,7 @@ except ImportError:
 from karma.registries.model_registry import model_registry
 from karma.registries.dataset_registry import dataset_registry
 from karma.registries.processor_registry import processor_registry
+from karma.registries.registry_manager import discover_all_registries
 from karma.cli.orchestrator import MultiDatasetOrchestrator
 from karma.cli.utils import get_compatible_datasets_for_model
 
@@ -913,9 +914,8 @@ def interactive_cmd(ctx, model, dataset, load_config, auto):
         ) as progress:
             task = progress.add_task("Initializing registries...", total=None)
 
-            model_registry.discover_models()
-            dataset_registry.discover_datasets()
-            processor_registry.discover_processors()
+            # Use optimized parallel discovery
+            discover_all_registries(use_cache=True, parallel=True)
 
             progress.update(task, description="Registries initialized!")
 

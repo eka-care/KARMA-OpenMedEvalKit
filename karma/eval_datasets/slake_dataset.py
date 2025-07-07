@@ -43,6 +43,4 @@ class SLAKEDataset(VQARADDataset):
         """
         # Override the dataset name for SLAKE
 
-        super().__init__(
-            dataset_name=dataset_name, split=split, commit_hash=commit_hash, **kwargs
-        )
+        super().__init__(**kwargs)

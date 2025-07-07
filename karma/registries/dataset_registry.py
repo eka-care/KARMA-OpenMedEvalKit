@@ -9,6 +9,7 @@ import importlib
 import pkgutil
 from typing import Dict, Type, List, Optional, Any
 import logging
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -335,15 +336,30 @@ class DatasetRegistry:
         info = self.get_dataset_info(name)
         return info["task_type"]
 
-    def discover_datasets(self):
+    def discover_datasets(self, use_cache: bool = True):
         """
         Automatically discover and import all dataset modules.
 
         This method imports all modules in the karma.eval_datasets package,
-        which triggers the decorator registration.
+        which triggers the decorator registration. Uses caching for performance.
+
+        Args:
+            use_cache: Whether to use cached discovery results (default: True)
         """
         if self._discovered:
             return
+
+        # Try to load from cache first
+        if use_cache:
+            cached_data = self._load_from_cache()
+            if cached_data:
+                logger.debug("Loaded dataset registry from cache")
+                self._discovered = True
+                return
+
+        # Perform discovery
+        start_time = time.time()
+        logger.debug("Starting dataset discovery...")
 
         try:
             import karma.eval_datasets
@@ -361,7 +377,53 @@ class DatasetRegistry:
         except ImportError as e:
             logger.error(f"Could not import karma.eval_datasets package: {e}")
 
+        discovery_time = time.time() - start_time
+        logger.debug(f"Dataset discovery completed in {discovery_time:.2f}s")
+
         self._discovered = True
+
+        # Cache the results
+        if use_cache:
+            self._save_to_cache()
+
+    def _load_from_cache(self) -> bool:
+        """
+        Load registry data from cache.
+
+        Returns:
+            True if cache was loaded successfully, False otherwise
+        """
+        try:
+            from karma.registries.cache_manager import get_cache_manager
+
+            cache_manager = get_cache_manager()
+            cached_data = cache_manager.get_cached_discovery("dataset")
+
+            if cached_data:
+                self.datasets = cached_data.get("datasets", {})
+                return True
+
+        except Exception as e:
+            logger.debug(f"Failed to load dataset registry from cache: {e}")
+
+        return False
+
+    def _save_to_cache(self) -> None:
+        """
+        Save current registry data to cache.
+        """
+        try:
+            from karma.registries.cache_manager import get_cache_manager
+
+            cache_manager = get_cache_manager()
+
+            cache_data = {"datasets": self.datasets}
+
+            cache_manager.set_cached_discovery("dataset", cache_data)
+            logger.debug("Saved dataset registry to cache")
+
+        except Exception as e:
+            logger.debug(f"Failed to save dataset registry to cache: {e}")
 
     def is_registered(self, name: str) -> bool:
         """
