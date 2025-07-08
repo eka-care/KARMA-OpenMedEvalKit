@@ -36,9 +36,8 @@ theme:
     - content.tabs.link
     - content.action.edit
     - content.action.view
-  font:
-    text: Inter
-    code: JetBrains Mono
+    - navigation.footer
+    - toc.follow
   icon:
     logo: material/heart-pulse
     repo: fontawesome/brands/github
@@ -48,6 +47,10 @@ theme:
   hljs_languages:
     - bash
     - python
+    - json
+    - yaml
+    - javascript
+    - curl
 
 plugins:
   - search
@@ -101,27 +104,20 @@ plugins:
 nav:
   - Home: index.md
   - Getting Started: getting-started.md
+  - Eval command reference: eval-command.md
   - User Guide:
     - Installation: user-guide/installation.md
     - Basic Usage:
-      - user-guide/basic-usage/index.md
       - CLI Basics: user-guide/basic-usage/cli-basics.md
       - Running Evaluations: user-guide/basic-usage/running-evaluations.md
       - Performance Optimization: user-guide/basic-usage/performance-optimization.md
-      - Troubleshooting: user-guide/basic-usage/troubleshooting.md
     - Models:
-      - user-guide/models/index.md
-      - user-guide/models/overview.md
       - user-guide/models/built-in-models.md
       - user-guide/models/model-configuration.md
-    - Datasets:
-        - user-guide/datasets/index.md
-        - Overview: user-guide/datasets/overview.md
-    - Metrics:
-      - user-guide/metrics/index.md
-      - Overview: user-guide/metrics/overview.md
+    - Datasets: user-guide/datasets/datasets_overview.md
+    - Metrics: user-guide/metrics/metrics_overview.md
+    - Processors: user-guide/processors/processors_overview.md
     - Adding HuggingFace Datasets: user-guide/adding-datasets-from-huggingface.md
-    - Processor Usage: user-guide/processor-usage.md
   - API Reference:
     - Models: api-reference/models.md
     - Datasets: api-reference/datasets.md
@@ -133,19 +129,35 @@ nav:
 markdown_extensions:
   - admonition
   - pymdownx.details
-  - pymdownx.superfences
+  - pymdownx.keys:
+  - pymdownx.tasklist:
+      custom_checkbox: true
   - pymdownx.highlight:
       anchor_linenums: true
-  - pymdownx.inlinehilite
-  - pymdownx.snippets
-  - pymdownx.superfences
   - pymdownx.tabbed:
       alternate_style: true
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.tabbed:
+      alternate_style: true
+      combine_header_slug: true
   - attr_list
   - md_in_html
+  - def_list
+  - footnotes
   - toc:
       anchorlink: true
       anchorlink_class: "toclink"
+      permalink: true
 
 extra:
   social:

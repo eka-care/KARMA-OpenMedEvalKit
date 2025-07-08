@@ -6,6 +6,19 @@ This guide covers working with datasets in KARMA, from using built-in datasets t
 
 KARMA supports 12+ medical datasets across multiple modalities:
 
+```bash
+# List available datasets
+karma list datasets
+
+# Get dataset information
+karma info dataset openlifescienceai/pubmedqa
+
+# Use a dataset
+karma eval --model qwen --model-path "Qwen/Qwen3-0.6B" \
+  --datasets openlifescienceai/pubmedqa
+```
+
+
 ### Text-based Datasets
 
 - **openlifescienceai/pubmedqa** - PubMed Question Answering
@@ -69,7 +82,8 @@ karma eval --model qwen --model-path "Qwen/Qwen3-0.6B" \
 
 ## Custom Dataset Integration
 
-You can create custom datasets by inheriting from `BaseMultimodalDataset`:
+You can create custom datasets by inheriting from `BaseMultimodalDataset`.
+The `__iter__` method is defined in the BaseMultimodalDataset class, however, you can override it if  you have specific configuration.
 
 ```python
 from karma.eval_datasets.base_dataset import BaseMultimodalDataset
@@ -102,10 +116,3 @@ class MyMedicalDataset(BaseMultimodalDataset):
             "options": item.get("options", [])
         }
 ```
-
-## Next Steps
-
-- **Learn about models**: See [Models Guide](../models/overview.md)
-- **Understand metrics**: Read [Metrics Guide](../metrics/overview.md)
-- **Add custom datasets**: Check [Adding HuggingFace Datasets](../adding-datasets-from-huggingface.md)
-- **API reference**: Explore [Datasets API Reference](../../api-reference/datasets.md)

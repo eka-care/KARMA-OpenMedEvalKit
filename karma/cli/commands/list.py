@@ -114,7 +114,7 @@ def list_datasets(ctx, task_type, metric, output_format, show_args):
     console = ctx.obj["console"]
 
     try:
-        # Discover all registries for better performance  
+        # Discover all registries for better performance
         console.print("[cyan]Discovering datasets...[/cyan]")
         discover_all_registries(use_cache=True, parallel=True)
 
@@ -256,10 +256,9 @@ def list_metrics(ctx, output_format):
                 title="Available Metrics", show_header=True, header_style="bold cyan"
             )
             table.add_column("Metric Name", style="green", width=20)
-            table.add_column("Status", style="blue", width=15)
 
             for metric in sorted(metrics):
-                table.add_row(metric, "✓ Available")
+                table.add_row(metric)
 
             console.print("\n")
             console.print(table)
