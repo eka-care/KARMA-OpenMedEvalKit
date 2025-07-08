@@ -11,7 +11,7 @@ This module provides a base class that handles:
 
 import threading
 import time
-from typing import Any, Dict, List, Tuple, Optional
+from typing import Any, Dict, List, Optional
 
 import weave
 from torch.utils.data import DataLoader
@@ -86,7 +86,7 @@ class Benchmark:
     Supports multimodal inputs (text, images, audio, etc.)
     """
 
-    def _create_weave_logger(self, dataset_name: str) -> EvaluationLogger:
+    def _create_weave_logger(self, dataset_name: str):
         """
         Create Weave evaluation logger if enabled.
 
@@ -148,7 +148,10 @@ class Benchmark:
         return results, samples_to_generate
 
     def batch_predict(
-        self, samples: List[DataLoaderIterable], dry_run: bool = False
+        self,
+        samples: List[DataLoaderIterable],
+        dry_run: bool = False,
+        dataset_name=None,
     ) -> List[Dict[str, Any]]:
         """
         Generate predictions for a batch of samples, with cache checking and fetching.
@@ -202,12 +205,15 @@ class Benchmark:
 
             # Step 3: Save new results to cache
             if self.enable_cache:
-                self.logger.info(
-                    f"Starting asynchronous cache update for datapoint"
-                )
+                # self.logger.info(
+                #     f"Starting asynchronous cache update for datapoint"
+                # )
                 cache_thread = threading.Thread(
                     target=self.cache_manager.batch_save_rows,
-                    args=(results,),
+                    args=(
+                        results,
+                        dataset_name,
+                    ),
                     daemon=True,
                 )
                 cache_thread.start()
@@ -215,7 +221,7 @@ class Benchmark:
             self.logger.info("Returning dummy results for dry run")
             # For dry run, return dummy results for cache misses
             for _, sample in enumerate(samples):
-                expected = sample["expected_output"]
+                expected = sample.expected_output
 
                 result = {
                     "prediction": "DRY_RUN",
@@ -245,8 +251,12 @@ class Benchmark:
             Dictionary of metric scores or None if metric not found
         """
         scores = {}
-        references = self.dataset.postprocess([it["expected_output"] for it in prediction_results])
-        predictions = self.dataset.postprocess([it["prediction"] for it in prediction_results])
+        references = self.dataset.postprocess(
+            [it["expected_output"] for it in prediction_results]
+        )
+        predictions = self.dataset.postprocess(
+            [it["prediction"] for it in prediction_results]
+        )
         for metric in metrics:
             score = metric.evaluate(predictions=predictions, references=references)
             if isinstance(score, dict):
@@ -281,7 +291,7 @@ class Benchmark:
             self.logger.info(
                 f"🚀 Starting evaluation with {self.dataset.__class__.__name__}"
             )
-        self.logger.info(f"📦 Batch size: {batch_size}")
+        # self.logger.info(f"📦 Batch size: {batch_size}")
 
         start_time = time.time()
 
@@ -325,8 +335,11 @@ class Benchmark:
 
             # Generate predictions using base class method
             if len(samples_to_generate) > 0:
+                print(f"saving dataset with name {self.dataset.dataset_name}")
                 model_results = self.batch_predict(
-                    samples=samples_to_generate, dry_run=dry_run
+                    samples=samples_to_generate,
+                    dry_run=dry_run,
+                    dataset_name=self.dataset.dataset_name,
                 )
                 batch_results.extend(model_results)
             # Process results and extract answers using dataset template

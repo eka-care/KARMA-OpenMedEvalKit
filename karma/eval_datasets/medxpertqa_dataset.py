@@ -51,6 +51,7 @@ class MedXpertQADataset(BaseMultimodalDataset):
             **kwargs,
         )
         self.dataset = self.dataset.cast_column("images", [Image(decode=False)])
+
     def format_item(self, sample: Dict[str, Any]) -> DataLoaderIterable:
         """
         Format a sample into a medical QA prompt.

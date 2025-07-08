@@ -114,6 +114,9 @@ nav:
       - user-guide/models/overview.md
       - user-guide/models/built-in-models.md
       - user-guide/models/model-configuration.md
+    - Datasets:
+        - user-guide/datasets/index.md
+        - Overview: user-guide/datasets/overview.md
     - Metrics:
       - user-guide/metrics/index.md
       - Overview: user-guide/metrics/overview.md

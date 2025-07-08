@@ -15,7 +15,7 @@ COMMIT_HASH = "5f4495c91d500742a58d1be2ab07d77f73c0acf8"
 
 @register_dataset(
     DATASET_NAME,
-    metrics=["bleu", "wer", "cer"],
+    metrics=["wer", "cer"],
     commit_hash=COMMIT_HASH,
     split=SPLIT,
     task_type="transcription",

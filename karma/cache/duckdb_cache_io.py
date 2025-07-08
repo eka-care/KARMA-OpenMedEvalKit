@@ -32,6 +32,7 @@ class DuckDBCacheIO:
             CREATE TABLE IF NOT EXISTS inference_results (
                 cache_key VARCHAR(64) PRIMARY KEY,
                 dataset_row_hash VARCHAR(64) NOT NULL,
+                dataset_name VARCHAR(64) NOT NULL,
                 model_output TEXT NOT NULL,
                 model_output_reasoning TEXT,
                 ground_truth_output TEXT,
@@ -71,7 +72,7 @@ class DuckDBCacheIO:
             """
             SELECT cache_key, dataset_row_hash, model_output, 
                    model_output_reasoning, ground_truth_output, 
-                   ground_truth_reasoning, config_hash, success
+                   ground_truth_reasoning, config_hash, dataset_name, success
             FROM inference_results 
             WHERE cache_key = ?
         """,
@@ -87,7 +88,8 @@ class DuckDBCacheIO:
                 "ground_truth_output": result[4],
                 "ground_truth_reasoning": result[5],
                 "config_hash": result[6],
-                "success": result[7],
+                "dataset_name": result[7],
+                "success": result[8],
             }
         return None
 
@@ -104,7 +106,7 @@ class DuckDBCacheIO:
             f"""
             SELECT cache_key, dataset_row_hash, model_output, 
                    model_output_reasoning, ground_truth_output, 
-                   ground_truth_reasoning, config_hash, success
+                   ground_truth_reasoning, config_hash, dataset_name, success
             FROM inference_results 
             WHERE cache_key IN ({placeholders})
         """,
@@ -121,7 +123,8 @@ class DuckDBCacheIO:
                 "ground_truth_output": row[4],
                 "ground_truth_reasoning": row[5],
                 "config_hash": row[6],
-                "success": row[7],
+                "dataset_name": row[7],
+                "success": row[8],
             }
 
         # Add None entries for missing keys
@@ -149,6 +152,7 @@ class DuckDBCacheIO:
                     data.get("ground_truth_reasoning"),
                     data["config_hash"],
                     data["success"],
+                    data["dataset_name"],
                 ]
             )
 
@@ -156,8 +160,8 @@ class DuckDBCacheIO:
             """
             INSERT OR REPLACE INTO inference_results 
             (cache_key, dataset_row_hash, model_output, model_output_reasoning,
-             ground_truth_output, ground_truth_reasoning, config_hash, success, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+             ground_truth_output, ground_truth_reasoning, config_hash, success, dataset_name, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
         """,
             batch_data,
         )

@@ -208,6 +208,7 @@ class CacheManager:
             input.model_dump() if not isinstance(input, dict) else input
             for input in model_inputs
         ]
+
         # Use centralized batch cache key generation
         _, cache_keys = self._batch_generate_cache_keys(model_inputs)
         # Batch fetch from database
@@ -220,7 +221,7 @@ class CacheManager:
         self.database_misses += len(result) - hits
         return result
 
-    def batch_save_rows(self, batch_data: List[Dict[str, Any]]) -> bool:
+    def batch_save_rows(self, batch_data: List[Dict[str, Any]], dataset_name) -> bool:
         """
         Save multiple inference results to database cache.
 
@@ -244,6 +245,7 @@ class CacheManager:
         for i, data in enumerate(batch_data):
             inference_data = {
                 "cache_key": cache_keys[i],
+                "dataset_name": dataset_name,
                 "dataset_row_idx": data["sample"].get("idx", None),
                 "dataset_row_metadata": data["sample"].get("meta", {}),
                 "dataset_row_hash": input_hashes[i],
