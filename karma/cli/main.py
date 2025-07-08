@@ -68,19 +68,16 @@ def karma(ctx, verbose, quiet):
     )
 
 
-def add_commands(karma):
-    # Add commands to the main group
-    karma.add_command(eval_cmd)
-    karma.add_command(list_cmd)
-    karma.add_command(info_cmd)
-    karma.add_command(interactive_cmd, name="interactive")
+karma.add_command(eval_cmd)
+karma.add_command(list_cmd)
+karma.add_command(info_cmd)
+karma.add_command(interactive_cmd, name="interactive")
 
 
 def main():
     """Main entry point for the CLI."""
     try:
         karma()
-        add_commands(karma)
     except KeyboardInterrupt:
         console.print("\n[yellow]Operation cancelled by user[/yellow]")
         raise click.Abort()
