@@ -32,6 +32,7 @@ class DuckDBCacheIO:
             CREATE TABLE IF NOT EXISTS inference_results (
                 cache_key VARCHAR(64) PRIMARY KEY,
                 dataset_row_hash VARCHAR(64) NOT NULL,
+                dataset_name VARCHAR(64) NOT NULL,
                 model_output TEXT NOT NULL,
                 model_output_reasoning TEXT,
                 ground_truth_output TEXT,

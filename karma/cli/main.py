@@ -7,6 +7,7 @@ subcommand organization and Rich for beautiful output formatting.
 
 import click
 from rich.console import Console
+from rich.panel import Panel
 from rich.traceback import install
 
 from karma.cli.commands.eval import eval_cmd
@@ -58,18 +59,28 @@ def karma(ctx, verbose, quiet):
     if quiet:
         console.quiet = True
 
+        # Show header
+    console.print(
+        Panel.fit(
+            "[bold cyan]KARMA: Knowledge Assessment and Reasoning for Medical Applications[/bold cyan]",
+            border_style="cyan",
+        )
+    )
 
-# Add commands to the main group
-karma.add_command(eval_cmd)
-karma.add_command(list_cmd)
-karma.add_command(info_cmd)
-karma.add_command(interactive_cmd, name="interactive")
+
+def add_commands(karma):
+    # Add commands to the main group
+    karma.add_command(eval_cmd)
+    karma.add_command(list_cmd)
+    karma.add_command(info_cmd)
+    karma.add_command(interactive_cmd, name="interactive")
 
 
 def main():
     """Main entry point for the CLI."""
     try:
         karma()
+        add_commands(karma)
     except KeyboardInterrupt:
         console.print("\n[yellow]Operation cancelled by user[/yellow]")
         raise click.Abort()
