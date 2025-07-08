@@ -20,7 +20,8 @@ KARMA supports 12+ medical datasets across multiple modalities:
 
 ### Audio Datasets
 
-- **ai4bharat/indicvoices_r** - Indic Voices Recognition
+- **ai4bharat/indicvoices_r** - Text to speech dataset that could be used for ASR evaluation as well.
+- **ai4bharat/indicvoices** - ASR dataset - Indic Voices Recognition
 
 ### Translation Datasets
 
