@@ -895,7 +895,7 @@ name = "langdetect"
 version = "1.0.9"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "langcodes" },
+    { name = "langdetect" },
 ]
 
 [[package]]
