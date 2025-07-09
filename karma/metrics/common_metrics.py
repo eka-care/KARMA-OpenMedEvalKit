@@ -31,10 +31,17 @@ class ExactMatchMetric(HfMetric):
         super().__init__(metric_name)
 
 
+@register_metric("f1")
+class F1Metric(HfMetric):
+    def __init__(self, metric_name: str = "f1"):
+        super().__init__(metric_name)
+
+
 @register_metric("wer")
 class WERMetric(HfMetric):
     def __init__(self, metric_name: str = "wer"):
         super().__init__(metric_name)
+
 
 @register_metric("cer")
 class CERMetric(HfMetric):

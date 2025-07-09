@@ -150,14 +150,6 @@ def eval_cmd(
 
     load_dotenv()
 
-    # Show header
-    console.print(
-        Panel.fit(
-            "[bold cyan]KARMA: Knowledge Assessment and Reasoning for Medical Applications[/bold cyan]",
-            border_style="cyan",
-        )
-    )
-
     try:
         # Discover available models and datasets using optimized registry manager
         console.print("[cyan]Discovering models and datasets...[/cyan]")

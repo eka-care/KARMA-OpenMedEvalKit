@@ -17,7 +17,7 @@ git clone https://github.com/eka-care/KARMA-OpenMedEvalKit.git
 cd KARMA-OpenMedEvalKit
 
 # Install KARMA
-uv install
+uv sync
 
 # Verify installation
 karma --version
