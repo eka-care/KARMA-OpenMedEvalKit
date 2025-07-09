@@ -1,8 +1,11 @@
 import re
+import unicodedata
 from pathlib import Path
 from typing import List, Tuple, Dict
 from karma.processors.base import BaseProcessor
 from karma.registries.processor_registry import register_processor
+from langdetect import detect
+from google.transliteration import transliterate_word
 from indicnlp.normalize.indic_normalize import IndicNormalizerFactory
 
 
@@ -50,20 +53,25 @@ class MultilingualTextProcessor(BaseProcessor):
 
     def process(self, lines: List[str]) -> List[str]:
         rules = self._load_rules()
-        lines = [self.normalizer.normalize(line) for line in lines]
-        flat_lines = []
-        for i, line in enumerate(lines):
-            if isinstance(line, list):
-                flat_lines.extend(line)
-            elif isinstance(line, str):
-                flat_lines.append(line)
-            else:
-                raise TypeError(
-                    f"Line {i} is not a string or list: {line} ({type(line)})"
-                )
-        return [self._apply_line(line, rules) for line in flat_lines]
+        for i, text in enumerate(lines):
+            script = detect(text)
+            if script == "en":
+                candidates = transliterate_word(text, lang_code=self.language)
+                text = candidates[0]
+            text = re.sub(
+                r"^[\u0900-\u0903\u093C\u093E-\u094D]+", "", text
+            )  # remove nuktas, bindu, and matras in the beginning of the text
+            text = unicodedata.normalize("NFC", text)
+            text = self.normalizer.normalize(text)
+            text = self._apply_line(text, rules)
+            lines[i] = text
+
+        return lines
 
     def _apply_line(self, text: str, rules: List[Tuple[re.Pattern, str]]) -> str:
+        """
+        Apply the rules to the text.
+        """
         for pattern, repl in rules:
             text = pattern.sub(repl, text)
         return text
