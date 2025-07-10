@@ -30,10 +30,13 @@ class BleuMetric(HfMetric):
         )
 
 
-@register_metric("exact_match")
+@register_metric("exact_match", optional_args=["ignore_case"], default_args={"ignore_case": True})
 class ExactMatchMetric(HfMetric):
     def __init__(self, metric_name: str = "exact_match", **kwargs):
         super().__init__(metric_name)
+    
+    def evaluate(self, predictions, references, **kwargs):
+        return self.metric.compute(predictions=predictions, references=references, ignore_case=kwargs.get("ignore_case", True))
 
 
 @register_metric("f1")
