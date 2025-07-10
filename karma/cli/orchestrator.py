@@ -69,6 +69,7 @@ class MultiDatasetOrchestrator:
         dataset_names: Optional[List[str]] = None,
         dataset_args: Optional[Dict[str, Dict[str, Any]]] = None,
         processor_args: Optional[Dict[str, Dict[str, Dict[str, Any]]]] = None,
+        metric_args: Optional[Dict[str, Dict[str, Any]]] = None,
         batch_size: int = 1,
         use_cache: bool = True,
         show_progress: bool = True,
@@ -82,9 +83,12 @@ class MultiDatasetOrchestrator:
             dataset_names: List of dataset names to evaluate (None for all)
             dataset_args: Dictionary mapping dataset names to their arguments
             processor_args: Dictionary mapping dataset names to processor names to their arguments
+            metric_args: Dictionary mapping metric names to their arguments
             batch_size: Batch size for evaluation
             use_cache: Whether to use caching for evaluation
             show_progress: Whether to show progress bars
+            max_samples: Maximum number of samples to evaluate
+            verbose: Whether to display verbose output
 
         Returns:
             Dictionary containing evaluation results
@@ -160,6 +164,7 @@ class MultiDatasetOrchestrator:
                         dataset_name,
                         dataset_args.get(dataset_name, {}),
                         processor_args.get(dataset_name, {}) if processor_args else {},
+                        metric_args if metric_args else {},
                         model,
                         batch_size,
                         use_cache,
@@ -176,6 +181,7 @@ class MultiDatasetOrchestrator:
                     dataset_name,
                     dataset_args.get(dataset_name, {}),
                     processor_args.get(dataset_name, {}) if processor_args else {},
+                    metric_args if metric_args else {},
                     model,
                     batch_size,
                     use_cache,
@@ -256,9 +262,10 @@ class MultiDatasetOrchestrator:
         dataset_name: str,
         dataset_args: Dict[str, Any],
         processor_args: Dict[str, Dict[str, Any]],
-        model: Any,
-        batch_size: int,
-        use_cache: bool,
+        metric_args: Optional[Dict[str, Dict[str, Any]]] = None,
+        model: Any = None,
+        batch_size: int = 1,
+        use_cache: bool = True,
         progress: Optional[Progress] = None,
         cache_manager: Optional[CacheManager] = None,
         max_samples: Optional[int] = None,
@@ -271,6 +278,7 @@ class MultiDatasetOrchestrator:
             dataset_name: Name of the dataset
             dataset_args: Arguments for dataset creation
             processor_args: Arguments for processor creation (mapping processor names to their args)
+            metric_args: Arguments for metric creation (mapping metric names to their args)
             model: Model instance
             batch_size: Batch size for evaluation
             use_cache: Whether to use caching for evaluation
@@ -351,7 +359,8 @@ class MultiDatasetOrchestrator:
             metrics_classes = []
             for metric_name in metrics:
                 # Get metric class from registry
-                metric_instance = metric_registry.get_metric_class(metric_name)
+                metric_kwargs = metric_args.get(metric_name, {}) if metric_args else {}
+                metric_instance = metric_registry.get_metric_class(metric_name, **metric_kwargs)
                 metrics_classes.append(metric_instance)
                 # Create benchmark instance
             benchmark = Benchmark(
