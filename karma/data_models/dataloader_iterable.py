@@ -12,6 +12,10 @@ class Conversation(BaseModel):
     conversation: List[ConversationTurn]
 
 
+class RubricCriteria(BaseModel):
+    criterion: str = Field(description="The rubric of the conversation.")
+
+
 class DataLoaderIterable(BaseModel):
     input: Optional[str] = Field(
         default=None,
@@ -32,9 +36,12 @@ class DataLoaderIterable(BaseModel):
         default=None,
         description="Other arguments passed as a sample from the dataset iter",
     )
-    conversation: Optional[List[Conversation]] = Field(
+    conversation: Optional[Conversation] = Field(
         default=None,
         description="Conversation prompt passed as a sample from the dataset iter",
+    )
+    rubric_to_evaluate: Optional[List[RubricCriteria]] = Field(
+        default=None, description="As defined in the healthbench paper, provide rubric"
     )
 
     class Config:
@@ -47,5 +54,3 @@ class DataLoaderIterable(BaseModel):
     def serialize_model(self) -> Dict[str, Any]:
         # Custom serialization logic that excludes None values
         return {k: v for k, v in self.__dict__.items() if v is not None}
-
-

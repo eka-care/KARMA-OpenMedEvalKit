@@ -6,5 +6,5 @@ class BaseMetric(ABC):
         self.metric_name = metric_name
 
     @abstractmethod
-    def evaluate(self, predictions, references, **kwargs):
+    def evaluate(self, predictions, references, rubrics, **kwargs):
         pass
