@@ -9,15 +9,16 @@ from indicnlp.normalize.indic_normalize import IndicNormalizerFactory
 logger = logging.getLogger(__name__)
 
 
-
-@register_processor(name="multilingual_text_processor")
+@register_processor(name="multilingual_text_processor", required_args=["language"])
 class MultilingualTextProcessor(BaseProcessor):
     """
     A minimal GLM processor that loads glm_<lang>.txt files
     and applies word-boundary substitutions to a list of strings.
     """
 
-    def __init__(self, glm_dir: str="karma/processors/glm", language: str="hi", **kwargs):
+    def __init__(
+        self, glm_dir: str = "karma/processors/glm", language: str = "hi", **kwargs
+    ):
         super().__init__(**kwargs)
         self.glm_dir = Path(glm_dir)
         self._rules_cache: Dict[str, List[Tuple[re.Pattern, str]]] = {}
@@ -25,7 +26,6 @@ class MultilingualTextProcessor(BaseProcessor):
         self.normalizer = IndicNormalizerFactory().get_normalizer(
             self.language, **{"remove_nuktas": True}
         )
-
 
     def _load_rules(self) -> List[Tuple[re.Pattern, str]]:
         if self.language in self._rules_cache:
@@ -63,7 +63,9 @@ class MultilingualTextProcessor(BaseProcessor):
             elif isinstance(line, str):
                 flat_lines.append(line)
             else:
-                raise TypeError(f"Line {i} is not a string or list: {line} ({type(line)})")
+                raise TypeError(
+                    f"Line {i} is not a string or list: {line} ({type(line)})"
+                )
         return [self._apply_line(line, rules) for line in flat_lines]
 
     def _apply_line(self, text: str, rules: List[Tuple[re.Pattern, str]]) -> str:

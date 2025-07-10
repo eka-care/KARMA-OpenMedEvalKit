@@ -26,11 +26,11 @@ Root command group for KARMA CLI.
 
 ### Evaluation Command
 
-#### eval_command
+#### eval_cmd
 
 Main evaluation command for running model evaluations.
 
-::: karma.cli.commands.eval
+::: karma.cli.commands.eval.eval_cmd
     options:
       show_source: false
       show_root_heading: true
@@ -329,6 +329,60 @@ karma info dataset openlifescienceai/pubmedqa --show-examples
 # Get system information with custom cache path
 karma info system --cache-path /path/to/cache.db
 ```
+
+## Command Help Reference
+
+This section provides detailed help information for each karma command, as displayed when running with the `--help` flag.
+
+
+### info
+
+Get detailed information about models, datasets, and system status.
+
+**Usage:** `karma info [OPTIONS] COMMAND [ARGS]...`
+
+**Subcommands:**
+- `dataset` - Get detailed information about a specific dataset
+- `model` - Get detailed information about a specific model
+- `system` - Get system information and status
+
+Use `karma info model <name>` or `karma info dataset <name>` for details.
+
+### interactive
+
+Interactive mode for model evaluation with iterative planning.
+
+This command provides a guided experience for selecting models and datasets with intelligent compatibility filtering. Processors are automatically assigned based on dataset configurations.
+
+**Usage:** `karma interactive [OPTIONS]`
+
+**Options:**
+- `--model TEXT` - Pre-select a model to start with
+- `--dataset TEXT` - Pre-select datasets to start with
+- `--load-config TEXT` - Load configuration from file
+- `--auto` - Auto-mode: use defaults for all selections
+
+**Examples:**
+```bash
+karma interactive
+karma interactive --model qwen
+karma interactive --dataset pubmedqa --dataset medqa
+karma interactive --load-config my_config
+```
+
+### list
+
+List available models, datasets, and other resources.
+
+**Usage:** `karma list [OPTIONS] COMMAND [ARGS]...`
+
+**Subcommands:**
+- `all` - List both models and datasets
+- `datasets` - List all available datasets in the registry
+- `metrics` - List all available metrics in the registry
+- `models` - List all available models in the registry
+
+Use `karma list models` or `karma list datasets` to see available resources.
 
 ## See Also
 

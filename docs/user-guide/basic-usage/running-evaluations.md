@@ -7,7 +7,7 @@ This guide covers how to run model evaluations using the KARMA CLI.
 The most basic evaluation requires specifying a model and model path:
 
 ```bash
-karma eval --model qwen --model-path "Qwen/Qwen3-0.6B"
+karma eval --model "Qwen/Qwen3-0.6B"
 ```
 
 This will:
@@ -20,21 +20,11 @@ This will:
 
 ```bash
 # Single dataset
-karma eval --model qwen --model-path "Qwen/Qwen3-0.6B" --datasets openlifescienceai/pubmedqa
+karma eval --model "Qwen/Qwen3-0.6B" --datasets openlifescienceai/pubmedqa
 
 # Multiple datasets
-karma eval --model qwen --model-path "Qwen/Qwen3-0.6B" \
+karma eval --model "Qwen/Qwen3-0.6B" \
   --datasets "openlifescienceai/pubmedqa,openlifescienceai/medmcqa,openlifescienceai/medqa"
-```
-
-## Save Results
-
-```bash
-# Save to JSON file
-karma eval --model qwen --model-path "Qwen/Qwen3-0.6B" --output results.json
-
-# Save to custom path
-karma eval --model qwen --model-path "Qwen/Qwen3-0.6B" --output /path/to/results.json
 ```
 
 ## Common Workflows
@@ -43,11 +33,11 @@ karma eval --model qwen --model-path "Qwen/Qwen3-0.6B" --output /path/to/results
 
 ```bash
 # Compare different model sizes
-karma eval --model qwen --model-path "Qwen/Qwen3-0.6B" --output qwen_0.6b.json
-karma eval --model qwen --model-path "Qwen/Qwen3-1.7B" --output qwen_1.7b.json
+karma eval --model "Qwen/Qwen3-0.6B" --output qwen_0.6b.json
+karma eval --model "Qwen/Qwen3-1.7B" --output qwen_1.7b.json
 
 # Compare different models
-karma eval --model qwen --model-path "Qwen/Qwen3-0.6B" --output qwen_results.json
+karma eval --model "Qwen/Qwen3-0.6B" --output qwen_results.json
 karma eval --model medgemma --model-path "google/medgemma-4b-it" --output medgemma_results.json
 ```
 
@@ -55,10 +45,10 @@ karma eval --model medgemma --model-path "google/medgemma-4b-it" --output medgem
 
 ```bash
 # Focus on specific medical domains
-karma eval --model qwen --model-path "Qwen/Qwen3-0.6B" \
+karma eval --model "Qwen/Qwen3-0.6B" \
   --datasets "openlifescienceai/pubmedqa,openlifescienceai/medmcqa,openlifescienceai/medqa"  # Text-based QA
 
-karma eval --model qwen --model-path "Qwen/Qwen3-0.6B" \
+karma eval --model "Qwen/Qwen3-0.6B" \
   --datasets "mdwiratathya/SLAKE-vqa-english,flaviagiammarino/vqa-rad"  # Vision-language tasks
 ```
 
@@ -66,19 +56,19 @@ karma eval --model qwen --model-path "Qwen/Qwen3-0.6B" \
 
 ```bash
 # Test different temperature settings
-karma eval --model qwen --model-path "Qwen/Qwen3-0.6B" \
+karma eval --model "Qwen/Qwen3-0.6B" \
   --model-kwargs '{"temperature":0.1}' --output temp_0.1.json
 
-karma eval --model qwen --model-path "Qwen/Qwen3-0.6B" \
+karma eval --model "Qwen/Qwen3-0.6B" \
   --model-kwargs '{"temperature":0.7}' --output temp_0.7.json
 
-karma eval --model qwen --model-path "Qwen/Qwen3-0.6B" \
+karma eval --model "Qwen/Qwen3-0.6B" \
   --model-kwargs '{"temperature":1.0}' --output temp_1.0.json
 ```
 
 ## Next Steps
 
 - **Learn about models**: Check out the [Models Guide](../models/overview.md)
-- **Configure datasets**: Read the [Datasets Guide](../datasets/overview.md)
+- **Configure datasets**: Read the [Datasets Guide](../datasets/datasets_overview.md)
 - **Optimize performance**: See [Performance Optimization](performance-optimization.md)
-- **Understand results**: Read the [Metrics Guide](../metrics/overview.md)
+- **Understand results**: Read the [Metrics Guide](../metrics/metrics_overview.md)

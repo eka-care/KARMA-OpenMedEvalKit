@@ -17,7 +17,7 @@ class DataLoaderIterable(BaseModel):
         default=None,
         description="Input prompt passed as a sample from the dataset iter",
     )
-    images: Optional[Union[Image.Image, List[Image.Image]]] = Field(
+    images: Optional[Union[Image.Image, List[Image.Image], bytes]] = Field(
         default=None,
         description="Image prompt passed as a sample from the dataset iter. See medxpertqa",
     )
@@ -47,3 +47,5 @@ class DataLoaderIterable(BaseModel):
     def serialize_model(self) -> Dict[str, Any]:
         # Custom serialization logic that excludes None values
         return {k: v for k, v in self.__dict__.items() if v is not None}
+
+

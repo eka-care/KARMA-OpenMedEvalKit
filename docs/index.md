@@ -17,15 +17,11 @@ git clone https://github.com/eka-care/KARMA-OpenMedEvalKit.git
 cd KARMA-OpenMedEvalKit
 
 # Install with uv (recommended)
-uv install
+uv sync
 
 # Run your first evaluation on 3 samples on a MCQA task.
 karma eval --model "Qwen/Qwen3-0.6B" --datasets openlifescienceai/pubmedqa --max-samples 3
 ```
-
-## See It In Action
-
-KARMA provides a rich CLI interface that makes medical AI evaluation straightforward. Here's what you can expect:
 
 ### Explore Available Resources
 

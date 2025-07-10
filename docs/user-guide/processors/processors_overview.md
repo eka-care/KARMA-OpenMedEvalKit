@@ -6,6 +6,19 @@ This guide covers working with text processors in KARMA, from using built-in pro
 
 KARMA-OpenMedEvalKit provides a flexible processor system that allows you to apply custom text transformations to your datasets during evaluation. Processors are particularly useful for normalizing text, handling multilingual content, and preparing data for specific model requirements.
 
+## Quick Start
+
+```bash
+# List available processors
+karma list processors
+
+# Use processor with evaluation
+karma eval --model qwen --model-path "Qwen/Qwen3-0.6B" \
+  --datasets "ai4bharat/IN22-Conv" \
+  --processor-args "ai4bharat/IN22-Conv.devnagari_transliterator:source_script=en,target_script=hi"
+```
+
+
 ## Architecture
 
 The processor system consists of:
@@ -19,20 +32,23 @@ The processors are by default chained i.e., the output of the previous processor
 
 ## Available Processors
 
-1. **GeneralTextProcessor**
-   - Handles common text normalization
-   - Number to text conversion
-   - Punctuation removal
-   - Case normalization
+**GeneralTextProcessor**
 
-2. **DevanagariTransliterator**  
-   - Multilingual text processing for indic Devanagri scripts
-   - Script conversion between languages
-   - Handles Devanagari text
+- Handles common text normalization
+- Number to text conversion
+- Punctuation removal
+- Case normalization
 
-3. **MultilingualTextProcessor**
-   - Audio transcription normalization
-   - Specialized for STT tasks where numbers need to be normalized
+**DevanagariTransliterator**  
+
+- Multilingual text processing for indic Devanagri scripts
+- Script conversion between languages
+- Handles Devanagari text
+
+**MultilingualTextProcessor**
+
+- Audio transcription normalization
+- Specialized for STT tasks where numbers need to be normalized
 
 ## Using Existing Processors
 
@@ -48,10 +64,10 @@ karma eval --model qwen --model-path "Qwen/Qwen3-0.6B" \
 ### Programmatic Usage
 
 ```python
-from karma.registries.processor_registry import get_processor
+from karma.registries.processor_registry import processor_registry
 
 # Create processor with custom configuration
-processor = get_processor("general_text_processor", lowercase=True, remove_punctuation=True)
+processor = processor_registry("general_text_processor", lowercase=True, remove_punctuation=True)
 
 # Apply to dataset
 processed_text = processor.process("Hello World! This has 123 numbers.")
@@ -177,10 +193,3 @@ def get_language_processor(language: str):
 3. **Performance**: Be mindful of processing overhead for large datasets
 4. **Testing**: Validate processor output with sample data
 5. **Configuration**: Make processors configurable for different use cases
-
-## Next Steps
-
-- **Learn about datasets**: See [Datasets Guide](../datasets/overview.md)
-- **Work with models**: Read [Models Guide](../models/overview.md)
-- **Advanced configuration**: Check [Configuration Guide](../configuration/environment-setup.md)
-- **API reference**: Explore [Processors API Reference](../../api-reference/processors.md)
