@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-Complete Hindi-specific CER-based word aligner - exact copy from original working code.
+Complete Hindi-specific CER-based word aligner
 """
 
 import re
 from typing import List
-from base_aligner import BaseCERAligner
+from karma.metrics.asr.base_aligner import BaseCERAligner
 
 class HindiCERAligner(BaseCERAligner):
     """Hindi-specific CER-based word aligner with English transliteration support."""

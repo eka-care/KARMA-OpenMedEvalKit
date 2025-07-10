@@ -25,10 +25,9 @@ class EvalResult:
     additional_info: Optional[Dict] = None
 
 @register_metric(
-    name = "asr_semantic_metrics",
+    name = "asr_semantic_metric",
     required_args = ["language"]
 )
-
 class ASRSemanticMetrics(BaseMetric):
     def __init__(self, metric_name: str, language = "en", **kwargs):
         super().__init__(metric_name, **kwargs)
@@ -129,7 +128,7 @@ class ASRSemanticMetrics(BaseMetric):
             num_sentences=processed_count
         )
 
-    def evaluate(self, predictions: List[str], references: List[str], **kwargs) -> Dict:
+    def evaluate(self, predictions: List[str], references: List[str], **kwargs) -> EvalResult:
         """
         Evaluate ASR predictions against references.
         
@@ -163,12 +162,11 @@ class ASRSemanticMetrics(BaseMetric):
             print(f"Processing {len(references)} utterances...")
             results = self.process_files(aligner, predictions, references)  # FIXED: Added self.
             
-            # Return as dictionary for compatibility
-            return {
-                'wer': results.wer,
-                'cer': results.cer,
-                'num_sentences': results.num_sentences
-            }
+            return EvalResult(
+                wer=results.wer,
+                cer=results.cer,
+                num_sentences=results.num_sentences
+            )
             
         except Exception as e:
             print(f"Error: {e}")

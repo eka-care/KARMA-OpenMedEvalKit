@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 """
-Base classes for CER-based word alignment.
+Base classes for CER-based word alignment with advanced features.
 """
 
 import sys
 import re
-from typing import List, Tuple, Dict, Optional
+from typing import List, Tuple, Dict, Optional, Set
 from dataclasses import dataclass
 from enum import Enum
 from abc import ABC, abstractmethod
+from itertools import product
 
 sys.setrecursionlimit(10000)
 
@@ -28,7 +29,7 @@ class WordAlignment:
     hyp_positions: List[Tuple[int, int]]
 
 class BaseCERAligner(ABC):
-    """Base class for CER-based word aligners."""
+    """Enhanced base class for CER-based word aligners with advanced features."""
     
     def __init__(self, cer_threshold: float = 0.4):
         self.cer_threshold = cer_threshold
@@ -74,6 +75,48 @@ class BaseCERAligner(ABC):
         cer = edit_distance / m
         return cer
     
+    def _calculate_substring_aware_cer(self, ref_text: str, hyp_text: str) -> float:
+        """Calculate CER that's aware of substring relationships."""
+        ref_clean = ref_text.replace(' ', '').replace('.', '').replace('-', '')
+        hyp_clean = hyp_text.replace(' ', '').replace('.', '').replace('-', '')
+        
+        # If one is a substring of the other, calculate based on that
+        if ref_clean in hyp_clean:
+            # ref is substring of hyp
+            extra_chars = len(hyp_clean) - len(ref_clean)
+            return extra_chars / max(len(ref_clean), 1)
+        elif hyp_clean in ref_clean:
+            # hyp is substring of ref  
+            missing_chars = len(ref_clean) - len(hyp_clean)
+            return missing_chars / max(len(ref_clean), 1)
+        
+        # Check for acronym-like relationships
+        ref_upper = ref_clean.upper()
+        hyp_upper = hyp_clean.upper()
+        
+        if hyp_upper in ref_upper:
+            missing_ratio = (len(ref_upper) - len(hyp_upper)) / max(len(ref_upper), 1)
+            return min(missing_ratio, 0.8)  # Cap at 0.8 to show it's still a decent match
+        elif ref_upper in hyp_upper:
+            extra_ratio = (len(hyp_upper) - len(ref_upper)) / max(len(ref_upper), 1) 
+            return min(extra_ratio, 0.8)
+        
+        # Check for common prefix/suffix
+        common_prefix = 0
+        for i in range(min(len(ref_upper), len(hyp_upper))):
+            if ref_upper[i] == hyp_upper[i]:
+                common_prefix += 1
+            else:
+                break
+        
+        if common_prefix >= 3:  # At least 3 characters in common at start
+            max_len = max(len(ref_upper), len(hyp_upper))
+            similarity = common_prefix / max_len
+            return 1.0 - similarity
+        
+        # Fall back to regular edit distance
+        return self._edit_distance_cer(ref_clean, hyp_clean)
+    
     @abstractmethod
     def normalize_text_semantically(self, text: str) -> str:
         """Normalize text for semantic comparison - language specific."""
@@ -85,7 +128,7 @@ class BaseCERAligner(ABC):
         pass
     
     def calculate_character_error_rate(self, ref_text: str, hyp_text: str) -> float:
-        """Calculate CER using direct and semantic comparison."""
+        """Calculate CER using direct, semantic, and substring-aware comparison."""
         ref_direct = ref_text.lower().replace(' ', '')
         hyp_direct = hyp_text.lower().replace(' ', '')
         cer_direct = self._edit_distance_cer(ref_direct, hyp_direct)
@@ -94,17 +137,29 @@ class BaseCERAligner(ABC):
         hyp_semantic = self.normalize_text_semantically(hyp_text)
         cer_semantic = self._edit_distance_cer(ref_semantic, hyp_semantic)
         
-        final_cer = min(cer_direct, cer_semantic)
+        # Add substring-aware CER calculation
+        cer_substring = self._calculate_substring_aware_cer(ref_text.lower(), hyp_text.lower())
+        
+        # Return the best (lowest) CER among all methods
+        final_cer = min(cer_direct, cer_semantic, cer_substring)
         return final_cer
     
+    def normalize_hyphenated_words(self, text: str) -> str:
+        """Remove hyphens from hyphenated words."""
+        return re.sub(r'\b([a-zA-Z]+)-([a-zA-Z]+)\b', r'\1\2', text)
+    
+    def get_all_possible_expansions(self, token: str) -> List[str]:
+        """Get all possible semantic expansions for a token - can be overridden by subclasses."""
+        # Default implementation just returns the single expansion
+        expansion = self.expand_ref_token_semantically(token)
+        if expansion != token:
+            return [expansion]
+        return []
+    
     def align_words_dp(self, reference: str, hypothesis: str) -> List[WordAlignment]:
-        """Use dynamic programming for optimal alignment with correct position tracking."""
+        """Use dynamic programming for optimal alignment with enhanced scoring."""
         ref_tokens = self.tokenize_with_positions(reference)
         hyp_tokens = self.tokenize_with_positions(hypothesis)
-        
-        print(f"Reference tokens: {[t[0] for t in ref_tokens]}")
-        print(f"Hypothesis tokens: {[t[0] for t in hyp_tokens]}")
-        print()
         
         m, n = len(ref_tokens), len(hyp_tokens)
         
@@ -151,6 +206,8 @@ class BaseCERAligner(ABC):
                 # Check if current ref token has semantic expansion
                 if ref_start < m:
                     ref_token = ref_tokens[ref_start][0]
+                    
+                    # First try single expansion
                     expanded_ref = self.expand_ref_token_semantically(ref_token)
                     if expanded_ref != ref_token:
                         expanded_tokens = expanded_ref.split()
@@ -176,41 +233,40 @@ class BaseCERAligner(ABC):
                                 dp[(ref_start, hyp_start)] = result
                                 return result
                     
-                    # Try alternative expansions if available
-                    if hasattr(self, 'get_all_possible_expansions'):
-                        all_expansions = self.get_all_possible_expansions(ref_token)
-                        for expanded_ref in all_expansions:
-                            if expanded_ref != ref_token:
-                                expanded_tokens = expanded_ref.split()
-                                target_span = len(expanded_tokens)
+                    # Try all possible expansions
+                    all_expansions = self.get_all_possible_expansions(ref_token)
+                    for expanded_ref in all_expansions:
+                        if expanded_ref != ref_token:
+                            expanded_tokens = expanded_ref.split()
+                            target_span = len(expanded_tokens)
+                            
+                            if hyp_start + target_span <= n:
+                                hyp_seq = [hyp_tokens[hyp_start + k][0] for k in range(target_span)]
                                 
-                                if hyp_start + target_span <= n:
-                                    hyp_seq = [hyp_tokens[hyp_start + k][0] for k in range(target_span)]
+                                if [w.lower() for w in expanded_tokens] == [w.lower() for w in hyp_seq]:
+                                    alignment = WordAlignment(
+                                        ref_words=[ref_token],
+                                        hyp_words=hyp_seq,
+                                        alignment_type=AlignmentType.MATCH,
+                                        character_error_rate=0.0,
+                                        ref_positions=[(ref_tokens[ref_start][1], ref_tokens[ref_start][2])],
+                                        hyp_positions=[(hyp_tokens[hyp_start + k][1], hyp_tokens[hyp_start + k][2]) for k in range(target_span)]
+                                    )
                                     
-                                    if [w.lower() for w in expanded_tokens] == [w.lower() for w in hyp_seq]:
-                                        alignment = WordAlignment(
-                                            ref_words=[ref_token],
-                                            hyp_words=hyp_seq,
-                                            alignment_type=AlignmentType.MATCH,
-                                            character_error_rate=0.0,
-                                            ref_positions=[(ref_tokens[ref_start][1], ref_tokens[ref_start][2])],
-                                            hyp_positions=[(hyp_tokens[hyp_start + k][1], hyp_tokens[hyp_start + k][2]) for k in range(target_span)]
-                                        )
-                                        
-                                        prev_score, prev_alignments = solve(ref_start + 1, hyp_start + target_span)
-                                        total_score = prev_score + 20.0
-                                        
-                                        result = (total_score, [alignment] + prev_alignments)
-                                        dp[(ref_start, hyp_start)] = result
-                                        return result
+                                    prev_score, prev_alignments = solve(ref_start + 1, hyp_start + target_span)
+                                    total_score = prev_score + 20.0
+                                    
+                                    result = (total_score, [alignment] + prev_alignments)
+                                    dp[(ref_start, hyp_start)] = result
+                                    return result
                 
-                # Regular alignment combinations
+                # Regular alignment combinations with enhanced scoring
                 for ref_span in range(1, max_ref_span + 1):
                     for hyp_span in range(1, max_hyp_span + 1):
                         ref_seq = [ref_tokens[ref_start + k][0] for k in range(ref_span)]
                         hyp_seq = [hyp_tokens[hyp_start + k][0] for k in range(hyp_span)]
                         
-                        # Calculate similarity
+                        # Calculate similarity with enhanced penalties
                         if ref_span == 1:
                             ref_token = ref_seq[0]
                             expanded_ref = self.expand_ref_token_semantically(ref_token)
@@ -239,16 +295,33 @@ class BaseCERAligner(ABC):
                                 cer = self.calculate_character_error_rate(ref_text, hyp_text)
                                 similarity = 1.0 - cer
                                 
-                                if hyp_span == 1:
+                                # Enhanced scoring for single ref to multiple hyp
+                                if similarity >= 0.99:
+                                    score_bonus = similarity + 5.0  # Big bonus for perfect matches
+                                elif similarity >= 0.95:
+                                    score_bonus = similarity + 3.0  # Good bonus for near-perfect
+                                elif hyp_span == 1:
                                     score_bonus = similarity + 1.0
                                 else:
-                                    score_bonus = similarity - 0.3
+                                    # Penalize single ref token to many hyp tokens with poor similarity
+                                    if similarity < 0.3:  # Very poor similarity
+                                        span_penalty = (hyp_span - 1) * 2.0  # Heavy penalty
+                                        score_bonus = similarity - 2.0 - span_penalty
+                                    else:
+                                        span_penalty = (hyp_span - 1) * 0.5
+                                        score_bonus = similarity - 0.3 - span_penalty
                         else:
                             ref_text = ' '.join(ref_seq)
                             hyp_text = ' '.join(hyp_seq)
                             cer = self.calculate_character_error_rate(ref_text, hyp_text)
                             similarity = 1.0 - cer
-                            score_bonus = similarity - 0.8
+                            
+                            # Penalize multi-ref-word spans unless they're very good matches
+                            if similarity >= 0.95:
+                                score_bonus = similarity + 1.0
+                            else:
+                                span_penalty = (ref_span - 1) * 0.3 + (hyp_span - 1) * 0.3
+                                score_bonus = similarity - 0.8 - span_penalty
                         
                         # Determine alignment type
                         if similarity >= 0.95:
