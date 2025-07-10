@@ -158,7 +158,6 @@ KARMA is built around four core components:
 - **New to KARMA?** Start with our [Getting Started](getting-started.md) guide
 - **Need help with installation?** Check the [Installation Guide](user-guide/installation.md)
 - **Want to add custom models?** See the [API Reference](api-reference/models.md)
-- **Contributing?** Read our [Contributing Guide](contributing.md)
 
 ## License
 

@@ -129,8 +129,3 @@ huggingface-cli login
 # Or set environment variable
 export HUGGINGFACE_TOKEN=your_token_here
 ```
-
-## Next Steps
-
-- **First time user?** Continue to [Basic Usage](basic-usage.md)
-- **Want to contribute?** See our [Contributing Guide](../contributing.md)

@@ -97,8 +97,6 @@ plugins:
           - api-reference/metrics.md
           - api-reference/registries.md
           - api-reference/cli.md
-        Contributing:
-          - contributing.md
       full_output: "llms-full.txt"
 
 nav:
@@ -124,7 +122,6 @@ nav:
     - Metrics: api-reference/metrics.md
     - Registries: api-reference/registries.md
     - CLI: api-reference/cli.md
-  - Contributing: contributing.md
 
 markdown_extensions:
   - admonition
