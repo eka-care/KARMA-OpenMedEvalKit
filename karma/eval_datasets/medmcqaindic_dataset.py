@@ -1,0 +1,55 @@
+"""
+MedQAIndic dataset implementation with multimodal support.
+
+This module provides the MedQAIndic Dataset class that implements the new
+multimodal dataset interface for use with the refactored benchmark system.
+"""
+
+import logging
+from typing import Any, Dict, Tuple
+
+from karma.registries.dataset_registry import register_dataset
+from karma.eval_datasets.medmcqa_dataset import MedMCQADataset
+
+logger = logging.getLogger(__name__)
+
+# Hardcoded confinement instructions
+CONFINEMENT_INSTRUCTIONS = "Output format: 'ANSWER: <option>', examples: ['ANSWER: A', 'ANSWER: B', 'ANSWER: C', 'ANSWER: D']"
+DATASET_NAME = "ekacare/MedMCQA-Indic"
+SPLIT = "test"
+COMMIT_HASH = "dc18742d78a3486eef3d68b610ec47411ae383dd"
+
+@register_dataset(
+    DATASET_NAME,
+    commit_hash=COMMIT_HASH,
+    split=SPLIT,
+    required_args=["subset"],
+    metrics=["exact_match"],
+    task_type="mcqa",
+)
+class MedMCQAIndicDataset(MedMCQADataset):
+    def __init__(
+            self,
+            subset: str = 'as',
+            **kwargs,
+    ):
+        """
+        Initialize MedMCQA dataset.
+
+        Args:
+            **kwargs: Additional arguments passed to base class
+        """
+        self.subset = subset
+        self.dataset_name = f"{DATASET_NAME}-{self.subset}"
+        super().__init__(dataset_name=self.dataset_name,config=subset,**kwargs)
+
+    def format_item(self, sample: Dict[str, Any],**kwargs):
+        return super().format_item(sample=sample, subset=self.subset)
+
+    def extract_prediction(self, response: str,**kwargs) -> Tuple[str, bool]:
+        return super().extract_prediction(response=response,subset=self.subset)
+
+
+
+
+

@@ -45,7 +45,7 @@ class MedMCQADataset(BaseMultimodalDataset):
         """
         super().__init__(**kwargs)
 
-    def format_item(self, sample: Dict[str, Any]):
+    def format_item(self, sample: Dict[str, Any], **kwargs):
         """
         Format a sample into a text prompt for MedMCQA.
 
@@ -71,13 +71,14 @@ class MedMCQADataset(BaseMultimodalDataset):
         processed_sample = DataLoaderIterable(
             input=prompt,
             expected_output=correct_answer,
+            **kwargs
         )
 
         # Add confinement instructions to the question and options
 
         return processed_sample
 
-    def extract_prediction(self, response: str) -> Tuple[str, bool]:
+    def extract_prediction(self, response: str, **kwargs) -> Tuple[str, bool]:
         """
         Extract the answer letter from model response.
 
