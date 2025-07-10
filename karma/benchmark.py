@@ -165,13 +165,13 @@ class Benchmark:
 
         if not dry_run:
             self.logger.debug("Generating batch responses from model")
-            start_time = time.time()
+            # start_time = time.time()
 
             batch_responses = self.model.run(inputs=samples)
-            generation_time = time.time() - start_time
-            self.logger.info(
-                f"Model generation completed in {generation_time:.2f} seconds"
-            )
+            # generation_time = time.time() - start_time
+            # self.logger.info(
+            #     f"Model generation completed in {generation_time:.2f} seconds"
+            # )
 
             # Use progress bar if available for per-sample progress
             progress_task = None
@@ -237,28 +237,38 @@ class Benchmark:
 
     def compute_metrics(
         self,
-        prediction_results: List[Dict[str, Any]],
+        ground_truth_and_prediction: List[Dict[str, Any]],
         metrics: List[BaseMetric],
     ) -> Dict[str, float] | None:
         """
         Compute metrics for prediction results using multi-threading.
 
         Args:
-            prediction_results: List of prediction result dictionaries
+            ground_truth_and_prediction: List of prediction result dictionaries
             metric_config: Configuration dictionary containing metric name and processors
 
         Returns:
             Dictionary of metric scores or None if metric not found
         """
         scores = {}
-        references = self.dataset.postprocess(
-            [it["expected_output"] for it in prediction_results]
-        )
-        predictions = self.dataset.postprocess(
-            [it["prediction"] for it in prediction_results]
-        )
+        references = []
+        predictions = []
+        rubrics = []
+        for it in ground_truth_and_prediction:
+            if it.get("prediction"):
+                predictions.append(it["prediction"])
+            if it.get("expected_output"):
+                references.append(it["expected_output"])
+            if it.get("rubric"):
+                rubrics.append(it["rubric"])
+
+        predictions = self.dataset.postprocess(predictions)
+        references = self.dataset.postprocess(references)
+
         for metric in metrics:
-            score = metric.evaluate(predictions=predictions, references=references)
+            score = metric.evaluate(
+                predictions=predictions, references=references, rubrics=rubrics
+            )
             if isinstance(score, dict):
                 scores[metric.metric_name] = score[metric.metric_name]
             else:
@@ -335,7 +345,6 @@ class Benchmark:
 
             # Generate predictions using base class method
             if len(samples_to_generate) > 0:
-                print(f"saving dataset with name {self.dataset.dataset_name}")
                 model_results = self.batch_predict(
                     samples=samples_to_generate,
                     dry_run=dry_run,

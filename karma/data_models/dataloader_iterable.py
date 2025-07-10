@@ -13,7 +13,9 @@ class Conversation(BaseModel):
 
 
 class RubricCriteria(BaseModel):
-    criterion: str = Field(description="The rubric of the conversation.")
+    criterion: str = Field(description="The rubric criterion text.")
+    points: float = Field(description="Points awarded if criterion is met.")
+    tags: List[str] = Field(default_factory=list, description="Tags for categorizing rubric items.")
 
 
 class DataLoaderIterable(BaseModel):
@@ -42,6 +44,10 @@ class DataLoaderIterable(BaseModel):
     )
     rubric_to_evaluate: Optional[List[RubricCriteria]] = Field(
         default=None, description="As defined in the healthbench paper, provide rubric"
+    )
+    system_prompt: Optional[str] = Field(
+        default=None,
+        description="The system prompt in case applicable passed as a sample from the dataset iter",
     )
 
     class Config:
