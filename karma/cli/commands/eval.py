@@ -13,14 +13,17 @@ from karma.cli.orchestrator import MultiDatasetOrchestrator
 from karma.cli.utils import (
     parse_dataset_args,
     parse_processor_args,
+    parse_metric_args,
     parse_datasets_list,
     validate_model_path,
     get_cache_info,
     ClickFormatter,
+    prompt_for_missing_metric_args,
 )
 from dotenv import load_dotenv
 from karma.registries.model_registry import model_registry
 from karma.registries.dataset_registry import dataset_registry
+from karma.registries.metrics_registry import metric_registry
 from karma.registries.registry_manager import discover_all_registries
 import json
 import yaml
@@ -48,6 +51,10 @@ from karma.registries.processor_registry import processor_registry
 @click.option(
     "--processor-args",
     help="Processor arguments in format 'dataset.processor:key=val,key2=val2;dataset2.processor:key=val'",
+)
+@click.option(
+    "--metric-args",
+    help="Metric arguments in format 'metric_name:key=val,key2=val2;metric2:key=val'",
 )
 @click.option(
     "--batch-size",
@@ -82,7 +89,7 @@ from karma.registries.processor_registry import processor_registry
 @click.option(
     "--interactive",
     is_flag=True,
-    help="Interactively prompt for missing dataset arguments",
+    help="Interactively prompt for missing dataset, processor, and metric arguments",
 )
 @click.option(
     "--dry-run",
@@ -113,6 +120,7 @@ def eval_cmd(
     datasets,
     dataset_args,
     processor_args,
+    metric_args,
     batch_size,
     cache,
     output,
@@ -144,6 +152,10 @@ def eval_cmd(
         karma eval --model qwen --model-path "path" --datasets "in22conv" \\
           --dataset-args "in22conv:source_language=en,target_language=hi" \\
           --processor-args "in22conv.devnagari_transliterator:source_script=en,target_script=hi"
+
+        # With metric arguments
+        karma eval --model qwen --model-path "path" --datasets "pubmedqa" \\
+          --metric-args "accuracy:normalize=true,sample_weight=none;bleu:max_order=4"
     """
     console = ctx.obj["console"]
     verbose = ctx.obj.get("verbose", False)
@@ -225,6 +237,9 @@ def eval_cmd(
             parse_processor_args(processor_args) if processor_args else {}
         )
 
+        # Parse metric arguments
+        parsed_metric_args = parse_metric_args(metric_args) if metric_args else {}
+
         # Interactive mode for missing arguments
         if interactive:
             parsed_dataset_args = _handle_interactive_args(
@@ -236,6 +251,11 @@ def eval_cmd(
                 dataset_names, parsed_processor_args, console
             )
 
+            # Interactive mode for metric arguments
+            parsed_metric_args = _handle_interactive_metric_args(
+                dataset_names, parsed_metric_args, console
+            )
+
         # Show evaluation plan
         _show_evaluation_plan(
             console,
@@ -244,6 +264,7 @@ def eval_cmd(
             dataset_names,
             parsed_dataset_args,
             parsed_processor_args,
+            parsed_metric_args,
             model_overrides,
             batch_size,
             cache,
@@ -278,6 +299,7 @@ def eval_cmd(
             dataset_names=dataset_names,
             dataset_args=parsed_dataset_args,
             processor_args=parsed_processor_args,
+            metric_args=parsed_metric_args,
             batch_size=batch_size,
             use_cache=cache,
             show_progress=progress,
@@ -465,6 +487,101 @@ def _handle_interactive_processor_args(
     return complete_processor_args
 
 
+def _handle_interactive_metric_args(
+    dataset_names: list, existing_metric_args: dict, console: Console
+) -> dict:
+    """
+    Handle interactive metric argument collection.
+
+    Args:
+        dataset_names: List of dataset names
+        existing_metric_args: Already provided metric arguments
+        console: Rich console for output
+
+    Returns:
+        Complete metric arguments dictionary
+    """
+    complete_metric_args = existing_metric_args.copy()
+
+    # Get all metrics that will be used across datasets
+    all_metrics = set()
+    for dataset_name in dataset_names:
+        try:
+            dataset_info = dataset_registry.get_dataset_info(dataset_name)
+            metrics = dataset_info.get("metrics", [])
+            all_metrics.update(metrics)
+        except Exception as e:
+            console.print(
+                ClickFormatter.warning(
+                    f"Could not get metrics for dataset '{dataset_name}': {e}"
+                )
+            )
+
+    if not all_metrics:
+        return complete_metric_args
+
+    # Check if user wants to configure metrics
+    console.print(
+        f"\n[blue]Found {len(all_metrics)} unique metrics: {', '.join(sorted(all_metrics))}[/blue]"
+    )
+    if not click.confirm(f"Configure metric arguments?"):
+        return complete_metric_args
+
+    # Handle each metric
+    for metric_name in sorted(all_metrics):
+        try:
+            # Get metric argument information
+            metric_info = metric_registry.get_metric_all_args(metric_name)
+            required_args = metric_info["required"]
+            optional_args = metric_info["optional"]
+            default_args = metric_info["defaults"]
+
+            # Check what arguments are already provided
+            provided_args = complete_metric_args.get(metric_name, {})
+            missing_required = [
+                arg for arg in required_args if arg not in provided_args
+            ]
+
+            # Show metric information to user
+            if required_args or optional_args:
+                console.print(f"\n[cyan]Metric '{metric_name}' configuration:[/cyan]")
+                if required_args:
+                    console.print(f"  Required arguments: {', '.join(required_args)}")
+                if optional_args:
+                    console.print(
+                        f"  Optional arguments: {', '.join(optional_args)} (defaults: {default_args})"
+                    )
+
+            # Prompt for arguments if needed
+            if missing_required or (
+                optional_args
+                and click.confirm(
+                    f"Configure optional arguments for metric '{metric_name}'?"
+                )
+            ):
+                new_args = prompt_for_missing_metric_args(
+                    metric_name,
+                    missing_required,
+                    optional_args,
+                    default_args,
+                    console,
+                )
+
+                if new_args:
+                    if metric_name not in complete_metric_args:
+                        complete_metric_args[metric_name] = {}
+                    complete_metric_args[metric_name].update(new_args)
+
+        except Exception as e:
+            console.print(
+                ClickFormatter.warning(
+                    f"Could not get requirements for metric '{metric_name}': {e}"
+                )
+            )
+
+    return complete_metric_args
+
+
 def _show_evaluation_plan(
     console: Console,
     model: str,
@@ -472,6 +589,7 @@ def _show_evaluation_plan(
     dataset_names: list,
     dataset_args: dict,
     processor_args: dict,
+    metric_args: dict,
     model_overrides: dict,
     batch_size: int,
     use_cache: bool,
@@ -487,6 +605,7 @@ def _show_evaluation_plan(
         dataset_names: List of dataset names
         dataset_args: Dataset arguments
         processor_args: Processor arguments
+        metric_args: Metric arguments
         model_overrides: Model overrides
         batch_size: Batch size
         use_cache: Whether to use caching
@@ -526,6 +645,14 @@ def _show_evaluation_plan(
                 if args:
                     args_str = ", ".join([f"{k}={v}" for k, v in args.items()])
                     console.print(f"  {dataset_name}.{processor_name}: {args_str}")
+
+    # Show metric arguments if any
+    if metric_args:
+        console.print(f"[cyan]Metric Arguments:[/cyan]")
+        for metric_name, args in metric_args.items():
+            if args:
+                args_str = ", ".join([f"{k}={v}" for k, v in args.items()])
+                console.print(f"  {metric_name}: {args_str}")
 
     # Show model overrides if any
     if model_overrides:
