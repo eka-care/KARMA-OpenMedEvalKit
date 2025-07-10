@@ -15,7 +15,11 @@ class EvalResult:
     additional_info: Optional[Dict] = None
 
 
-@register_metric("asr_metric")
+@register_metric(
+    name="asr_metric",
+    optional_args=["use_entity_wer", "entity_extraction_method"],
+    default_args={"use_entity_wer": False, "entity_extraction_method": "simple"}
+)
 class ASRMetrics(BaseMetric):
     def __init__(self, metric_name: str, **kwargs):
         super().__init__(metric_name, **kwargs)
