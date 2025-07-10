@@ -17,7 +17,7 @@ class EvalResult:
 
 @register_metric("asr_metric")
 class ASRMetrics(BaseMetric):
-    def __init__(self, metric_name: str, **kwargs):
+    def __init__(self, metric_name: str = "asr_metric", **kwargs):
         super().__init__(metric_name, **kwargs)
 
     def evaluate(self, predictions, references, **kwargs) -> EvalResult:

@@ -5,10 +5,13 @@ This module provides the base interface that eval_datasets should implement
 to provide model inputs directly to the benchmark system.
 """
 
+import logging
 from abc import ABC, abstractmethod
 from typing import Dict, Any, Tuple, Generator, Optional, List
 from torch.utils.data import IterableDataset
 from datasets import load_dataset
+
+logger = logging.getLogger(__name__)
 
 
 class BaseMultimodalDataset(IterableDataset, ABC):
@@ -124,7 +127,12 @@ class BaseMultimodalDataset(IterableDataset, ABC):
         """
         if self.processors:
             for processor in self.processors:
+                logger.info(
+                    f"Running processor - {processor.name} for {self.dataset_name}"
+                )
+                logger.info(f"Before processing: {responses[0]}")
                 responses = processor.process(responses)
+                logger.info(f"After processing Output: {responses[0]}")
         return responses
 
 

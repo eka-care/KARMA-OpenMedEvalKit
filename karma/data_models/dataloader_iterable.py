@@ -1,6 +1,15 @@
 from pydantic import BaseModel, Field, model_serializer
 from PIL import Image
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Union
+
+
+class ConversationTurn(BaseModel):
+    content: str = Field(description="The content of the conversation.")
+    role: str = Field(description="The role of the conversation.")
+
+
+class Conversation(BaseModel):
+    conversation: List[ConversationTurn]
 
 
 class DataLoaderIterable(BaseModel):
@@ -23,6 +32,11 @@ class DataLoaderIterable(BaseModel):
         default=None,
         description="Other arguments passed as a sample from the dataset iter",
     )
+    conversation: Optional[List[Conversation]] = Field(
+        default=None,
+        description="Conversation prompt passed as a sample from the dataset iter",
+    )
+
     class Config:
         arbitrary_types_allowed = True
         exclude_none = True
@@ -33,5 +47,3 @@ class DataLoaderIterable(BaseModel):
     def serialize_model(self) -> Dict[str, Any]:
         # Custom serialization logic that excludes None values
         return {k: v for k, v in self.__dict__.items() if v is not None}
-
-

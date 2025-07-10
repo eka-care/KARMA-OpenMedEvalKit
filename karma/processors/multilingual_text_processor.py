@@ -1,9 +1,12 @@
 import re
+import logging
 from pathlib import Path
 from typing import List, Tuple, Dict
 from karma.processors.base import BaseProcessor
 from karma.registries.processor_registry import register_processor
 from indicnlp.normalize.indic_normalize import IndicNormalizerFactory
+
+logger = logging.getLogger(__name__)
 
 
 
@@ -19,7 +22,9 @@ class MultilingualTextProcessor(BaseProcessor):
         self.glm_dir = Path(glm_dir)
         self._rules_cache: Dict[str, List[Tuple[re.Pattern, str]]] = {}
         self.language = language
-        self.normalizer = IndicNormalizerFactory().get_normalizer(self.language)
+        self.normalizer = IndicNormalizerFactory().get_normalizer(
+            self.language, **{"remove_nuktas": True}
+        )
 
 
     def _load_rules(self) -> List[Tuple[re.Pattern, str]]:

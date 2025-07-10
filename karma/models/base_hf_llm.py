@@ -62,7 +62,7 @@ class MedGemmaLLM(BaseHFModel):
         from huggingface_hub import login
 
         try:
-            login(os.getenv("HF_TOKEN"))
+            login(os.getenv("HUGGINGFACE_TOKEN"))
         except ValueError:
             logger.warning("HF token not found, will not login.")
 
