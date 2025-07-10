@@ -113,8 +113,11 @@ class MedGemmaLLM(BaseModel):
 
             # Add image if provided
             if data_point.images:
-                for image in data_point.images:
-                    user_content.append({"type": "image", "image": MedGemmaLLM.decode_image(image)})
+                if isinstance(data_point.images, list):
+                    for image in data_point.images:
+                        user_content.append({"type": "image", "image": MedGemmaLLM.decode_image(image)})
+                else:
+                    user_content.append({"type": "image", "image": MedGemmaLLM.decode_image(data_point.images)})
 
             messages.append({"role": "user", "content": user_content})
 
