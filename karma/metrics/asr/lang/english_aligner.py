@@ -169,9 +169,26 @@ class EnglishCERAligner(BaseCERAligner):
         
         # Handle tokens with digits
         if re.search(r'\d', token):
+            # Special handling for decimal numbers with units (e.g., 7.5mg)
+            decimal_match = re.match(r'^(\d+\.\d+)([a-zA-Z]+)$', token)
+            if decimal_match:
+                number_part, unit_part = decimal_match.groups()
+                number_words = self.convert_decimal_to_words(number_part)
+                
+                if unit_part.lower() in self.word_to_unit:
+                    unit_word = self.unit_words[self.word_to_unit[unit_part.lower()]][0]
+                else:
+                    unit_word = unit_part.lower()
+                
+                expanded = ' '.join(number_words + [unit_word])
+                if expanded != token:
+                    return expanded
+            
+            # General handling for other digit patterns
             result_parts = []
             current_number = ""
             current_alpha = ""
+            in_decimal = False
             
             for char in token:
                 if char.isdigit():
@@ -184,19 +201,31 @@ class EnglishCERAligner(BaseCERAligner):
                             result_parts.append(current_alpha.lower())
                         current_alpha = ""
                     current_number += char
+                elif char == '.' and current_number and not in_decimal:
+                    # Handle decimal point - continue building the number
+                    current_number += char
+                    in_decimal = True
                 elif char.isalpha():
                     # Process accumulated number first
                     if current_number:
-                        number_words = self.convert_number_to_words(current_number)
+                        if '.' in current_number:
+                            number_words = self.convert_decimal_to_words(current_number)
+                        else:
+                            number_words = self.convert_number_to_words(current_number)
                         result_parts.extend(number_words)
                         current_number = ""
+                        in_decimal = False
                     current_alpha += char
                 else:
                     # Process accumulated number and alpha
                     if current_number:
-                        number_words = self.convert_number_to_words(current_number)
+                        if '.' in current_number:
+                            number_words = self.convert_decimal_to_words(current_number)
+                        else:
+                            number_words = self.convert_number_to_words(current_number)
                         result_parts.extend(number_words)
                         current_number = ""
+                        in_decimal = False
                     if current_alpha:
                         # Check if it's a unit abbreviation
                         if current_alpha.lower() in self.word_to_unit:
@@ -205,8 +234,8 @@ class EnglishCERAligner(BaseCERAligner):
                             result_parts.append(current_alpha.lower())
                         current_alpha = ""
                     
-                    # Process symbol character
-                    if char in self.symbol_words and self.symbol_words[char]:
+                    # Process symbol character (but not decimal point)
+                    if char in self.symbol_words and char != '.' and self.symbol_words[char]:
                         # Use first non-empty word
                         for word in self.symbol_words[char]:
                             if word:
@@ -215,7 +244,10 @@ class EnglishCERAligner(BaseCERAligner):
             
             # Process any remaining number or alpha at the end
             if current_number:
-                number_words = self.convert_number_to_words(current_number)
+                if '.' in current_number:
+                    number_words = self.convert_decimal_to_words(current_number)
+                else:
+                    number_words = self.convert_number_to_words(current_number)
                 result_parts.extend(number_words)
             if current_alpha:
                 # Check if it's a unit abbreviation
@@ -371,6 +403,80 @@ class EnglishCERAligner(BaseCERAligner):
         
         return words
 
+    def convert_decimal_to_words(self, decimal_str: str) -> List[str]:
+        """Convert a decimal number string to English words."""
+        if not decimal_str:
+            return ["zero"]
+        
+        # Handle negative numbers
+        if decimal_str.startswith('-'):
+            return ["negative"] + self.convert_decimal_to_words(decimal_str[1:])
+        
+        # Split into integer and decimal parts
+        if '.' in decimal_str:
+            integer_part, decimal_part = decimal_str.split('.', 1)
+        else:
+            integer_part, decimal_part = decimal_str, ""
+        
+        words = []
+        
+        # Convert integer part
+        if integer_part:
+            if integer_part == "0":
+                words.append("zero")
+            else:
+                words.extend(self.convert_number_to_words(integer_part))
+        else:
+            words.append("zero")
+        
+        # Convert decimal part
+        if decimal_part:
+            words.append("point")
+            # Convert each digit individually
+            digit_words = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine']
+            for digit in decimal_part:
+                if digit.isdigit():
+                    words.append(digit_words[int(digit)])
+        
+        return words
+    
+    def convert_decimal_to_words_with_and(self, decimal_str: str) -> List[str]:
+        """Convert a decimal number string to English words with British 'and' style."""
+        if not decimal_str:
+            return ["zero"]
+        
+        # Handle negative numbers
+        if decimal_str.startswith('-'):
+            return ["negative"] + self.convert_decimal_to_words_with_and(decimal_str[1:])
+        
+        # Split into integer and decimal parts
+        if '.' in decimal_str:
+            integer_part, decimal_part = decimal_str.split('.', 1)
+        else:
+            integer_part, decimal_part = decimal_str, ""
+        
+        words = []
+        
+        # Convert integer part with British style
+        if integer_part:
+            if integer_part == "0":
+                words.append("zero")
+            else:
+                words.extend(self.convert_number_to_words_with_and(integer_part))
+        else:
+            words.append("zero")
+        
+        # Convert decimal part
+        if decimal_part:
+            words.append("point")
+            # Convert each digit individually
+            digit_words = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine']
+            for digit in decimal_part:
+                if digit.isdigit():
+                    words.append(digit_words[int(digit)])
+        
+        return words
+
     def _convert_below_1000(self, num: int) -> List[str]:
         """Convert numbers below 1000 to English words - American style."""
         if num == 0:
@@ -478,12 +584,25 @@ class EnglishCERAligner(BaseCERAligner):
         
         # Handle tokens with digits
         if re.search(r'\d', token) and '/' not in token:  # Don't re-process if already handled above
-            # Pattern: Number followed by unit (750mg)
-            match = re.match(r'^(\d+)([a-zA-Z]+)$', token)
+            # Pattern: Pure decimal number (158.12)
+            match = re.match(r'^(\d+\.\d+)$', token)
+            if match:
+                number_part = match.group(1)
+                number_words = self.convert_decimal_to_words(number_part)
+                number_words_with_and = self.convert_decimal_to_words_with_and(number_part)
+                
+                # Add both American and British styles
+                expansion = ' '.join(number_words)
+                expansions.add(expansion)
+                expansion_with_and = ' '.join(number_words_with_and)
+                expansions.add(expansion_with_and)
+            
+            # Pattern: Decimal number followed by unit (7.5mg)
+            match = re.match(r'^(\d+\.\d+)([a-zA-Z]+)$', token)
             if match:
                 number_part, unit_part = match.groups()
-                number_words = self.convert_number_to_words(number_part)
-                number_words_with_and = self.convert_number_to_words_with_and(number_part)
+                number_words = self.convert_decimal_to_words(number_part)
+                number_words_with_and = self.convert_decimal_to_words_with_and(number_part)
                 
                 if unit_part.lower() in self.unit_words:
                     # Add all unit variations
@@ -506,6 +625,38 @@ class EnglishCERAligner(BaseCERAligner):
                     expansions.add(expansion)
                     expansion_with_and = ' '.join(number_words_with_and + [unit_part.lower()])
                     expansions.add(expansion_with_and)
+            
+            # Pattern: Integer number followed by unit (750mg)
+            match = re.match(r'^(\d+)([a-zA-Z]+)$', token)
+            if match:
+                number_part, unit_part = match.groups()
+                number_words = self.convert_number_to_words(number_part)
+                number_words_with_and = self.convert_number_to_words_with_and(number_part)
+                
+                if unit_part.lower() in self.unit_words:
+                    # Add all unit variations
+                    for unit_variant in self.unit_words[unit_part.lower()]:
+                        # Lowercase variant
+                        expansion = ' '.join(number_words + [unit_variant])
+                        expansions.add(expansion)
+                        expansion_with_and = ' '.join(number_words_with_and + [unit_variant])
+                        expansions.add(expansion_with_and)
+                        # Uppercase variant (always generate both cases)
+                        expansion_upper = ' '.join(number_words + [unit_part.upper()])
+                        expansions.add(expansion_upper)
+                        expansion_with_and_upper = ' '.join(number_words_with_and + [unit_part.upper()])
+                        expansions.add(expansion_with_and_upper)
+                else:
+                    # Not a known unit, just lowercase it
+                    expansion = ' '.join(number_words + [unit_part.lower()])
+                    expansions.add(expansion)
+                    expansion_with_and = ' '.join(number_words_with_and + [unit_part.lower()])
+                    expansions.add(expansion_with_and)
+                    # Uppercase variant (always generate both cases)
+                    expansion_upper = ' '.join(number_words + [unit_part.upper()])
+                    expansions.add(expansion_upper)
+                    expansion_with_and_upper = ' '.join(number_words_with_and + [unit_part.upper()])
+                    expansions.add(expansion_with_and_upper)
             
             # Pattern: Unit followed by number (pH7, CO2)
             match = re.match(r'^([a-zA-Z]+)(\d+)$', token)
@@ -574,6 +725,7 @@ class EnglishCERAligner(BaseCERAligner):
         result_parts = []
         current_number = ""
         current_alpha = ""
+        in_decimal = False
         
         # Create lookup for symbol replacements
         symbol_replacements = {pos: word for pos, symbol, word in symbol_combo}
@@ -587,18 +739,30 @@ class EnglishCERAligner(BaseCERAligner):
                         result_parts.append(current_alpha.lower())
                     current_alpha = ""
                 current_number += char
+            elif char == '.' and current_number and not in_decimal:
+                # Handle decimal point - continue building the number
+                current_number += char
+                in_decimal = True
             elif char.isalpha():
                 if current_number:
-                    number_words = self.convert_number_to_words(current_number)
+                    if '.' in current_number:
+                        number_words = self.convert_decimal_to_words(current_number)
+                    else:
+                        number_words = self.convert_number_to_words(current_number)
                     result_parts.extend(number_words)
                     current_number = ""
+                    in_decimal = False
                 current_alpha += char
             else:
                 # Process any accumulated number/alpha
                 if current_number:
-                    number_words = self.convert_number_to_words(current_number)
+                    if '.' in current_number:
+                        number_words = self.convert_decimal_to_words(current_number)
+                    else:
+                        number_words = self.convert_number_to_words(current_number)
                     result_parts.extend(number_words)
                     current_number = ""
+                    in_decimal = False
                 if current_alpha:
                     if current_alpha.lower() in self.unit_words:
                         result_parts.append(self.unit_words[current_alpha.lower()][0])
@@ -606,13 +770,16 @@ class EnglishCERAligner(BaseCERAligner):
                         result_parts.append(current_alpha.lower())
                     current_alpha = ""
                 
-                # Add symbol word if it exists and is non-empty
-                if i in symbol_replacements and symbol_replacements[i]:
+                # Add symbol word if it exists and is non-empty (but not decimal point)
+                if i in symbol_replacements and symbol_replacements[i] and char != '.':
                     result_parts.append(symbol_replacements[i])
         
         # Process remaining
         if current_number:
-            number_words = self.convert_number_to_words(current_number)
+            if '.' in current_number:
+                number_words = self.convert_decimal_to_words(current_number)
+            else:
+                number_words = self.convert_number_to_words(current_number)
             result_parts.extend(number_words)
         if current_alpha:
             if current_alpha.lower() in self.unit_words:
