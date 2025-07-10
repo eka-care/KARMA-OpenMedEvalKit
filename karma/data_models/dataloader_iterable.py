@@ -8,7 +8,7 @@ class DataLoaderIterable(BaseModel):
         default=None,
         description="Input prompt passed as a sample from the dataset iter",
     )
-    images: Optional[Union[Image.Image, List[Image.Image], bytes]] = Field(
+    images: Optional[Union[Image.Image, List[Image.Image], bytes, List[bytes]]] = Field(
         default=None,
         description="Image prompt passed as a sample from the dataset iter. See medxpertqa",
     )
