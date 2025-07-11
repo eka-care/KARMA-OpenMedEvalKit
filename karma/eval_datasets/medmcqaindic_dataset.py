@@ -14,7 +14,6 @@ from karma.eval_datasets.medmcqa_dataset import MedMCQADataset
 logger = logging.getLogger(__name__)
 
 # Hardcoded confinement instructions
-CONFINEMENT_INSTRUCTIONS = "Output format: 'ANSWER: <option>', examples: ['ANSWER: A', 'ANSWER: B', 'ANSWER: C', 'ANSWER: D']"
 DATASET_NAME = "ekacare/MedMCQA-Indic"
 SPLIT = "test"
 COMMIT_HASH = "dc18742d78a3486eef3d68b610ec47411ae383dd"
