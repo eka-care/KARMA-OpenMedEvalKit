@@ -75,4 +75,7 @@ class SLAKEDataset(VQARADDataset):
         """
         Extract the answer from the answer string.
         """
-        return answer.split("Final Answer:")[1].strip(), True
+        if "Final Answer:" in answer:
+            return answer.split("Final Answer:")[1].strip(), True
+        else:
+            return answer, False
