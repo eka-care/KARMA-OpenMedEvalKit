@@ -195,4 +195,3 @@ The results.json file will look like this.
 
 - **Explore datasets**: Check out our [Dataset Guide](user-guide/basic-usage.md) to learn about available medical datasets
 - **Add custom models**: See the [API Reference](api-reference/models.md) for integrating your own models
-- **Contributing**: Help improve KARMA by reading our [Contributing Guide](contributing.md)

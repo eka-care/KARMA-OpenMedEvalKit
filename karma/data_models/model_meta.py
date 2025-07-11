@@ -33,11 +33,15 @@ class ModelMeta(BaseModel):
 
     # Core identification
     name: str = Field(..., description="HuggingFace-style model identifier")
-    revision: Optional[str] = Field(None, description="Git commit hash or version tag")
-    reference: Optional[str] = Field(
-        None, description="Official documentation or homepage URL"
+    revision: Optional[str] = Field(
+        default=None, description="Git commit hash or version tag"
     )
-    description: Optional[str] = Field(None, description="Brief model description")
+    reference: Optional[str] = Field(
+        default=None, description="Official documentation or homepage URL"
+    )
+    description: Optional[str] = Field(
+        default=None, description="Brief model description"
+    )
 
     # Model loading configuration
     loader_class: str = Field(..., description="Full Python path to model loader class")
@@ -58,15 +62,17 @@ class ModelMeta(BaseModel):
     )
 
     # Technical specifications
-    n_parameters: Optional[int] = Field(None, description="Number of model parameters")
+    n_parameters: Optional[int] = Field(
+        default=None, description="Number of model parameters"
+    )
     memory_usage_mb: Optional[float] = Field(
-        None, description="Estimated memory usage in MB"
+        default=None, description="Estimated memory usage in MB"
     )
     max_tokens: Optional[int] = Field(
-        None, description="Maximum token length supported"
+        default=None, description="Maximum token length supported"
     )
     embed_dim: Optional[int] = Field(
-        None, description="Embedding dimension for embedding models"
+        default=None, description="Embedding dimension for embedding models"
     )
     framework: List[str] = Field(
         default_factory=lambda: ["PyTorch", "Transformers"],
@@ -75,28 +81,28 @@ class ModelMeta(BaseModel):
 
     # Multi-modal specific metadata
     audio_sample_rate: Optional[int] = Field(
-        None, description="Required audio sample rate in Hz"
+        default=None, description="Required audio sample rate in Hz"
     )
     supported_audio_formats: Optional[List[str]] = Field(
         default_factory=list, description="Supported audio file formats"
     )
     vision_encoder_dim: Optional[int] = Field(
-        None, description="Vision encoder dimension"
+        default=None, description="Vision encoder dimension"
     )
     max_image_size: Optional[int] = Field(
-        None, description="Maximum supported image size"
+        default=None, description="Maximum supported image size"
     )
 
     # Licensing and availability
-    license: Optional[str] = Field(None, description="License type or URL")
+    license: Optional[str] = Field(default=None, description="License type or URL")
     open_weights: Optional[bool] = Field(
-        None, description="Whether model weights are publicly available"
+        default=None, description="Whether model weights are publicly available"
     )
     public_training_code: Optional[str] = Field(
-        None, description="URL to training code if available"
+        default=None, description="URL to training code if available"
     )
     public_training_data: Optional[Union[str, bool]] = Field(
-        None, description="Training data availability info"
+        default=None, description="Training data availability info"
     )
 
     # Language and domain support
@@ -110,14 +116,14 @@ class ModelMeta(BaseModel):
         default_factory=dict, description="Benchmark performance scores"
     )
     inference_speed_ms: Optional[float] = Field(
-        None, description="Average inference time in ms"
+        default=None, description="Average inference time in ms"
     )
 
     # Release information
     release_date: Optional[str] = Field(
-        None, description="Model release date (YYYY-MM-DD)"
+        default=None, description="Model release date (YYYY-MM-DD)"
     )
-    version: Optional[str] = Field(None, description="Model version")
+    version: Optional[str] = Field(default=None, description="Model version")
 
     @validator("languages")
     def validate_languages(cls, v):
