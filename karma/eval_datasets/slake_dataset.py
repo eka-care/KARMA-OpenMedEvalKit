@@ -25,6 +25,7 @@ CONFINEMENT_INSTRUCTIONS = "You may write out your argument before stating your 
     split=SPLIT,
     metrics=["exact_match", "tokenised_f1"],
     task_type="vqa",
+    optional_args=["confinement_instructions"],
 )
 class SLAKEDataset(VQARADDataset):
     """
@@ -34,6 +35,7 @@ class SLAKEDataset(VQARADDataset):
 
     def __init__(
         self,
+        confinement_instructions: str = CONFINEMENT_INSTRUCTIONS,
         **kwargs,
     ):
         """
@@ -44,7 +46,7 @@ class SLAKEDataset(VQARADDataset):
         """
         # Override the dataset name for SLAKE
 
-        super().__init__(**kwargs)
+        super().__init__(confinement_instructions=confinement_instructions, **kwargs)
     
     def format_item(self, sample: Dict[str, Any]) -> DataLoaderIterable:
         """
@@ -61,7 +63,7 @@ class SLAKEDataset(VQARADDataset):
         image = sample["image"]["bytes"]
 
         # Create VQA prompt
-        prompt = f"Question: {question}\n\n{CONFINEMENT_INSTRUCTIONS}"
+        prompt = f"Question: {question}\n\n{self.confinement_instructions}"
 
         processed_sample = DataLoaderIterable(
             input=prompt,

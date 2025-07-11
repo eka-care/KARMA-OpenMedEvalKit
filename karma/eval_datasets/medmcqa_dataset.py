@@ -15,7 +15,11 @@ from karma.registries.dataset_registry import register_dataset
 logger = logging.getLogger(__name__)
 
 # Hardcoded confinement instructions
-CONFINEMENT_INSTRUCTIONS = "Output format: 'ANSWER: <option>', examples: ['ANSWER: A', 'ANSWER: B', 'ANSWER: C', 'ANSWER: D']"
+CONFINEMENT_INSTRUCTIONS = """Instructions: The following are multiple choice questions about medical knowledge. Solve them in a
+step-by-step fashion, starting by summarizing the available information. Output a single option from the
+four options as the final answer. Question: <QUESTION> Response (think step by step and then
+end with "Final Answer:" followed by *only* the letter corresponding to the correct answer enclosed in
+parentheses)"""
 DATASET_NAME = "openlifescienceai/medmcqa"
 SPLIT = "validation"
 COMMIT_HASH = "91c6572c454088bf71b679ad90aa8dffcd0d5868"
@@ -61,7 +65,7 @@ class MedMCQADataset(BaseMultimodalDataset):
         cop = sample["cop"]
         choice_labels = ["A", "B", "C", "D"]
         correct_answer = choice_labels[cop]
-        prompt = f"{input_text}\n\n{CONFINEMENT_INSTRUCTIONS}"
+        prompt = self.confinement_instructions.replace("<QUESTION>", input_text)
 
         # processed_sample = {
         #     "input": prompt,

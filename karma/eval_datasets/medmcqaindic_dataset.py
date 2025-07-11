@@ -17,7 +17,11 @@ logger = logging.getLogger(__name__)
 DATASET_NAME = "ekacare/MedMCQA-Indic"
 SPLIT = "test"
 COMMIT_HASH = "dc18742d78a3486eef3d68b610ec47411ae383dd"
-
+CONFINEMENT_INSTRUCTIONS = """Instructions: The following are multiple choice questions about medical knowledge. Solve them in a
+step-by-step fashion, starting by summarizing the available information. Output a single option from the
+four options as the final answer. Question: <QUESTION> Response (think step by step and then
+end with "Final Answer:" followed by *only* the letter corresponding to the correct answer enclosed in
+parentheses)"""
 @register_dataset(
     DATASET_NAME,
     commit_hash=COMMIT_HASH,
@@ -25,11 +29,13 @@ COMMIT_HASH = "dc18742d78a3486eef3d68b610ec47411ae383dd"
     required_args=["subset"],
     metrics=["exact_match"],
     task_type="mcqa",
+    optional_args=["confinement_instructions"],
 )
 class MedMCQAIndicDataset(MedMCQADataset):
     def __init__(
             self,
             subset: str = 'as',
+            confinement_instructions: str = CONFINEMENT_INSTRUCTIONS,
             **kwargs,
     ):
         """
@@ -40,7 +46,7 @@ class MedMCQAIndicDataset(MedMCQADataset):
         """
         self.subset = subset
         self.dataset_name = f"{DATASET_NAME}-{self.subset}"
-        super().__init__(dataset_name=self.dataset_name,config=subset,**kwargs)
+        super().__init__(dataset_name=self.dataset_name,config=subset,confinement_instructions=confinement_instructions,**kwargs)
 
     def format_item(self, sample: Dict[str, Any],**kwargs):
         return super().format_item(sample=sample, subset=self.subset)

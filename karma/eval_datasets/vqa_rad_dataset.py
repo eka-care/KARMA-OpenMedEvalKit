@@ -18,7 +18,9 @@ logger = logging.getLogger(__name__)
 DATASET_NAME = "flaviagiammarino/vqa-rad"
 SPLIT = "test"
 COMMIT_HASH = "bcf91e7654fb9d51c8ab6a5b82cacf3fafd2fae9"
-
+CONFINEMENT_INSTRUCTIONS = """"Given this radiology image, which can be a frontal chest X-ray, a single slice head or
+abdominal CT or MR image, provide a very short, definitive, and concise answer (if possible, a single
+word) to the following question: <QUESTION>"""
 
 @register_dataset(
     DATASET_NAME,
@@ -61,12 +63,7 @@ class VQARADDataset(BaseMultimodalDataset):
         image = sample["image"]["bytes"]
 
         # Create VQA prompt
-        if answer in ["yes", "no"]:
-            prompt = (
-                f"Question: {question}\n\nPlease output 'yes' or 'no'(no extra output)"
-            )
-        else:
-            prompt = f"Question: {question}\n\nPlease answer the question concisely."
+        prompt = self.confinement_instructions.replace("<QUESTION>", question)
 
         processed_sample = DataLoaderIterable(
             input=prompt,

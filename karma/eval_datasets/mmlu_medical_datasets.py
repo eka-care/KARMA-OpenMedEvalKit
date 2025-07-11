@@ -13,7 +13,11 @@ from karma.eval_datasets.medqa_dataset import MedQADataset
 logger = logging.getLogger(__name__)
 
 # Hardcoded confinement instructions - same as MedQA
-
+CONFINEMENT_INSTRUCTIONS = """Instructions: The following are multiple choice questions about medical knowledge. Solve them in a
+step-by-step fashion, starting by summarizing the available information. Output a single option from the
+four options as the final answer. Question: <QUESTION> Response (think step by step and then
+end with "Final Answer:" followed by *only* the letter corresponding to the correct answer enclosed in
+parentheses)"""
 SPLIT = "test"
 
 
@@ -23,12 +27,14 @@ SPLIT = "test"
     split=SPLIT,
     metrics=["exact_match"],
     task_type="mcqa",
+    optional_args=["confinement_instructions"],
 )
 class MMLUProfessionalMedicineDataset(MedQADataset):
     """MMLU Professional Medicine dataset inheriting from MedQA."""
 
-    def __init__(self, **kwargs):
+    def __init__(self, confinement_instructions: str = CONFINEMENT_INSTRUCTIONS, **kwargs):
         super().__init__(
+            confinement_instructions=confinement_instructions,
             **kwargs,
         )
 
@@ -39,12 +45,14 @@ class MMLUProfessionalMedicineDataset(MedQADataset):
     commit_hash="a7a792bd0855aead8b6bf922fa22260eff160d6e",
     metrics=["exact_match"],
     task_type="mcqa",
+    optional_args=["confinement_instructions"],
 )
 class MMLUAnatomyDataset(MedQADataset):
     """MMLU Anatomy dataset inheriting from MedQA."""
 
-    def __init__(self, **kwargs):
+    def __init__(self, confinement_instructions: str = CONFINEMENT_INSTRUCTIONS, **kwargs):
         super().__init__(
+            confinement_instructions=confinement_instructions,
             **kwargs,
         )
 
@@ -55,12 +63,14 @@ class MMLUAnatomyDataset(MedQADataset):
     commit_hash="94b1278bb84c3005f90eef76d5846916f0d07f3a",
     metrics=["exact_match"],
     task_type="mcqa",
+    optional_args=["confinement_instructions"],
 )
 class MMLUCollegeBiologyDataset(MedQADataset):
     """MMLU College Biology dataset inheriting from MedQA."""
 
-    def __init__(self, **kwargs):
+    def __init__(self, confinement_instructions: str = CONFINEMENT_INSTRUCTIONS, **kwargs):
         super().__init__(
+            confinement_instructions=confinement_instructions,
             **kwargs,
         )
 
@@ -71,12 +81,14 @@ class MMLUCollegeBiologyDataset(MedQADataset):
     commit_hash="e15116763fac9a86c1383c9d48428381b3335b22",
     metrics=["exact_match"],
     task_type="mcqa",
+    optional_args=["confinement_instructions"],
 )
 class MMLUClinicalKnowledgeDataset(MedQADataset):
     """MMLU Clinical Knowledge dataset inheriting from MedQA."""
 
-    def __init__(self, **kwargs):
+    def __init__(self, confinement_instructions: str = CONFINEMENT_INSTRUCTIONS, **kwargs):
         super().__init__(
+            confinement_instructions=confinement_instructions,
             **kwargs,
         )
 
@@ -87,11 +99,13 @@ class MMLUClinicalKnowledgeDataset(MedQADataset):
     commit_hash="62ba72a3cc369ffec1def2a042f81ddc6837be12",
     metrics=["exact_match"],
     task_type="mcqa",
+    optional_args=["confinement_instructions"],
 )
 class MMLUCollegeMedicineDataset(MedQADataset):
     """MMLU College Medicine dataset inheriting from MedQA."""
 
-    def __init__(self, **kwargs):
+    def __init__(self, confinement_instructions: str = CONFINEMENT_INSTRUCTIONS, **kwargs):
         super().__init__(
+            confinement_instructions=confinement_instructions,
             **kwargs,
         )

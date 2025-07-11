@@ -31,6 +31,7 @@ class BaseMultimodalDataset(IterableDataset, ABC):
         commit_hash: Optional[str] = None,
         processors=None,
         max_samples: Optional[int] = None,
+        confinement_instructions: str = "",
         **kwargs,
     ):
         """
@@ -69,7 +70,7 @@ class BaseMultimodalDataset(IterableDataset, ABC):
         self.processors = processors
         # check if max samples is None then set it max integer
         self.max_samples = max_samples if max_samples is not None else float("inf")
-
+        self.confinement_instructions = confinement_instructions
     def __iter__(self) -> Generator[Dict[str, Any], None, None]:
         """
         Get a single sample from the dataset.
