@@ -22,7 +22,7 @@ COMMIT_HASH = "8d18b4d5a4eae47101c1d9f57b99fc58df66f17e"
     DATASET_NAME,
     commit_hash=COMMIT_HASH,
     split=SPLIT,
-    metrics=["exact_match"],
+    metrics=["exact_match", "tokenised_f1"],
     task_type="vqa",
 )
 class SLAKEDataset(VQARADDataset):
