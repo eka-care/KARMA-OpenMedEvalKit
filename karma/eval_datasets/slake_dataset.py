@@ -6,7 +6,7 @@ since they share the same structure for visual question answering.
 """
 
 import logging
-from typing import Dict, Any
+from typing import Dict, Any, Tuple
 from karma.data_loader_iterable import DataLoaderIterable
 from karma.eval_datasets.vqa_rad_dataset import VQARADDataset
 from karma.registries.dataset_registry import register_dataset
@@ -71,8 +71,8 @@ class SLAKEDataset(VQARADDataset):
 
         return processed_sample
     
-    def extract_answer(self, answer: str) -> str:
+    def extract_prediction(self, answer: str) -> Tuple[str, bool]:
         """
         Extract the answer from the answer string.
         """
-        return answer.split("Final Answer: ")[1].strip()
+        return answer.split("Final Answer:")[1].strip(), True
