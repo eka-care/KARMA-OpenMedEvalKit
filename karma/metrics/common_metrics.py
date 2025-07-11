@@ -64,6 +64,7 @@ class TokenisedF1Metric(BaseMetric):
         super().__init__(metric_name)
 
     def tokenize(self, text):
+        text = text.replace('\n', '').replace('.', '')
         return re.findall(r'\w+', text.lower())
     
     def evaluate(self, predictions, references , **kwargs):
