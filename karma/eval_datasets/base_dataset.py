@@ -5,10 +5,13 @@ This module provides the base interface that eval_datasets should implement
 to provide model inputs directly to the benchmark system.
 """
 
+import logging
 from abc import ABC, abstractmethod
 from typing import Dict, Any, Tuple, Generator, Optional, List
 from torch.utils.data import IterableDataset
 from datasets import load_dataset
+
+logger = logging.getLogger(__name__)
 
 
 class BaseMultimodalDataset(IterableDataset, ABC):
@@ -28,6 +31,7 @@ class BaseMultimodalDataset(IterableDataset, ABC):
         commit_hash: Optional[str] = None,
         processors=None,
         max_samples: Optional[int] = None,
+        confinement_instructions: str = "",
         **kwargs,
     ):
         """
@@ -53,7 +57,6 @@ class BaseMultimodalDataset(IterableDataset, ABC):
                 split=split,
                 streaming=stream,
                 revision=commit_hash,
-                batch_size=20,
             )
             if config
             else load_dataset(
@@ -61,14 +64,13 @@ class BaseMultimodalDataset(IterableDataset, ABC):
                 split=split,
                 streaming=stream,
                 revision=commit_hash,
-                batch_size=20,
             )
         )
         self.config = config
         self.processors = processors
         # check if max samples is None then set it max integer
         self.max_samples = max_samples if max_samples is not None else float("inf")
-
+        self.confinement_instructions = confinement_instructions
     def __iter__(self) -> Generator[Dict[str, Any], None, None]:
         """
         Get a single sample from the dataset.
@@ -124,6 +126,9 @@ class BaseMultimodalDataset(IterableDataset, ABC):
         """
         if self.processors:
             for processor in self.processors:
+                logger.info(
+                    f"Running processor - {processor.name} for {self.dataset_name}"
+                )
                 responses = processor.process(responses)
         return responses
 

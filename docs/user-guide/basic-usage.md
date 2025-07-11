@@ -271,5 +271,4 @@ karma eval --model Qwen/Qwen3-0.6B --datasets openlifescienceai/pubmedqa
 ## Next Steps
 
 - **Custom models?** See the [API Reference](../api-reference/models.md)
-- **Contributing?** Read our [Contributing Guide](../contributing.md)
 - **Issues?** Visit our [GitHub Issues](https://github.com/eka-care/KARMA-OpenMedEvalKit/issues)

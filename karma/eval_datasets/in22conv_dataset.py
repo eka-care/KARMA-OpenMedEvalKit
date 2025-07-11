@@ -11,7 +11,7 @@ from karma.eval_datasets.base_dataset import BaseMultimodalDataset
 from karma.registries.dataset_registry import register_dataset
 from karma.data_models.dataloader_iterable import DataLoaderIterable
 
-CONFINEMENT_INSTRUCTIONS = "Translate the given English text to the target language. Output only the translation without any additional text."
+CONFINEMENT_INSTRUCTIONS = "Translate the given text to the target language. Output only the translation without any additional text."
 DATASET_NAME = "ai4bharat/IN22-Conv"
 SPLIT = "test"
 COMMIT_HASH = "18cd45870ff0a9e65df9b80dbbcc615eec0e4899"
@@ -75,7 +75,7 @@ CODE_TO_NAME = {
     split=SPLIT,
     processors=["devnagari_transliterator"],
     required_args=["source_language", "target_language"],
-    optional_args=["domain", "processors"],
+    optional_args=["domain", "processors", "confinement_instructions"],
     default_args={"source_language": "en", "domain": "conversational"},
 )
 class IN22ConvDataset(BaseMultimodalDataset):
@@ -90,6 +90,7 @@ class IN22ConvDataset(BaseMultimodalDataset):
         target_language: str,
         domain: str = "conversational",
         processors: Optional[List] = None,
+        confinement_instructions: Optional[str] = CONFINEMENT_INSTRUCTIONS,
         **kwargs,
     ):
         """
@@ -125,6 +126,7 @@ class IN22ConvDataset(BaseMultimodalDataset):
         self.domain = domain
         super().__init__(
             processors=processors,
+            confinement_instructions=confinement_instructions,
             **kwargs,
         )
         self.dataset_name = (
@@ -145,7 +147,7 @@ class IN22ConvDataset(BaseMultimodalDataset):
         target_text = sample.get(self.target_language, "")
 
         # Create translation prompt
-        prompt = f"Translate the following English text to {CODE_TO_NAME[self.target_language]}:\n\n{source_text}\n\n{CONFINEMENT_INSTRUCTIONS}"
+        prompt = f"Translate the following English text to {CODE_TO_NAME[self.target_language]}:\n\n{source_text}\n\n{self.confinement_instructions}"
 
         processed_sample = DataLoaderIterable(
             input=prompt,

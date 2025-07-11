@@ -15,7 +15,11 @@ from karma.registries.dataset_registry import register_dataset
 logger = logging.getLogger(__name__)
 
 # Hardcoded confinement instructions
-CONFINEMENT_INSTRUCTIONS = "Output format: 'ANSWER: <option>', examples: ['ANSWER: A', 'ANSWER: B', 'ANSWER: C', 'ANSWER: D']"
+CONFINEMENT_INSTRUCTIONS = """Instructions: The following are multiple choice questions about medical knowledge. Solve them in a
+step-by-step fashion, starting by summarizing the available information. Output a single option from the
+four options as the final answer. Question: <QUESTION> Response (think step by step and then
+end with "Final Answer:" followed by *only* the letter corresponding to the correct answer enclosed in
+parentheses)"""
 DATASET_NAME = "openlifescienceai/medqa"
 SPLIT = "test"
 COMMIT_HASH = "153e61cdd129eb79d3c27f82cdf3bc5e018c11b0"
@@ -35,6 +39,7 @@ class MedQADataset(BaseMultimodalDataset):
 
     def __init__(
         self,
+        confinement_instructions: str = CONFINEMENT_INSTRUCTIONS,
         **kwargs,
     ):
         """
@@ -44,6 +49,7 @@ class MedQADataset(BaseMultimodalDataset):
             **kwargs: Additional arguments passed to base class
         """
         super().__init__(
+            confinement_instructions=confinement_instructions,
             **kwargs,
         )
 
@@ -61,7 +67,7 @@ class MedQADataset(BaseMultimodalDataset):
 
         # Parse correct answer from Correct Option field
         correct_option = sample["data"]["Correct Option"]
-        prompt = f"{input_text}\n\n{CONFINEMENT_INSTRUCTIONS}"
+        prompt = self.confinement_instructions.replace("<QUESTION>", input_text)
 
         processed_sample = DataLoaderIterable(
             input=prompt,
@@ -71,36 +77,14 @@ class MedQADataset(BaseMultimodalDataset):
         return processed_sample
 
     def extract_prediction(self, response: str) -> Tuple[str, bool]:
-        """
-        Extract the answer letter from model response.
-
-        Args:
-            response: Model's response text
-
-        Returns:
-            Extracted answer letter (A, B, C, or D)
-        """
-        response = response.strip().upper()
-        # Look for single letter answers
-        valid_answers = ["A", "B", "C", "D"]
-
-        # Check if response is just a single letter
-        if response in valid_answers:
-            return response, True
-
-        # Look for "Answer: X" pattern
-        if "ANSWER:" in response:
-            answer_part = response.split("ANSWER:")[-1].strip()
-            if answer_part and answer_part[0] in valid_answers:
-                return answer_part[0], True
-
-        # Look for first occurrence of valid answer
-        for char in response.split(" "):
-            if char in valid_answers:
-                return char, True
-
-        # Default to A if no valid answer found
-        return response, False
+        if "Final Answer:" in response:
+            answer = response.split("Final Answer:")[1].strip() 
+            # Remove parentheses if present
+            if answer.startswith('(') and answer.endswith(')'):
+                answer = answer[1:-1]
+            return answer, True
+        else:
+            return response, False
 
     def _format_question(self, data: Dict[str, Any]) -> str:
         """

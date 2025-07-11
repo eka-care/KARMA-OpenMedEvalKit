@@ -1,6 +1,23 @@
 from pydantic import BaseModel, Field, model_serializer
 from PIL import Image
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Union
+
+
+class ConversationTurn(BaseModel):
+    content: str = Field(description="The content of the conversation.")
+    role: str = Field(description="The role of the conversation.")
+
+
+class Conversation(BaseModel):
+    conversation_turns: List[ConversationTurn]
+
+
+class RubricCriteria(BaseModel):
+    criterion: str = Field(description="The rubric criterion text.")
+    points: float = Field(description="Points awarded if criterion is met.")
+    tags: List[str] = Field(
+        default_factory=list, description="Tags for categorizing rubric items."
+    )
 
 
 class DataLoaderIterable(BaseModel):
@@ -22,6 +39,17 @@ class DataLoaderIterable(BaseModel):
     other_args: Optional[Dict[str, Any]] = Field(
         default=None,
         description="Other arguments passed as a sample from the dataset iter",
+    )
+    conversation: Optional[Conversation] = Field(
+        default=None,
+        description="Conversation prompt passed as a sample from the dataset iter",
+    )
+    rubric_to_evaluate: Optional[List[RubricCriteria]] = Field(
+        default=None, description="As defined in the healthbench paper, provide rubric"
+    )
+    system_prompt: Optional[str] = Field(
+        default=None,
+        description="The system prompt in case applicable passed as a sample from the dataset iter",
     )
 
     class Config:

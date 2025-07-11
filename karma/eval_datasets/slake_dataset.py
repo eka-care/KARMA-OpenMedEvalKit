@@ -17,7 +17,9 @@ logger = logging.getLogger(__name__)
 DATASET_NAME = "mdwiratathya/SLAKE-vqa-english"
 SPLIT = "test"
 COMMIT_HASH = "8d18b4d5a4eae47101c1d9f57b99fc58df66f17e"
-CONFINEMENT_INSTRUCTIONS = "You may write out your argument before stating your final very short, definitive, and concise answer (if possible, a single word or the letter corresponding to your answer choice) X in the format 'Final Answer: X': "
+CONFINEMENT_INSTRUCTIONS = """<QUESTION> You may write out your argument before stating your final very short,
+definitive, and concise answer (if possible, a single word or the letter corresponding to your answer
+choice) X in the format "Final Answer: X": """
 
 @register_dataset(
     DATASET_NAME,
@@ -25,6 +27,7 @@ CONFINEMENT_INSTRUCTIONS = "You may write out your argument before stating your 
     split=SPLIT,
     metrics=["exact_match", "tokenised_f1"],
     task_type="vqa",
+    optional_args=["confinement_instructions"],
 )
 class SLAKEDataset(VQARADDataset):
     """
@@ -34,6 +37,7 @@ class SLAKEDataset(VQARADDataset):
 
     def __init__(
         self,
+        confinement_instructions: str = CONFINEMENT_INSTRUCTIONS,
         **kwargs,
     ):
         """
@@ -44,7 +48,7 @@ class SLAKEDataset(VQARADDataset):
         """
         # Override the dataset name for SLAKE
 
-        super().__init__(**kwargs)
+        super().__init__(confinement_instructions=confinement_instructions, **kwargs)
     
     def format_item(self, sample: Dict[str, Any]) -> DataLoaderIterable:
         """
@@ -61,7 +65,7 @@ class SLAKEDataset(VQARADDataset):
         image = sample["image"]["bytes"]
 
         # Create VQA prompt
-        prompt = f"Question: {question}\n\n{CONFINEMENT_INSTRUCTIONS}"
+        prompt = self.confinement_instructions.replace("<QUESTION>", question)
 
         processed_sample = DataLoaderIterable(
             input=prompt,

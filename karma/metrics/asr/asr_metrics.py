@@ -21,7 +21,7 @@ class EvalResult:
     default_args={"use_entity_wer": False, "entity_extraction_method": "simple"}
 )
 class ASRMetrics(BaseMetric):
-    def __init__(self, metric_name: str, **kwargs):
+    def __init__(self, metric_name: str = "asr_metric", **kwargs):
         super().__init__(metric_name, **kwargs)
 
     def evaluate(self, predictions, references, **kwargs) -> EvalResult:
