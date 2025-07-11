@@ -6,7 +6,7 @@ multimodal dataset interface for visual question answering on radiology images.
 """
 
 import logging
-from typing import Dict, Any
+from typing import Dict, Any, Tuple
 from datasets import Image
 from karma.eval_datasets.base_dataset import BaseMultimodalDataset
 from karma.registries.dataset_registry import register_dataset
@@ -18,9 +18,9 @@ logger = logging.getLogger(__name__)
 DATASET_NAME = "flaviagiammarino/vqa-rad"
 SPLIT = "test"
 COMMIT_HASH = "bcf91e7654fb9d51c8ab6a5b82cacf3fafd2fae9"
-CONFINEMENT_INSTRUCTIONS = """"Given this radiology image, which can be a frontal chest X-ray, a single slice head or
-abdominal CT or MR image, provide a very short, definitive, and concise answer (if possible, a single
-word) to the following question: <QUESTION>"""
+CONFINEMENT_INSTRUCTIONS = """"<QUESTION> You may write out your argument before stating your final very short,
+definitive, and concise answer (if possible, a single word or the letter corresponding to your answer
+choice) X in the format "Final Answer: X":"""
 
 @register_dataset(
     DATASET_NAME,
@@ -72,3 +72,12 @@ class VQARADDataset(BaseMultimodalDataset):
         )
 
         return processed_sample
+
+    def extract_prediction(self, answer: str) -> Tuple[str, bool]:
+        """
+        Extract the answer from the answer string.
+        """
+        if "Final Answer:" in answer:
+            return answer.split("Final Answer:")[1].strip(), True
+        else:
+            return answer, False
