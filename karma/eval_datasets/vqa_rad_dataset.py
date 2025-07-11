@@ -24,7 +24,7 @@ COMMIT_HASH = "bcf91e7654fb9d51c8ab6a5b82cacf3fafd2fae9"
     DATASET_NAME,
     split=SPLIT,
     commit_hash=COMMIT_HASH,
-    metrics=["exact_match"],
+    metrics=["exact_match", "tokenised_f1"],
     task_type="vqa",
 )
 class VQARADDataset(BaseMultimodalDataset):
