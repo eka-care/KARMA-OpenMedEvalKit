@@ -7,7 +7,7 @@ since they share the same structure for visual question answering.
 
 import logging
 from typing import Dict, Any, Tuple
-from karma.data_loader_iterable import DataLoaderIterable
+from karma.data_models.dataloader_iterable import DataLoaderIterable
 from karma.eval_datasets.vqa_rad_dataset import VQARADDataset
 from karma.registries.dataset_registry import register_dataset
 
