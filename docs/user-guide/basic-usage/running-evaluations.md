@@ -65,6 +65,11 @@ karma eval --model "Qwen/Qwen3-0.6B" \
 karma eval --model "Qwen/Qwen3-0.6B" \
   --model-kwargs '{"temperature":1.0}' --output temp_1.0.json
 ```
+### Evaluation With Additional Args
+```bash
+# Test with Additional Args
+karma eval --model "Qwen/Qwen3-0.6B" --datasets ekacare/MedMCQA-Indic --dataset-args "ekacare/MedMCQA-Indic:subset=as"
+```
 
 ## Next Steps
 
