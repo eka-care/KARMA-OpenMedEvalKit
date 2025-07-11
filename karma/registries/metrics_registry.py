@@ -294,8 +294,8 @@ class MetricRegistry:
         try:
             import karma.metrics
 
-            # Import all modules in karma.metrics package
-            for finder, name, ispkg in pkgutil.iter_modules(
+            # Import all modules in karma.metrics package recursively
+            for finder, name, ispkg in pkgutil.walk_packages(
                 karma.metrics.__path__, karma.metrics.__name__ + "."
             ):
                 # Skip base classes and utility modules
