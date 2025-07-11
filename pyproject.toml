@@ -40,7 +40,6 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "gradio>=5.36.2",
     "line-profiler>=4.2.0",
     "ruff>=0.12.0",
 ]

@@ -128,9 +128,7 @@ class BaseMultimodalDataset(IterableDataset, ABC):
                 logger.info(
                     f"Running processor - {processor.name} for {self.dataset_name}"
                 )
-                logger.info(f"Before processing: {responses[0]}")
                 responses = processor.process(responses)
-                logger.info(f"After processing Output: {responses[0]}")
         return responses
 
 
