@@ -4,9 +4,8 @@ CER-based word alignment across languages.
 ASR Metrics class for evaluating speech recognition performance.
 """
 
-import sys
-import os
-from typing import Dict, Optional, List, Tuple
+import logging
+from typing import Dict, Optional, List
 from dataclasses import dataclass
 from karma.metrics.base_metric_abs import BaseMetric
 from karma.registries.metrics_registry import register_metric
@@ -14,6 +13,7 @@ from karma.registries.metrics_registry import register_metric
 from karma.metrics.asr.base_aligner import BaseCERAligner
 from karma.metrics.asr.lang.english_aligner import EnglishCERAligner
 from karma.metrics.asr.lang.hindi_aligner import HindiCERAligner
+logger = logging.getLogger(__name__)
 
 @dataclass
 class EvalResult:
@@ -32,6 +32,7 @@ class ASRSemanticMetrics(BaseMetric):
     def __init__(self, metric_name: str, language = "en", **kwargs):
         super().__init__(metric_name, **kwargs)
         self.language = language
+        self.cer_threshold = 0.4
 
     @staticmethod
     def get_aligner(language: str, cer_threshold: float = 0.4) -> BaseCERAligner:
@@ -56,7 +57,7 @@ class ASRSemanticMetrics(BaseMetric):
             raise ValueError(f"Mismatch in ref/hyp count: {len(references)} refs vs {len(predictions)} predictions")
         
         if len(references) == 0:
-            print("No data to process!")
+            logger.info("No data to process!")
             return EvalResult(
                 wer=0.0, cer=0.0, num_sentences=0, total_ref_words=0
             )
@@ -79,7 +80,7 @@ class ASRSemanticMetrics(BaseMetric):
                 alignments = aligner.align_words_dp(ref, hyp)
                 
                 # Print results
-                aligner.print_alignment_visual(alignments)
+                #aligner.print_alignment_visual(alignments) #to be used for debugging
                 
                 # Calculate statistics
                 stats = aligner.calculate_error_rates(alignments)
@@ -109,8 +110,8 @@ class ASRSemanticMetrics(BaseMetric):
                 # )
                 
             except Exception as e:
-                print(f"Error processing utterance {utt_id}: {e}")
-                print("Skipping this utterance...")
+                logger.error(f"Error processing utterance {utt_id}: {e}")
+                logger.info("Skipping this utterance...")
                 continue
                 
         # Calculate dataset-wide statistics
@@ -137,7 +138,6 @@ class ASRSemanticMetrics(BaseMetric):
             references: List of reference transcriptions
             **kwargs: Additional parameters including:
                 - language: Language code (e.g., 'english', 'hindi', 'en', 'hi') - REQUIRED
-                - cer_threshold: CER threshold for alignment (default: 0.4)
                 
         Returns:
             Dictionary containing evaluation results
@@ -148,18 +148,17 @@ class ASRSemanticMetrics(BaseMetric):
             raise ValueError("Language parameter is required. Pass it via cli: 'asr_metric:language=hi'")
         
         try:
-            print(f"Creating {language} aligner...")
+            logger.info(f"Creating {language} aligner...")
             # Get language-specific aligner
-            cer_threshold = kwargs.get('cer_threshold')
             aligner = self.get_aligner(language)
-            print(f"Aligner created successfully")
+            logger.info(f"Aligner created successfully")
             
             # Validate inputs
             if not predictions or not references:
                 raise ValueError("Both predictions and references must be non-empty lists")
             
             # Process files
-            print(f"Processing {len(references)} utterances...")
+            logger.info(f"Processing {len(references)} utterances...")
             results = self.process_files(aligner, predictions, references)  # FIXED: Added self.
             
             return EvalResult(
@@ -169,7 +168,5 @@ class ASRSemanticMetrics(BaseMetric):
             )
             
         except Exception as e:
-            print(f"Error: {e}")
-            import traceback
-            traceback.print_exc()
+            logger.error(f"Error: {e}")
             raise  # Re-raise instead of sys.exit for better error handling
