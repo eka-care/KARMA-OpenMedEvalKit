@@ -9,13 +9,15 @@ class ConversationTurn(BaseModel):
 
 
 class Conversation(BaseModel):
-    conversation: List[ConversationTurn]
+    conversation_turns: List[ConversationTurn]
 
 
 class RubricCriteria(BaseModel):
     criterion: str = Field(description="The rubric criterion text.")
     points: float = Field(description="Points awarded if criterion is met.")
-    tags: List[str] = Field(default_factory=list, description="Tags for categorizing rubric items.")
+    tags: List[str] = Field(
+        default_factory=list, description="Tags for categorizing rubric items."
+    )
 
 
 class DataLoaderIterable(BaseModel):

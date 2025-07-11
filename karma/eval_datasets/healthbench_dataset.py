@@ -59,7 +59,7 @@ class HealthBenchDataset(BaseMultimodalDataset):
                     role=conversation_turn["role"],
                 )
             )
-        conversation = Conversation(conversation=conversation)
+        conversation = Conversation(conversation_turns=conversation)
 
         criterions = []
         for rubric_item in sample["rubrics"]:

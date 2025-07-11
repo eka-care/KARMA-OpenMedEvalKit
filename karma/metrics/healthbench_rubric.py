@@ -1,19 +1,27 @@
 import json
 import numpy as np
+import logging
+
 from typing import List, Dict, Any, Optional
 from karma.metrics.base_metric_abs import BaseMetric
 from karma.models.openai_llm import OpenAILLM
 from karma.registries.metrics_registry import register_metric
-from karma.data_models.dataloader_iterable import DataLoaderIterable, RubricCriteria
+from karma.data_models.dataloader_iterable import (
+    DataLoaderIterable,
+    RubricCriteria,
+    Conversation,
+    ConversationTurn,
+)
 
+logger = logging.getLogger(__name__)
 
 HEALTHBENCH_PROMPT = """
 Your job is to look at a conversation and a rubric item, and score the last turn (i.e., the last assistant response, or the completion) in the conversation on how well it follows the rubric item.
 
 # Conversation
-{conversation}
+<<conversation>>
 # Rubric item
-{rubric}
+<<rubric>>
 
 # Instructions
 Return a json object with the following fields: "explanation" and "criteria_met".
@@ -54,7 +62,7 @@ As another example, if the criteria says "Is overly verbose" and the response is
 In other words, for criteria with negative points, a good response should be classified as false because it does not meet the undesirable criteria, and only bad responses that do meet undesirable criteria should be classified as true.
 
 # Final instruction
-Return just the json. Do not include any other text in the response.
+Return just the json, no need for markdown beginning. Do not include any other text in the response.
 """.strip()
 # the above prompt has been taken verbatim from the healthbench eval repository
 
@@ -67,9 +75,10 @@ class HealthBenchRubricMetric(BaseMetric):
     LLM driven rubric evaluation metric.
     """
 
-    def __init__(self, provider_to_use, model_id, **kwargs):
-        super().__init__(metric_name="rubric_evaluation")
+    def __init__(self, metric_name, provider_to_use, model_id, **kwargs):
+        super().__init__(metric_name=metric_name, **kwargs)
         self.provider = provider_to_use
+        logger.info(f"Got {provider_to_use} rubric evaluation metric")
         if self.provider == "openai":
             self.model = OpenAILLM(model_name_or_path=model_id)
 
@@ -87,35 +96,38 @@ class HealthBenchRubricMetric(BaseMetric):
             Dict containing evaluation results
         """
         question_results = []
-
-        for prediction in predictions:
-            # Extract conversation and rubrics from the prediction
-            conversation = prediction.conversation
-            rubrics = prediction.rubric_to_evaluate
-
+        samples = kwargs["samples"]
+        logger.info(
+            f"Evaluating {len(predictions)} conversations with {self.provider} model - {self.model}"
+        )
+        # self.model.load_model()
+        for prediction, sample, sample_rubrics in zip(predictions, samples, rubrics):
             # Format conversation as string
-            conversation_str = self._format_conversation(conversation)
-
+            sample.conversation.conversation_turns.append(
+                ConversationTurn(content=prediction, role="agent")
+            )
             # Evaluate each rubric criterion for this question
             grading_responses = []
-            for rubric in rubrics:
+            for rubric in sample_rubrics:
                 # Create prompt for this specific rubric
-                prompt = HEALTHBENCH_PROMPT.format(
-                    conversation=conversation_str, rubric=rubric.criterion
-                )
+                conversation = sample.conversation.model_dump_json()
+                prompt = HEALTHBENCH_PROMPT.replace(
+                    "<<conversation>>", conversation
+                ).replace("<<rubric>>", rubric.model_dump_json())
 
-                # Create evaluation input
+                # # Create evaluation input
                 eval_input = DataLoaderIterable(
                     input=prompt,
                     system_prompt="You are an expert evaluator for medical question answering.",
                 )
 
+                logger.info("Trying to run the model")
                 # Run model evaluation
                 response = self.model.run([eval_input])[0]
-
                 # Parse JSON response
                 try:
                     eval_result = json.loads(response)
+                    logger.info(eval_result)
                     grading_responses.append(
                         {
                             "criteria_met": eval_result["criteria_met"],
@@ -133,18 +145,19 @@ class HealthBenchRubricMetric(BaseMetric):
                     )
 
             # Calculate score for this question
-            question_score = self.calculate_score(rubrics, grading_responses)
+            question_score = self.calculate_score(sample_rubrics, grading_responses)
 
             question_results.append(
                 {
-                    "conversation": conversation_str,
                     "rubric_evaluations": grading_responses,
                     "question_score": question_score,
                 }
             )
 
         # Aggregate results
-        return self._aggregate_results(question_results)
+        return {
+            "healthbench_rubric_evaluation": self._aggregate_results(question_results)
+        }
 
     def calculate_score(
         self, rubric_items: List[RubricCriteria], grading_responses: List[Dict]
@@ -271,6 +284,6 @@ class HealthBenchRubricMetric(BaseMetric):
     def _format_conversation(self, conversation):
         """Format conversation turns into a readable string."""
         formatted = []
-        for turn in conversation.conversation:
+        for turn in conversation.conversation_turns:
             formatted.append(f"{turn.role}: {turn.content}")
         return "\n".join(formatted)

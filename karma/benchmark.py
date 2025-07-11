@@ -131,6 +131,7 @@ class Benchmark:
                 cache_hits += 1
                 result = {
                     "prediction": cache_result.get("model_output", ""),
+                    "sample": sample,
                     # "thinking_content": cache_result.get("model_output_reasoning", ""),
                     "from_cache": True,
                     "expected_output": sample.expected_output,
@@ -254,20 +255,25 @@ class Benchmark:
         references = []
         predictions = []
         rubrics = []
+        samples = []
         for it in ground_truth_and_prediction:
             if it.get("prediction"):
                 predictions.append(it["prediction"])
             if it.get("expected_output"):
                 references.append(it["expected_output"])
-            if it.get("rubric"):
-                rubrics.append(it["rubric"])
+            if it.get("sample"):
+                samples.append(it["sample"])
+                rubrics.append(it["sample"].rubric_to_evaluate)
 
         predictions = self.dataset.postprocess(predictions)
         references = self.dataset.postprocess(references)
 
         for metric in metrics:
             score = metric.evaluate(
-                predictions=predictions, references=references, rubrics=rubrics
+                predictions=predictions,
+                references=references,
+                rubrics=rubrics,
+                samples=samples,
             )
             if isinstance(score, dict):
                 scores[metric.metric_name] = score[metric.metric_name]
@@ -360,7 +366,7 @@ class Benchmark:
                 prediction_result = {
                     "prediction": result["prediction"],
                     "expected_output": expected,
-                    "sample": sample.model_dump(),
+                    "sample": sample,
                     "from_cache": result.get("from_cache", False),
                     "success": result.get("success", True),
                 }

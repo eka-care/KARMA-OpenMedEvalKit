@@ -90,8 +90,8 @@ class OpenAILLM(BaseModel):
             messages = []
 
             # Check if conversation field exists and has data
-            if item.conversation and len(item.conversation.conversation) > 0:
-                for turn in item.conversation.conversation:
+            if item.conversation and len(item.conversation.conversation_turns) > 0:
+                for turn in item.conversation.conversation_turns:
                     # Map conversation turn to OpenAI message format
                     messages.append({"role": turn.role, "content": turn.content})
 
@@ -141,7 +141,6 @@ class OpenAILLM(BaseModel):
 
         processed_inputs = self.preprocess(inputs, **kwargs)
         outputs = []
-
         for api_input in processed_inputs:
             try:
                 response = self.client.chat.completions.create(**api_input)

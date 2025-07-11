@@ -56,7 +56,6 @@ class BaseMultimodalDataset(IterableDataset, ABC):
                 split=split,
                 streaming=stream,
                 revision=commit_hash,
-                batch_size=20,
             )
             if config
             else load_dataset(
@@ -64,7 +63,6 @@ class BaseMultimodalDataset(IterableDataset, ABC):
                 split=split,
                 streaming=stream,
                 revision=commit_hash,
-                batch_size=20,
             )
         )
         self.config = config

@@ -151,7 +151,7 @@ KARMA is built around four core components:
 1. **[Models](api-reference/models.md)** - Unified interface for medical AI models
 2. **[Datasets](api-reference/datasets.md)** - Standardized medical evaluation datasets
 3. **[Metrics](api-reference/metrics.md)** - Comprehensive evaluation metrics
-4. **[Registries](api-reference/registries.md)** - Auto-discovery system for components
+5. **[Processors]** - A way to post process the output of the model 
 
 ## What's Next?
 
