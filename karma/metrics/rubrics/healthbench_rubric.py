@@ -68,7 +68,7 @@ Return just the json, no need for markdown beginning. Do not include any other t
 
 
 @register_metric(
-    name="healthbench_rubric_evaluation", required_args=["provider_to_use", "model_id"]
+    name="healthbench_rubric_evaluation",
 )
 class HealthBenchRubricMetric(BaseMetric):
     """
@@ -104,7 +104,7 @@ class HealthBenchRubricMetric(BaseMetric):
         for prediction, sample, sample_rubrics in zip(predictions, samples, rubrics):
             # Format conversation as string
             sample.conversation.conversation_turns.append(
-                ConversationTurn(content=prediction, role="agent")
+                ConversationTurn(content=prediction, role="assistant")
             )
             # Evaluate each rubric criterion for this question
             grading_responses = []
@@ -280,10 +280,3 @@ class HealthBenchRubricMetric(BaseMetric):
                 }
 
         return aggregated_tags
-
-    def _format_conversation(self, conversation):
-        """Format conversation turns into a readable string."""
-        formatted = []
-        for turn in conversation.conversation_turns:
-            formatted.append(f"{turn.role}: {turn.content}")
-        return "\n".join(formatted)

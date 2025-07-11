@@ -181,18 +181,13 @@ GPT4o_LLM = ModelMeta(
         "frequency_penalty": 0.0,
         "presence_penalty": 0.0,
     },
-    revision=None,
     reference="https://platform.openai.com/docs/models/gpt-4o",
     model_type=ModelType.TEXT_GENERATION,
     modalities=[ModalityType.TEXT],
-    n_parameters=None,  # Not publicly disclosed
-    memory_usage_mb=None,  # API-based, no local memory usage
     max_tokens=4096,
-    embed_dim=None,
     framework=["openai"],
     release_date="2024-05-13",
     version="1.0",
-    license=None,
 )
 
 GPT4o_Mini_LLM = ModelMeta(
