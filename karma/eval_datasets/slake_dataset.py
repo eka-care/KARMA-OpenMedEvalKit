@@ -17,7 +17,9 @@ logger = logging.getLogger(__name__)
 DATASET_NAME = "mdwiratathya/SLAKE-vqa-english"
 SPLIT = "test"
 COMMIT_HASH = "8d18b4d5a4eae47101c1d9f57b99fc58df66f17e"
-CONFINEMENT_INSTRUCTIONS = "You may write out your argument before stating your final very short, definitive, and concise answer (if possible, a single word or the letter corresponding to your answer choice) X in the format 'Final Answer: X': "
+CONFINEMENT_INSTRUCTIONS = """<QUESTION> You may write out your argument before stating your final very short,
+definitive, and concise answer (if possible, a single word or the letter corresponding to your answer
+choice) X in the format "Final Answer: X": """
 
 @register_dataset(
     DATASET_NAME,
@@ -63,7 +65,7 @@ class SLAKEDataset(VQARADDataset):
         image = sample["image"]["bytes"]
 
         # Create VQA prompt
-        prompt = f"Question: {question}\n\n{self.confinement_instructions}"
+        prompt = self.confinement_instructions.replace("<QUESTION>", question)
 
         processed_sample = DataLoaderIterable(
             input=prompt,
