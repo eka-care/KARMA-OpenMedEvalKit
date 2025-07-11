@@ -26,6 +26,7 @@ choice) X in the format "Final Answer: X":"""
     DATASET_NAME,
     split=SPLIT,
     commit_hash=COMMIT_HASH,
+    optional_args=["confinement_instructions"],
     metrics=["exact_match", "tokenised_f1"],
     task_type="vqa",
 )
@@ -37,6 +38,7 @@ class VQARADDataset(BaseMultimodalDataset):
 
     def __init__(
         self,
+        confinement_instructions: str = CONFINEMENT_INSTRUCTIONS,
         **kwargs,
     ):
         """
@@ -45,7 +47,7 @@ class VQARADDataset(BaseMultimodalDataset):
         Args:
             **kwargs: Additional arguments passed to base class
         """
-        super().__init__(**kwargs)
+        super().__init__(confinement_instructions=confinement_instructions, **kwargs)
         self.dataset = self.dataset.cast_column("image", Image(decode=False))
 
     def format_item(self, sample: Dict[str, Any]) -> DataLoaderIterable:
