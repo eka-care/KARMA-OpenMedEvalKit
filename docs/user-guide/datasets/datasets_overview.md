@@ -40,6 +40,13 @@ karma eval --model qwen --model-path "Qwen/Qwen3-0.6B" \
 
 - **ai4bharat/IN22-Conv** - Indic Language Conversation Translation
 
+### Rubric-Based Evaluation Datasets
+
+- **ekacare/ekacare_medical_history_summarisation** - Medical History Summarization with rubric evaluation
+- **Tonic/Health-Bench-Eval-OSS-2025-07** - Health-Bench evaluation with rubric scoring
+
+These datasets include structured rubric criteria that define evaluation points, scoring weights, and categorization tags. The rubric evaluation is performed by an LLM evaluator (OpenAI or AWS Bedrock) that assesses model responses against multiple criteria simultaneously.
+
 ## Viewing Available Datasets
 
 ```bash
@@ -78,6 +85,13 @@ karma eval --model qwen --model-path "Qwen/Qwen3-0.6B" \
 karma eval --model qwen --model-path "Qwen/Qwen3-0.6B" \
   --datasets "openlifescienceai/medmcqa" \
   --dataset-args "openlifescienceai/medmcqa:split=validation"
+
+# Rubric-based datasets with custom system prompts
+karma eval --model qwen --model-path "Qwen/Qwen3-0.6B" \
+  --datasets "Tonic/Health-Bench-Eval-OSS-2025-07" \
+  --metrics "rubric_evaluation" \
+  --dataset-args "Tonic/Health-Bench-Eval-OSS-2025-07:system_prompt=You are a medical expert assistant" \
+  --metric-args "rubric_evaluation:provider_to_use=openai,model_id=gpt-4o-mini,batch_size=5"
 ```
 
 ## Custom Dataset Integration

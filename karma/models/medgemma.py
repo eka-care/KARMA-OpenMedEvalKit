@@ -80,7 +80,7 @@ class MedGemmaLLM(BaseModel):
             self.model_name_or_path, trust_remote_code=True
         )
 
-    def run(self, inputs, **kwargs):
+    def run(self, inputs: List[DataLoaderIterable], **kwargs) -> List[str]:
         model_inputs = self.preprocess(inputs)
         results = self.model.generate(
             **model_inputs,
@@ -107,19 +107,55 @@ class MedGemmaLLM(BaseModel):
 
         for i, data_point in enumerate(inputs):
             messages = []
-            user_content: List[Dict[str, Union[str, Image.Image]]] = [
-                {"type": "text", "text": data_point.input}
-            ]
+            
+            # Check if conversation field exists and has data
+            if data_point.conversation and len(data_point.conversation.conversation_turns) > 0:
+                for turn in data_point.conversation.conversation_turns:
+                    # Handle conversation turns - assume text content for now
+                    # Images in conversations would need to be handled differently
+                    content = [{"type": "text", "text": turn.content}]
+                    messages.append({"role": turn.role, "content": content})
+                
+                # Add images to the last user message if available
+                if data_point.images and messages:
+                    # Find the last user message to add images
+                    for msg in reversed(messages):
+                        if msg["role"] == "user":
+                            if isinstance(data_point.images, list):
+                                for image in data_point.images:
+                                    msg["content"].append({"type": "image", "image": MedGemmaLLM.decode_image(image)})
+                            else:
+                                msg["content"].append({"type": "image", "image": MedGemmaLLM.decode_image(data_point.images)})
+                            break
+            
+            # Fall back to input field if no conversation data
+            elif data_point.input:
+                user_content: List[Dict[str, Union[str, Image.Image]]] = [
+                    {"type": "text", "text": data_point.input}
+                ]
 
-            # Add image if provided
-            if data_point.images:
-                if isinstance(data_point.images, list):
-                    for image in data_point.images:
-                        user_content.append({"type": "image", "image": MedGemmaLLM.decode_image(image)})
-                else:
-                    user_content.append({"type": "image", "image": MedGemmaLLM.decode_image(data_point.images)})
+                # Add image if provided
+                if data_point.images:
+                    if isinstance(data_point.images, list):
+                        for image in data_point.images:
+                            user_content.append({"type": "image", "image": MedGemmaLLM.decode_image(image)})
+                    else:
+                        user_content.append({"type": "image", "image": MedGemmaLLM.decode_image(data_point.images)})
 
-            messages.append({"role": "user", "content": user_content})
+                messages.append({"role": "user", "content": user_content})
+            
+            # Add system prompt if available (for backward compatibility)
+            if hasattr(data_point, "system_prompt") and data_point.system_prompt:
+                # Insert system message at the beginning if not already present
+                if not messages or messages[0]["role"] != "system":
+                    messages.insert(
+                        0, {"role": "system", "content": [{"type": "text", "text": data_point.system_prompt}]}
+                    )
+            
+            # Ensure we have at least one message
+            if not messages:
+                logger.warning("No input or conversation data found for item, skipping")
+                continue
 
             batch_messages.append(messages)
 
