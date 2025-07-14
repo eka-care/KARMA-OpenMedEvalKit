@@ -150,7 +150,7 @@ MedGemmaModel = ModelMeta(
         else "mps"
         if torch.mps.is_available()
         else "cpu",
-        "max_tokens": 256,  # Sufficient for translation outputs
+        "max_tokens": 1024,  # Sufficient for translation outputs
         "temperature": 0.01,  # Lower temperature for more consistent translations
         "top_p": 0.9,  # Nucleus sampling
         "top_k": 50,

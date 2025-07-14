@@ -75,14 +75,14 @@ class SLAKEDataset(VQARADDataset):
 
         return processed_sample
     
-    def extract_prediction(self, answer: str) -> Tuple[str, bool]:
+    def extract_prediction(self, response: str) -> Tuple[str, bool]:
         """
         Extract the answer from the answer string.
         """
         answer, success = "", False
-        if "Final Answer:" in answer:
-            answer = answer.split("Final Answer:")[1].strip()
+        if "Final Answer:" in response:
+            answer = response.split("Final Answer:")[1].strip()
             success = True
         if not answer:
-            logger.warning(f"No answer found in response: {answer}")
+            logger.warning(f"No answer found in response: {response}")
         return answer, success
