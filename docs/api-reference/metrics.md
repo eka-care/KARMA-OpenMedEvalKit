@@ -92,7 +92,31 @@ Character Error Rate metric for speech recognition evaluation.
 
 Comprehensive ASR evaluation metrics including WER, CER, and language-specific handling.
 
-::: karma.metrics.asr_metrics.ASRMetrics
+::: karma.metrics.asr.asr_metrics.ASRMetrics
+    options:
+      show_source: false
+      show_root_heading: true
+      show_category_heading: true
+      members_order: source
+      filters: ["!^_"]
+      merge_init_into_class: true
+
+::: karma.metrics.asr.asr_semantic_metrics.ASRSemanticMetrics
+    options:
+      show_source: false
+      show_root_heading: true
+      show_category_heading: true
+      members_order: source
+      filters: ["!^_"]
+      merge_init_into_class: true
+
+## Rubric-Based Evaluation Metrics
+
+### RubricMetric
+
+LLM-driven rubric evaluation metric for medical question answering with batch processing support.
+
+::: karma.metrics.rubrics.rubric_evaluation.RubricMetric
     options:
       show_source: false
       show_root_heading: true
@@ -339,7 +363,8 @@ def get_metrics_for_task(task_type):
         'vqa': ['exact_match', 'bleu', 'accuracy'],
         'translation': ['bleu', 'exact_match'],
         'asr': ['wer', 'cer'],
-        'classification': ['accuracy', 'exact_match']
+        'classification': ['accuracy', 'exact_match'],
+        'rubric_evaluation': ['rubric_evaluation']
     }
     
     return metric_mapping.get(task_type, ['exact_match'])
@@ -424,6 +449,9 @@ class MetricAggregator:
 ### Custom Medical Metrics
 - **medical_terminology_accuracy**: Medical term precision
 - **medical_semantic_similarity**: Semantic similarity for medical text
+
+### Rubric-Based Metrics
+- **rubric_evaluation**: LLM-driven rubric evaluation with batch processing
 
 ## See Also
 

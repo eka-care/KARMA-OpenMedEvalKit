@@ -48,6 +48,38 @@ karma info dataset openlifescienceai/pubmedqa
 - **Meaning**: Percentage of characters that need to be changed
 - **Use case**: Speech recognition, fine-grained text evaluation
 
+### Rubric-Based Evaluation Example
+
+Based on healthbench's rubric evaluation criteria, rubrics can be evaluated through rubric_evaluation. 
+
+```bash
+# Use rubric evaluation metric with OpenAI
+karma eval --model qwen --model-path "Qwen/Qwen3-0.6B" \
+  --datasets "Tonic/Health-Bench-Eval-OSS-2025-07" \
+  --metric-args "rubric_evaluation:provider_to_use=openai,model_id=gpt-4o-mini,batch_size=5"
+
+# Use with AWS Bedrock
+karma eval --model qwen --model-path "Qwen/Qwen3-0.6B" \
+  --datasets "ekacare/ekacare_medical_history_summarisation" \
+  --metric-args "rubric_evaluation:provider_to_use=bedrock,model_id=anthropic.claude-3-haiku-20240307-v1:0,batch_size=10"
+```
+
+The rubric evaluation metric automatically uses the rubric criteria defined in the dataset. For example, Health-Bench datasets contain rubrics like:
+
+```json
+{
+  "criterion": "States that oral iron supplements can lead to unpleasant gastrointestinal side effects",
+  "points": 5,
+  "tags": ["level:cluster", "cluster:accuracy", "axis:medical_knowledge"]
+}
+```
+
+The metric evaluates model responses against these criteria using an LLM evaluator and returns:
+- Overall score (0-1 based on achieved points vs total possible points)
+- Individual rubric evaluations with explanations
+- Tag-based performance breakdowns
+- Statistical measures (std dev, bootstrap standard error)
+
 ## Custom Metrics
 
 ### Creating Custom Metrics
