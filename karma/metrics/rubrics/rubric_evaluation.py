@@ -4,6 +4,7 @@ import logging
 
 from typing import List, Dict, Any, Optional
 from karma.metrics.base_metric_abs import BaseMetric
+from karma.models.aws_bedrock import AWSBedrock
 from karma.models.openai_llm import OpenAILLM
 from karma.registries.metrics_registry import register_metric
 from karma.data_models.dataloader_iterable import (
@@ -16,10 +17,10 @@ from karma.data_models.dataloader_iterable import (
 logger = logging.getLogger(__name__)
 
 PROMPT = """
-Your job is to look at a conversation and a rubric item, and score the last turn (i.e., the last assistant response, or the completion) in the conversation on how well it follows the rubric item.
+Your job is to look at a Input and a rubric item, and score the last turn (i.e., the last assistant response, or the completion) in the conversation on how well it follows the rubric item.
 
-# Conversation
-<<conversation>>
+# Input
+<<input_prompt>>
 # Rubric item
 <<rubric>>
 
@@ -66,21 +67,64 @@ Return just the json, no need for markdown beginning. Do not include any other t
 """.strip()
 # the above prompt has been taken verbatim from the healthbench eval repository
 
+BATCH_PROMPT = """
+Your job is to look at a Input and multiple rubric items, and score the last turn (i.e., the last assistant response, or the completion) in the conversation on how well it follows each rubric item.
+
+# Input
+<<input_prompt>>
+
+# Rubric items
+<<rubrics>>
+
+# Instructions
+Return a JSON array where each element corresponds to a rubric item (in the same order as provided) and contains the following fields: "explanation" and "criteria_met".
+- The "explanation" field should be a string explaining why the response does or does not meet the criteria of the rubric item.
+- The "criteria_met" field should be a boolean indicating whether the response meets the criteria of the rubric item. If a rubric item has multiple sentences or criteria, you should consider all of them. If any of the criteria is not met, the answer should be false. Only return true is all of the criteria are met.
+- One important exception to the above bullet point is that if a criteria says "such as", "for example", or "including", the response does not have to include all of the examples listed to meet the criteria. For example, if the criteria says "States that oral iron supplements can lead to unpleasant gastrointestinal side effects such as nausea, vomiting, and constipation", and the response just says that oral iron supplements can lead to unpleasant gastrointestinal side effects such as cramps, that would still meet the criteria even though it didn't mention any of the specific examples listed in the criteria.
+
+# Example
+If there are 2 rubric items, your response should be a JSON array with 2 elements:
+```json
+[
+  {
+    "explanation": "The assistant did not tell the user to go to the hospital if unconscious.",
+    "criteria_met": false
+  },
+  {
+    "explanation": "The assistant provided accurate information about the topic.",
+    "criteria_met": true
+  }
+]
+```
+
+# Final instruction
+Return just the JSON array, no need for markdown beginning. Do not include any other text in the response.
+""".strip()
+
 
 @register_metric(
     name="rubric_evaluation",
+    optional_args=["batch_size"],
+    default_args={"batch_size": 100},
 )
 class RubricMetric(BaseMetric):
     """
     LLM driven rubric evaluation metric.
     """
 
-    def __init__(self, metric_name, provider_to_use, model_id, **kwargs):
+    def __init__(self, metric_name, provider_to_use, model_id, batch_size=1, **kwargs):
         super().__init__(metric_name=metric_name, **kwargs)
         self.provider = provider_to_use
-        logger.info(f"Got {provider_to_use} rubric evaluation metric")
+        if isinstance(batch_size, str):
+            batch_size = int(batch_size)
+        self.batch_size = batch_size
+        logger.info(
+            f"Got {provider_to_use} rubric evaluation metric with batch_size={batch_size}"
+        )
         if self.provider == "openai":
             self.model = OpenAILLM(model_name_or_path=model_id)
+        elif self.provider == "bedrock":
+            self.model = AWSBedrock(model_name_or_path=model_id)
 
     def evaluate(self, predictions, references=None, rubrics=None, **kwargs):
         """
@@ -106,41 +150,19 @@ class RubricMetric(BaseMetric):
             sample.conversation.conversation_turns.append(
                 ConversationTurn(content=prediction, role="assistant")
             )
-            # Evaluate each rubric criterion for this question
+
+            # Get conversation JSON once
+            conversation_json = sample.conversation.model_dump_json()
+
+            # Evaluate rubrics in batches
             grading_responses = []
-            for rubric in sample_rubrics:
-                # Create prompt for this specific rubric
-                conversation = sample.conversation.model_dump_json()
-                prompt = PROMPT.replace("<<conversation>>", conversation).replace(
-                    "<<rubric>>", rubric.model_dump_json()
-                )
+            for i in range(0, len(sample_rubrics), self.batch_size):
+                batch_end = min(i + self.batch_size, len(sample_rubrics))
+                rubric_batch = sample_rubrics[i:batch_end]
 
-                # # Create evaluation input
-                eval_input = DataLoaderIterable(
-                    input=prompt,
-                    system_prompt="You are an expert evaluator for medical question answering.",
-                )
-
-                # Run model evaluation
-                response = self.model.run([eval_input])[0]
-                # Parse JSON response
-                try:
-                    eval_result = json.loads(response)
-                    grading_responses.append(
-                        {
-                            "criteria_met": eval_result["criteria_met"],
-                            "explanation": eval_result["explanation"],
-                            "rubric": rubric,
-                        }
-                    )
-                except json.JSONDecodeError:
-                    grading_responses.append(
-                        {
-                            "criteria_met": False,
-                            "explanation": f"Failed to parse response: {response}",
-                            "rubric": rubric,
-                        }
-                    )
+                # Evaluate this batch
+                batch_results = self._evaluate_batch(conversation_json, rubric_batch)
+                grading_responses.extend(batch_results)
 
             # Calculate score for this question
             question_score = self.calculate_score(sample_rubrics, grading_responses)
@@ -154,6 +176,135 @@ class RubricMetric(BaseMetric):
 
         # Aggregate results
         return {"rubric_evaluation": self._aggregate_results(question_results)}
+
+    def _evaluate_batch(
+        self, conversation_json: str, rubric_batch: List[RubricCriteria]
+    ) -> List[Dict]:
+        """
+        Evaluate a batch of rubrics for a single conversation.
+
+        Args:
+            conversation_json: JSON representation of the conversation
+            rubric_batch: List of rubric criteria to evaluate
+
+        Returns:
+            List of evaluation results, one per rubric
+        """
+        if len(rubric_batch) == 1:
+            # Use single rubric prompt for batch size 1
+            prompt = PROMPT.replace("<<input_prompt>>", conversation_json).replace(
+                "<<rubric>>", rubric_batch[0].model_dump_json()
+            )
+
+            eval_input = DataLoaderIterable(
+                input=prompt,
+                system_prompt="You are an expert evaluator for medical question answering.",
+            )
+
+            response = self.model.run([eval_input])[0]
+
+            try:
+                eval_result = json.loads(response)
+                return [
+                    {
+                        "criteria_met": eval_result["criteria_met"],
+                        "explanation": eval_result["explanation"],
+                        "rubric": rubric_batch[0],
+                    }
+                ]
+            except json.JSONDecodeError:
+                return [
+                    {
+                        "criteria_met": False,
+                        "explanation": f"Failed to parse response: {response}",
+                        "rubric": rubric_batch[0],
+                    }
+                ]
+        else:
+            # Use batch prompt for multiple rubrics
+            rubrics_json = json.dumps([rubric.model_dump() for rubric in rubric_batch])
+            prompt = BATCH_PROMPT.replace(
+                "<<input_prompt>>", conversation_json
+            ).replace("<<rubrics>>", rubrics_json)
+
+            eval_input = DataLoaderIterable(
+                input=prompt,
+                system_prompt="You are an expert evaluator for medical question answering.",
+            )
+
+            response = self.model.run([eval_input])[0]
+
+            try:
+                eval_results = json.loads(response)
+                if not isinstance(eval_results, list) or len(eval_results) != len(
+                    rubric_batch
+                ):
+                    raise ValueError(
+                        f"Expected {len(rubric_batch)} results, got {len(eval_results) if isinstance(eval_results, list) else 'non-list'}"
+                    )
+                logger.info(f"Eval results: {eval_results} for {conversation_json}")
+                return [
+                    {
+                        "criteria_met": result["criteria_met"],
+                        "explanation": result["explanation"],
+                        "rubric": rubric,
+                    }
+                    for result, rubric in zip(eval_results, rubric_batch)
+                ]
+            except (json.JSONDecodeError, ValueError, KeyError) as e:
+                # Fallback to individual evaluation if batch fails
+                logger.warning(
+                    f"Batch evaluation failed: {e}. Falling back to individual evaluation."
+                )
+                return self._evaluate_individual_fallback(
+                    conversation_json, rubric_batch
+                )
+
+    def _evaluate_individual_fallback(
+        self, conversation_json: str, rubric_batch: List[RubricCriteria]
+    ) -> List[Dict]:
+        """
+        Fallback to individual evaluation when batch processing fails.
+
+        Args:
+            conversation_json: JSON representation of the conversation
+            rubric_batch: List of rubric criteria to evaluate
+
+        Returns:
+            List of evaluation results, one per rubric
+        """
+        results = []
+        for rubric in rubric_batch:
+            prompt = PROMPT.replace("<<input_prompt>>", conversation_json).replace(
+                "<<rubric>>", rubric.model_dump_json()
+            )
+
+            eval_input = DataLoaderIterable(
+                input=prompt,
+                system_prompt="You are an expert evaluator for medical question answering.",
+            )
+
+            response = self.model.run([eval_input])[0]
+
+            try:
+                eval_result = json.loads(response)
+                results.append(
+                    {
+                        "criteria_met": eval_result["criteria_met"],
+                        "explanation": eval_result["explanation"],
+                        "rubric": rubric,
+                    }
+                )
+            except json.JSONDecodeError:
+                results.append(
+                    {
+                        "criteria_met": False,
+                        "explanation": f"Failed to parse response: {response}",
+                        "rubric": rubric,
+                    }
+                )
+
+        return results
 
     def calculate_score(
         self, rubric_items: List[RubricCriteria], grading_responses: List[Dict]
