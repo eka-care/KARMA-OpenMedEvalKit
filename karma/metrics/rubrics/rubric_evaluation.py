@@ -15,7 +15,7 @@ from karma.data_models.dataloader_iterable import (
 
 logger = logging.getLogger(__name__)
 
-HEALTHBENCH_PROMPT = """
+PROMPT = """
 Your job is to look at a conversation and a rubric item, and score the last turn (i.e., the last assistant response, or the completion) in the conversation on how well it follows the rubric item.
 
 # Conversation
@@ -68,9 +68,9 @@ Return just the json, no need for markdown beginning. Do not include any other t
 
 
 @register_metric(
-    name="healthbench_rubric_evaluation",
+    name="rubric_evaluation",
 )
-class HealthBenchRubricMetric(BaseMetric):
+class RubricMetric(BaseMetric):
     """
     LLM driven rubric evaluation metric.
     """
@@ -111,9 +111,9 @@ class HealthBenchRubricMetric(BaseMetric):
             for rubric in sample_rubrics:
                 # Create prompt for this specific rubric
                 conversation = sample.conversation.model_dump_json()
-                prompt = HEALTHBENCH_PROMPT.replace(
-                    "<<conversation>>", conversation
-                ).replace("<<rubric>>", rubric.model_dump_json())
+                prompt = PROMPT.replace("<<conversation>>", conversation).replace(
+                    "<<rubric>>", rubric.model_dump_json()
+                )
 
                 # # Create evaluation input
                 eval_input = DataLoaderIterable(
@@ -155,9 +155,7 @@ class HealthBenchRubricMetric(BaseMetric):
             )
 
         # Aggregate results
-        return {
-            "healthbench_rubric_evaluation": self._aggregate_results(question_results)
-        }
+        return {"rubric_evaluation": self._aggregate_results(question_results)}
 
     def calculate_score(
         self, rubric_items: List[RubricCriteria], grading_responses: List[Dict]

@@ -13,34 +13,23 @@ from karma.data_models.dataloader_iterable import (
     Conversation,
     RubricCriteria,
 )
-from karma.registries.dataset_registry import register_dataset
 from karma.eval_datasets.base_dataset import BaseMultimodalDataset
 
 logger = logging.getLogger(__name__)
 
-DATASET_NAME = "Tonic/Health-Bench-Eval-OSS-2025-07"
-SPLIT = "oss_eval"
-COMMIT_HASH = "0865a52cdf7ed7eff9923fe0dca419d9a0d6acbf"
 
-
-@register_dataset(
-    DATASET_NAME,
-    split=SPLIT,
-    commit_hash=COMMIT_HASH,
-    metrics=["healthbench_rubric_evaluation"],
-    task_type="rubric_evaluation",
-)
-class HealthBenchDataset(BaseMultimodalDataset):
+class RubricBaseDataset(BaseMultimodalDataset):
     """
-    Health-Bench-Eval-OSS-2025-07 PyTorch Dataset implementing the multimodal interface.
+    Health-Bench-Eval-OSS-2025-07
     Handles medical question answering with rubric-based evaluation.
     We are considering the first ideal completion to evaluate
     """
 
     def __init__(
         self,
-        dataset_name: str = DATASET_NAME,
-        split: str = SPLIT,
+        dataset_name: str,
+        split: str,
+        system_prompt: str,
         **kwargs,
     ):
         super().__init__(
@@ -48,6 +37,7 @@ class HealthBenchDataset(BaseMultimodalDataset):
             split=split,
             **kwargs,
         )
+        self.system_prompt = system_prompt
 
     def format_item(self, sample: Dict[str, Any]) -> DataLoaderIterable:
         # Extract prompt information
@@ -74,6 +64,7 @@ class HealthBenchDataset(BaseMultimodalDataset):
         processed_sample = DataLoaderIterable(
             conversation=conversation,
             rubric_to_evaluate=criterions,
+            system_prompt=self.system_prompt,
         )
 
         return processed_sample

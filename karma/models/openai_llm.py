@@ -11,7 +11,6 @@ logger = logging.getLogger(__name__)
 
 # the default system prompt for openai models as per
 # https://github.com/openai/simple-evals/blob/main/sampler/chat_completion_sampler.py#L9
-base_default_system_prompt = """You are a helpful assistant."""
 
 
 class OpenAILLM(BaseModel):

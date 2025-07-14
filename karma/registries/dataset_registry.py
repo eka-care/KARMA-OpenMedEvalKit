@@ -364,8 +364,8 @@ class DatasetRegistry:
         try:
             import karma.eval_datasets
 
-            # Import all modules in karma.eval_datasets package
-            for finder, name, ispkg in pkgutil.iter_modules(
+            # Import all modules in karma.eval_datasets package recursively
+            for finder, name, ispkg in pkgutil.walk_packages(
                 karma.eval_datasets.__path__, karma.eval_datasets.__name__ + "."
             ):
                 if not name.endswith(".base_dataset"):  # Skip base module
