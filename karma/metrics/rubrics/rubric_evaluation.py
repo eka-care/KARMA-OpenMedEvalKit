@@ -121,13 +121,11 @@ class RubricMetric(BaseMetric):
                     system_prompt="You are an expert evaluator for medical question answering.",
                 )
 
-                logger.info("Trying to run the model")
                 # Run model evaluation
                 response = self.model.run([eval_input])[0]
                 # Parse JSON response
                 try:
                     eval_result = json.loads(response)
-                    logger.info(eval_result)
                     grading_responses.append(
                         {
                             "criteria_met": eval_result["criteria_met"],
