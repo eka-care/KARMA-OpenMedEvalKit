@@ -257,10 +257,9 @@ class Benchmark:
         rubrics = []
         samples = []
         for it in ground_truth_and_prediction:
-            if it.get("prediction"):
-                predictions.append(it["prediction"])
-            if it.get("expected_output"):
-                references.append(it["expected_output"])
+            
+            predictions.append(it["prediction"])
+            references.append(it["expected_output"])
             if it.get("sample"):
                 samples.append(it["sample"])
                 rubrics.append(it["sample"].rubric_to_evaluate)
