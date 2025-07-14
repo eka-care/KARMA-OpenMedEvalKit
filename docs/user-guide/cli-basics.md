@@ -55,4 +55,4 @@ karma info --help
 
 - **Run your first evaluation**: See [Running Evaluations](running-evaluations.md)
 - **Learn about models**: Check out the [Models Guide](../models/overview.md)
-- **Explore datasets**: Read the [Datasets Guide](../datasets/datasets_overview.md)
+- **Explore datasets**: Read the [Datasets Guide](datasets/datasets_overview.md)

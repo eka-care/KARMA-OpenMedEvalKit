@@ -48,7 +48,7 @@ pip install -e ".[audio]"
 Let's run a simple evaluation using the Qwen3-0.6B model on the PubMedQA dataset:
 
 ```bash
-karma eval --model qwen --model-path "Qwen/Qwen3-0.6B" \
+karma eval --model "Qwen/Qwen3-0.6B" \
 --datasets openlifescienceai/pubmedqa
 ```
 

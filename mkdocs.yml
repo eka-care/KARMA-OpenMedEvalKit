@@ -105,10 +105,7 @@ nav:
   - Eval command reference: eval-command.md
   - User Guide:
     - Installation: user-guide/installation.md
-    - Basic Usage:
-      - CLI Basics: user-guide/basic-usage/cli-basics.md
-      - Running Evaluations: user-guide/basic-usage/running-evaluations.md
-      - Performance Optimization: user-guide/basic-usage/performance-optimization.md
+    - CLI Basics: user-guide/cli-basics.md
     - Models:
       - user-guide/models/built-in-models.md
       - user-guide/models/model-configuration.md
