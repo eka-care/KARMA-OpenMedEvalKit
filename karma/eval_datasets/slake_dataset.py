@@ -79,7 +79,7 @@ class SLAKEDataset(VQARADDataset):
         """
         Extract the answer from the answer string.
         """
-        success = False
+        answer, success = "", False
         if "Final Answer:" in answer:
             answer = answer.split("Final Answer:")[1].strip()
             success = True

@@ -83,7 +83,7 @@ class MedMCQADataset(BaseMultimodalDataset):
         return processed_sample
 
     def extract_prediction(self, response: str, **kwargs) -> Tuple[str, bool]:
-        success = False
+        answer, success = "", False
         if "Final Answer:" in response:
             answer = response.split("Final Answer:")[1].strip()
             # Remove parentheses if present
