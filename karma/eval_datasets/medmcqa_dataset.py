@@ -83,14 +83,16 @@ class MedMCQADataset(BaseMultimodalDataset):
         return processed_sample
 
     def extract_prediction(self, response: str, **kwargs) -> Tuple[str, bool]:
+        success = False
         if "Final Answer:" in response:
             answer = response.split("Final Answer:")[1].strip()
             # Remove parentheses if present
             if answer.startswith('(') and answer.endswith(')'):
                 answer = answer[1:-1]
-            return answer, True
-        else:
-            return response, False
+            success = True
+        if not answer:
+            logger.warning(f"No answer found in response: {response}")
+        return answer, success
 
     def _format_question(self, data: Dict[str, Any]) -> str:
         """
