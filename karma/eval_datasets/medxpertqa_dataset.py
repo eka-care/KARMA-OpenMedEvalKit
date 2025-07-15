@@ -77,8 +77,7 @@ class MedXpertQADataset(BaseMultimodalDataset):
 
         # Create medical QA prompt
         choices_text = "\n".join(formatted_choices)
-        prompt = self.confinement_instructions.replace("<QUESTION>", question)
-
+        prompt = self.confinement_instructions.replace("<QUESTION>", question+"\n\n"+choices_text)
         processed_sample = DataLoaderIterable(
             input=prompt,
             expected_output=label,

@@ -68,7 +68,6 @@ class MedQADataset(BaseMultimodalDataset):
         # Parse correct answer from Correct Option field
         correct_option = sample["data"]["Correct Option"]
         prompt = self.confinement_instructions.replace("<QUESTION>", input_text)
-
         processed_sample = DataLoaderIterable(
             input=prompt,
             expected_output=correct_option,
@@ -117,7 +116,7 @@ class MedQADataset(BaseMultimodalDataset):
                 + "\n".join(formatted_choices)
             )
         else:
-            formatted_question = f"Question: {question}\n" + "\n".join(
+            formatted_question = f"{question}\n" + "\n".join(
                 formatted_choices
             )
 
