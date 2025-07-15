@@ -12,33 +12,38 @@ logger = logging.getLogger(__name__)
 
 
 @register_metric(
-    name="medical_records_rubric_evaluation",
+    name="json_rubric_evaluation",
     required_args=["provider_to_use", "model_id"],
     default_args={"provider_to_use": "openai", "model_id": "gpt-4o-mini"}
 )
-class MedicalRecordsRubricMetric(BaseMetric):
+class JsonRubricEvaluationMetric(BaseMetric):
     """
-    LLM driven rubric evaluation metric for medical records parsing.
+    LLM driven rubric evaluation metric for structured JSON outputs.
     
-    Evaluates JSON outputs generated from medical record images against
-    structured rubrics. Unlike HealthBench which loops through individual 
-    criteria, this metric sends the entire rubric prompt to the judge LLM 
-    and expects all rubric scores in a single response.
+    Evaluates JSON outputs generated from any input (text, images, etc.) against
+    structured rubrics. This metric sends the entire rubric prompt to the judge LLM 
+    and expects all rubric scores in a single response, making it efficient for 
+    batch evaluation of multiple criteria.
+    
+    Use cases:
+    - Medical records parsing (image → JSON)
+    - Clinical note generation (conversation → JSON) 
+    - Any structured data extraction task
     """
 
     def __init__(self, metric_name: str, provider_to_use: str = "openai", model_id: str = "gpt-4o-mini", **kwargs):
         super().__init__(metric_name=metric_name, **kwargs)
         self.provider = provider_to_use
-        logger.info(f"Got {provider_to_use} rubric evaluation metric for medical records parsing")
+        logger.info(f"Got {provider_to_use} JSON rubric evaluation metric")
         if self.provider == "openai":
             self.model = OpenAILLM(model_name_or_path=model_id, max_tokens=10000)
 
     def evaluate(self, predictions, references=None, rubrics=None, **kwargs):
         """
-        Evaluate JSON predictions from medical image parsing against rubrics using LLM-based scoring.
+        Evaluate JSON predictions against rubrics using LLM-based scoring.
 
         Args:
-            predictions: List of JSON responses from multimodal model parsing medical images
+            predictions: List of JSON responses from models
             references: Not used in rubric evaluation  
             rubrics: Not used - rubrics are embedded in sample other_args
             **kwargs: Additional arguments including 'samples' with rubric prompts
@@ -67,12 +72,11 @@ class MedicalRecordsRubricMetric(BaseMetric):
             # Create evaluation input
             eval_input = DataLoaderIterable(
                 input=complete_prompt,
-                system_prompt="You are an expert evaluator for medical records parsing tasks.",
+                system_prompt="You are an expert evaluator for structured JSON output tasks.",
             )
             logger.info(f"Running rubric evaluation on {document_type} document")
             # Run model evaluation
             response = self.model.run([eval_input])[0]
-            print("model response", prediction)
             
             # Parse JSON response - handle markdown wrapping
             try:
@@ -111,7 +115,7 @@ class MedicalRecordsRubricMetric(BaseMetric):
 
         # Aggregate results
         return {
-            "medical_records_rubric_evaluation": self._aggregate_results(question_results)
+            "json_rubric_evaluation": self._aggregate_results(question_results)
         }
 
     def calculate_score(self, rubric_scores: Dict[str, int]) -> float:
@@ -127,7 +131,7 @@ class MedicalRecordsRubricMetric(BaseMetric):
         if not rubric_scores:
             return 0.0
             
-        # For medical records parsing, each rubric criterion is worth 1 point
+        # For JSON evaluation, each rubric criterion is worth 1 point
         # Score is the percentage of criteria met
         total_criteria = len(rubric_scores)
         met_criteria = sum(rubric_scores.values())
@@ -227,7 +231,7 @@ class MedicalRecordsRubricMetric(BaseMetric):
         self, question_results: List[Dict]
     ) -> Dict[str, Dict[str, Any]]:
         """
-        Aggregate scores by document type (Lab-report vs Prescription).
+        Aggregate scores by document type (Lab-report vs Prescription vs clinical_note).
 
         Args:
             question_results: List of question-level results
@@ -297,4 +301,4 @@ class MedicalRecordsRubricMetric(BaseMetric):
                 # "rubric_breakdown": rubric_breakdown
             }
 
-        return aggregated_by_doc_type
+        return aggregated_by_doc_type 
