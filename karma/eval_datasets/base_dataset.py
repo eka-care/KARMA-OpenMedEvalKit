@@ -118,7 +118,7 @@ class BaseMultimodalDataset(IterableDataset, ABC):
         """
         Extract the prediction from the model output.
         """
-        return prediction, True
+        return prediction.strip(), True
 
     def postprocess(self, responses: List[str]) -> List[str]:
         """

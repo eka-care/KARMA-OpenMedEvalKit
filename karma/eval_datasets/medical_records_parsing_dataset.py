@@ -103,21 +103,3 @@ class MedicalRecordsParsingDataset(BaseMultimodalDataset):
         )
 
         return processed_sample
-
-    def extract_prediction(self, response: str) -> Tuple[str, bool]:
-        """
-        Extract the prediction from model response.
-
-        For medical records parsing evaluation, we return the full response 
-        as the prediction. The actual scoring will be handled by the 
-        medical_records_rubric_evaluation metric which will evaluate the
-        response against the rubrics in a single batch call.
-
-        Args:
-            response: Model's response text (typically JSON format)
-
-        Returns:
-            Tuple of (prediction, success_flag)
-        """
-        # For rubric evaluation, return the full response
-        return response.strip(), True 
