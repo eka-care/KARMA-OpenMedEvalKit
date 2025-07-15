@@ -23,7 +23,7 @@ SPLIT = "test"  # Adjust as needed based on actual dataset splits
 @register_dataset(
     DATASET_NAME,
     split=SPLIT,
-    metrics=["medical_records_rubric_evaluation"],
+    metrics=["json_rubric_evaluation"],
     task_type="multimodal_rubric_evaluation",
     optional_args=["system_prompt"],
 )
