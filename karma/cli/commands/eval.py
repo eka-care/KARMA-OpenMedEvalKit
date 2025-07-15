@@ -159,7 +159,7 @@ def eval_cmd(
           --metric-args "accuracy:normalize=true,sample_weight=none;bleu:max_order=4"
     """
     console = ctx.obj["console"]
-    verbose = ctx.obj.get("verbose", verbose)
+    verbose = ctx.obj.get("verbose", False)
 
     load_dotenv()
 

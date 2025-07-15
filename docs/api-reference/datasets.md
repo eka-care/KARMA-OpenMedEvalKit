@@ -198,6 +198,47 @@ MMLU College Medicine dataset.
       filters: ["!^_"]
       merge_init_into_class: true
 
+### Rubric-Based Evaluation Datasets
+
+#### RubricBaseDataset
+
+Base class for rubric-based evaluation datasets that handle medical question answering with rubric-based evaluation.
+
+::: karma.eval_datasets.rubrics.rubric_base_dataset.RubricBaseDataset
+    options:
+      show_source: false
+      show_root_heading: true
+      show_category_heading: true
+      members_order: source
+      filters: ["!^_"]
+      merge_init_into_class: true
+
+#### EkaMedicalHistorySummary (ekacare/ekacare_medical_history_summarisation)
+
+EkaCare Medical History Summarization dataset for rubric-based evaluation.
+
+::: karma.eval_datasets.rubrics.eka_medical_history_summary.EkaMedicalHistorySummary
+    options:
+      show_source: false
+      show_root_heading: true
+      show_category_heading: true
+      members_order: source
+      filters: ["!^_"]
+      merge_init_into_class: true
+
+#### HealthBenchDataset (Tonic/Health-Bench-Eval-OSS-2025-07)
+
+Health-Bench evaluation dataset for rubric-based medical question answering.
+
+::: karma.eval_datasets.rubrics.healthbench_dataset.HealthBenchDataset
+    options:
+      show_source: false
+      show_root_heading: true
+      show_category_heading: true
+      members_order: source
+      filters: ["!^_"]
+      merge_init_into_class: true
+
 ## Data Models
 
 ### DataLoaderIterable

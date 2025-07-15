@@ -9,6 +9,7 @@ import json
 import re
 from typing import Dict, Any, List, Optional
 from pathlib import Path
+from dataclasses import dataclass, fields, is_dataclass
 
 import click
 from rich.console import Console
@@ -288,6 +289,21 @@ def format_duration(seconds: float) -> str:
         return f"{hours}h {remaining_minutes}m"
 
 
+def serialize_dataclass(obj: Any) -> Any:
+    """Recursively serialize dataclasses to dict"""
+    if is_dataclass(obj):
+        return {
+            field.name: serialize_dataclass(getattr(obj, field.name))
+            for field in fields(obj)
+        }
+    elif isinstance(obj, list):
+        return [serialize_dataclass(item) for item in obj]
+    elif isinstance(obj, dict):
+        return {key: serialize_dataclass(value) for key, value in obj.items()}
+    else:
+        return obj
+
+
 def save_results(
     results: Dict[str, Any],
     output_path: str,
@@ -311,6 +327,8 @@ def save_results(
     try:
         if format_type.lower() == "json":
             with open(output_file, "w") as f:
+                # Enable serialisation of dataclasses
+                results = serialize_dataclass(results)
                 json.dump(results, f, indent=2, ensure_ascii=False)
         elif format_type.lower() == "yaml":
             import yaml

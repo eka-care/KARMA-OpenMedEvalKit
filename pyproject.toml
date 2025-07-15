@@ -60,7 +60,9 @@ karma = "karma.cli.main:main"
 
 [project.optional-dependencies]
 audio = [
+    "google-transliteration-api>=1.0.3",
     "jiwer>=4.0.0",
+    "langdetect>=1.0.9",
     "num2words>=0.5.14",
     "torchaudio>=2.7.1",
 ]
