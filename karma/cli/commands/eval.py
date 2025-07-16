@@ -144,18 +144,18 @@ def eval_cmd(
     Examples:
 
         # Basic evaluation on all datasets
-        karma eval --model qwen --model-path "Qwen/Qwen2.5-0.5B-Instruct"
+        karma eval --model "Qwen/Qwen2.5-0.5B-Instruct"
 
         # Evaluate specific datasets
-        karma eval --model qwen --model-path "path/to/model" --datasets "pubmedqa,medmcqa"
+        karma eval --model "path/to/model" --datasets "pubmedqa,medmcqa"
 
         # With dataset and processor arguments
-        karma eval --model qwen --model-path "path" --datasets "in22conv" \\
+        karma eval --model "path" --datasets "in22conv" \\
           --dataset-args "in22conv:source_language=en,target_language=hi" \\
           --processor-args "in22conv.devnagari_transliterator:source_script=en,target_script=hi"
 
         # With metric arguments
-        karma eval --model qwen --model-path "path" --datasets "pubmedqa" \\
+        karma eval --model "path" --datasets "pubmedqa" \\
           --metric-args "accuracy:normalize=true,sample_weight=none;bleu:max_order=4"
     """
     console = ctx.obj["console"]
