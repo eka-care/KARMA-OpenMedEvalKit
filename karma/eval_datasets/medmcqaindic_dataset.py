@@ -22,6 +22,8 @@ step-by-step fashion, starting by summarizing the available information. Output 
 four options as the final answer. Question: <QUESTION> Response (think step by step and then
 end with "Final Answer:" followed by *only* the letter corresponding to the correct answer enclosed in
 parentheses)"""
+
+
 @register_dataset(
     DATASET_NAME,
     commit_hash=COMMIT_HASH,
@@ -33,10 +35,10 @@ parentheses)"""
 )
 class MedMCQAIndicDataset(MedMCQADataset):
     def __init__(
-            self,
-            subset: str = 'as',
-            confinement_instructions: str = CONFINEMENT_INSTRUCTIONS,
-            **kwargs,
+        self,
+        subset: str = "as",
+        confinement_instructions: str = CONFINEMENT_INSTRUCTIONS,
+        **kwargs,
     ):
         """
         Initialize MedMCQA dataset.
@@ -46,15 +48,15 @@ class MedMCQAIndicDataset(MedMCQADataset):
         """
         self.subset = subset
         self.dataset_name = f"{DATASET_NAME}-{self.subset}"
-        super().__init__(dataset_name=self.dataset_name,config=subset,confinement_instructions=confinement_instructions,**kwargs)
+        super().__init__(
+            dataset_name=self.dataset_name,
+            config=subset,
+            confinement_instructions=confinement_instructions,
+            **kwargs,
+        )
 
-    def format_item(self, sample: Dict[str, Any],**kwargs):
+    def format_item(self, sample: Dict[str, Any], **kwargs):
         return super().format_item(sample=sample, subset=self.subset)
 
-    def extract_prediction(self, response: str,**kwargs) -> Tuple[str, bool]:
-        return super().extract_prediction(response=response,subset=self.subset)
-
-
-
-
-
+    def extract_prediction(self, response: str, **kwargs) -> Tuple[str, bool]:
+        return super().extract_prediction(response=response, subset=self.subset)

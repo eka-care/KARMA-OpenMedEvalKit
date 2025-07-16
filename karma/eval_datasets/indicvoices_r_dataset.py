@@ -15,7 +15,7 @@ COMMIT_HASH = "5f4495c91d500742a58d1be2ab07d77f73c0acf8"
 
 @register_dataset(
     DATASET_NAME,
-    metrics=["asr_semantic_metric"], #metrics=["wer", "cer", "asr_semantic_metric"],
+    metrics=["asr_semantic_metric"],  # metrics=["wer", "cer", "asr_semantic_metric"],
     commit_hash=COMMIT_HASH,
     split=SPLIT,
     task_type="transcription",
@@ -35,6 +35,8 @@ class IndicVoicesRDataset(BaseMultimodalDataset):
 
         """
         super().__init__(
+            dataset_name=DATASET_NAME,
+            split=SPLIT,
             config=language,
             processors=processors,
             **kwargs,

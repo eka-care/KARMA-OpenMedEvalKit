@@ -22,6 +22,7 @@ CONFINEMENT_INSTRUCTIONS = """Given this radiology image, which can be a frontal
 abdominal CT or MR image, provide a very short, definitive, and concise answer (if possible, a single
 word) to the following question: <QUESTION>"""
 
+
 @register_dataset(
     DATASET_NAME,
     split=SPLIT,
@@ -38,6 +39,8 @@ class VQARADDataset(BaseMultimodalDataset):
 
     def __init__(
         self,
+        dataset_name=DATASET_NAME,
+        split=SPLIT,
         confinement_instructions: str = CONFINEMENT_INSTRUCTIONS,
         **kwargs,
     ):
