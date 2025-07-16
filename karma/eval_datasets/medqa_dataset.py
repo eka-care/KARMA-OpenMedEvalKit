@@ -39,6 +39,8 @@ class MedQADataset(BaseMultimodalDataset):
 
     def __init__(
         self,
+        dataset_name=DATASET_NAME,
+        split=SPLIT,
         confinement_instructions: str = CONFINEMENT_INSTRUCTIONS,
         **kwargs,
     ):
@@ -78,9 +80,9 @@ class MedQADataset(BaseMultimodalDataset):
     def extract_prediction(self, response: str) -> Tuple[str, bool]:
         answer, success = "", False
         if "Final Answer:" in response:
-            answer = response.split("Final Answer:")[1].strip() 
+            answer = response.split("Final Answer:")[1].strip()
             # Remove parentheses if present
-            if answer.startswith('(') and answer.endswith(')'):
+            if answer.startswith("(") and answer.endswith(")"):
                 answer = answer[1:-1]
             success = True
         if not answer:
@@ -116,8 +118,6 @@ class MedQADataset(BaseMultimodalDataset):
                 + "\n".join(formatted_choices)
             )
         else:
-            formatted_question = f"{question}\n" + "\n".join(
-                formatted_choices
-            )
+            formatted_question = f"{question}\n" + "\n".join(formatted_choices)
 
         return formatted_question

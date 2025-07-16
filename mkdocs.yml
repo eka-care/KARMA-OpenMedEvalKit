@@ -1,6 +1,6 @@
 site_name: KARMA - Medical AI Evaluation Framework
 site_description: High-performance evaluation framework for medical AI models
-site_url: https://karma-docs.example.com
+site_url: https://karma.eka.care
 repo_url: https://github.com/eka-care/KARMA-OpenMedEvalKit
 repo_name: eka-care/KARMA-OpenMedEvalKit
 
@@ -52,6 +52,17 @@ theme:
     - javascript
     - curl
 
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/eka-care/KARMA-OpenMedEvalKit
+    - icon: fontawesome/brands/python
+      link: https://pypi.org/project/karma/
+    - icon: material/robot-outline
+      link: https://karma.eka.care/llms-full.txt
+      name: LLMs.txt
+
+
 plugins:
   - search
   - mkdocstrings:
@@ -91,7 +102,10 @@ plugins:
 
 nav:
   - Home: index.md
+  - Getting Started: getting-started.md
+  - Supported Resources: supported-resources.md
   - Eval command reference: eval-command.md
+  - Building with LLMs: building-with-llms.md
   - User Guide:
     - Installation: user-guide/installation.md
     - CLI Basics: user-guide/cli-basics.md
@@ -100,8 +114,8 @@ nav:
       - user-guide/models/model-configuration.md
     - Datasets: user-guide/datasets/datasets_overview.md
     - Metrics: user-guide/metrics/metrics_overview.md
+    - Registry: user-guide/registry/registries.md
     - Processors: user-guide/processors/processors_overview.md
-    - Adding HuggingFace Datasets: user-guide/adding-datasets-from-huggingface.md
   - API Reference:
     - Models: api-reference/models.md
     - Datasets: api-reference/datasets.md
@@ -141,13 +155,6 @@ markdown_extensions:
       anchorlink: true
       anchorlink_class: "toclink"
       permalink: true
-
-extra:
-  social:
-    - icon: fontawesome/brands/github
-      link: https://github.com/eka-care/KARMA-OpenMedEvalKit
-    - icon: fontawesome/brands/python
-      link: https://pypi.org/project/karma/
 
 extra_css:
   - stylesheets/extra.css
