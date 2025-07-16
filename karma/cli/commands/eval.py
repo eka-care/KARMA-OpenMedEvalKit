@@ -110,6 +110,7 @@ from karma.registries.processor_registry import processor_registry
 )
 @click.option(
     "--verbose",
+    default=False,
     help="Pass this argument to have a verbose output",
 )
 @click.pass_context

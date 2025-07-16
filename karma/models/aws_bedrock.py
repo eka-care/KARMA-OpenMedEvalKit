@@ -22,8 +22,8 @@ class AWSBedrock(BaseModel):
         aws_access_key_id: Optional[str] = None,
         aws_secret_access_key: Optional[str] = None,
         aws_session_token: Optional[str] = None,
-        max_tokens: int = 1024,
-        temperature: float = 0.7,
+        max_tokens: int = 2048,
+        temperature: float = 0.0,
         top_p: float = 1.0,
         **kwargs,
     ):

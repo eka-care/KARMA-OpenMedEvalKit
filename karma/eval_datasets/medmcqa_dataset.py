@@ -83,36 +83,16 @@ class MedMCQADataset(BaseMultimodalDataset):
         return processed_sample
 
     def extract_prediction(self, response: str, **kwargs) -> Tuple[str, bool]:
-        """
-        Extract the answer letter from model response.
-
-        Args:
-            response: Model's response text
-
-        Returns:
-            Extracted answer letter (A, B, C, or D)
-        """
-        response = response.strip().upper()
-        # Look for single letter answers
-        valid_answers = ["A", "B", "C", "D"]
-
-        # Check if response is just a single letter
-        if response in valid_answers:
-            return response, True
-
-        # Look for "Answer: X" pattern
-        if "ANSWER:" in response:
-            answer_part = response.split("ANSWER:")[-1].strip()
-            if answer_part and answer_part[0] in valid_answers:
-                return answer_part[0], True
-
-        # Look for first occurrence of valid answer
-        for char in response.split(" "):
-            if char in valid_answers:
-                return char, True
-
-        # Default to A if no valid answer found
-        return response, False
+        answer, success = "", False
+        if "Final Answer:" in response:
+            answer = response.split("Final Answer:")[1].strip()
+            # Remove parentheses if present
+            if answer.startswith('(') and answer.endswith(')'):
+                answer = answer[1:-1]
+            success = True
+        if not answer:
+            logger.warning(f"No answer found in response: {response}")
+        return answer, success
 
     def _format_question(self, data: Dict[str, Any]) -> str:
         """

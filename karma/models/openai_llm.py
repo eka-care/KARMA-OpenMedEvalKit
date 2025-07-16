@@ -11,7 +11,6 @@ logger = logging.getLogger(__name__)
 
 # the default system prompt for openai models as per
 # https://github.com/openai/simple-evals/blob/main/sampler/chat_completion_sampler.py#L9
-base_default_system_prompt = """You are a helpful assistant."""
 
 
 class OpenAILLM(BaseModel):
@@ -21,8 +20,8 @@ class OpenAILLM(BaseModel):
         self,
         model_name_or_path: str = "gpt-4o",
         api_key: Optional[str] = None,
-        max_tokens: int = 1024,
-        temperature: float = 0.7,
+        max_tokens: int = 2048,
+        temperature: float = 0.0,
         top_p: float = 1.0,
         frequency_penalty: float = 0.0,
         presence_penalty: float = 0.0,

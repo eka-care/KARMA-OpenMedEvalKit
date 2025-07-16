@@ -79,17 +79,48 @@ class QwenThinkingLLM(BaseModel):
         inputs: List[DataLoaderIterable],
         **kwargs,
     ) -> Dict[str, torch.Tensor]:
-        inputs = [
-            self.processor.apply_chat_template(
-                [{"role": "user", "content": datapoint.input}],
+        processed_inputs = []
+
+        for datapoint in inputs:
+            messages = []
+
+            # Check if conversation field exists and has data
+            if (
+                datapoint.conversation
+                and len(datapoint.conversation.conversation_turns) > 0
+            ):
+                for turn in datapoint.conversation.conversation_turns:
+                    # Map conversation turn to chat template format
+                    messages.append({"role": turn.role, "content": turn.content})
+
+            # Fall back to input field if no conversation data
+            elif datapoint.input:
+                messages = [{"role": "user", "content": datapoint.input}]
+
+            # Add system prompt if available (for backward compatibility)
+            if hasattr(datapoint, "system_prompt") and datapoint.system_prompt:
+                # Insert system message at the beginning if not already present
+                if not messages or messages[0]["role"] != "system":
+                    messages.insert(
+                        0, {"role": "system", "content": datapoint.system_prompt}
+                    )
+
+            # Ensure we have at least one message
+            if not messages:
+                logger.warning("No input or conversation data found for item, skipping")
+                continue
+
+            # Apply chat template
+            formatted_input = self.processor.apply_chat_template(
+                messages,
                 tokenize=False,
                 add_generation_prompt=True,
                 enable_thinking=self.enable_thinking,
             )
-            for datapoint in inputs
-        ]
+            processed_inputs.append(formatted_input)
+
         model_inputs = self.processor(
-            inputs,
+            processed_inputs,
             return_tensors="pt",
             padding=True,
             truncation=True,
@@ -99,9 +130,9 @@ class QwenThinkingLLM(BaseModel):
 
     def run(
         self,
-        inputs: Union[torch.Tensor, Dict[str, torch.Tensor], List[str], Any],
+        inputs: List[DataLoaderIterable],
         **kwargs,
-    ):
+    ) -> List[str]:
         model_inputs = self.preprocess(inputs)
         results = self.model.generate(
             **model_inputs,
@@ -119,16 +150,21 @@ class QwenThinkingLLM(BaseModel):
         ]
         return self.postprocess(outputs)
 
-    def postprocess(self, model_outputs: List[str], **kwargs) -> List[Tuple[str, str]]:
+    def postprocess(self, model_outputs: List[str], **kwargs) -> List[str]:
         if not self.enable_thinking:
-            return [("", output) for output in model_outputs]
+            return [output.strip() if output else "" for output in model_outputs]
         else:
-            return [
-                self.parse_thinking_content(output)
-                if "</think>" in output
-                else ("", output)
-                for output in model_outputs
-            ]
+            processed_outputs = []
+            for output in model_outputs:
+                if "</think>" in output:
+                    # Extract only the final answer part, ignore thinking content
+                    _, final_answer = self.parse_thinking_content(output)
+                    processed_outputs.append(
+                        final_answer.strip() if final_answer else ""
+                    )
+                else:
+                    processed_outputs.append(output.strip() if output else "")
+            return processed_outputs
 
     def parse_thinking_content(self, output) -> Tuple[str, str]:
         thinking_content = output.split("</think>")[0]
@@ -145,7 +181,7 @@ QwenModel3_06B = ModelMeta(
         "top_k": 50,
         "top_p": 0.9,
         "enable_thinking": True,
-        "max_tokens": 256,
+        "max_tokens": 32768,
     },
     revision=None,
     reference=None,
@@ -166,7 +202,7 @@ QwenModel_1_7B = ModelMeta(
         "top_k": 50,
         "top_p": 0.9,
         "enable_thinking": True,
-        "max_tokens": 256,
+        "max_tokens": 32768,
     },
     revision=None,
     reference=None,

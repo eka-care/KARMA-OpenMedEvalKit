@@ -68,7 +68,6 @@ class MedQADataset(BaseMultimodalDataset):
         # Parse correct answer from Correct Option field
         correct_option = sample["data"]["Correct Option"]
         prompt = self.confinement_instructions.replace("<QUESTION>", input_text)
-
         processed_sample = DataLoaderIterable(
             input=prompt,
             expected_output=correct_option,
@@ -77,14 +76,16 @@ class MedQADataset(BaseMultimodalDataset):
         return processed_sample
 
     def extract_prediction(self, response: str) -> Tuple[str, bool]:
+        answer, success = "", False
         if "Final Answer:" in response:
             answer = response.split("Final Answer:")[1].strip() 
             # Remove parentheses if present
             if answer.startswith('(') and answer.endswith(')'):
                 answer = answer[1:-1]
-            return answer, True
-        else:
-            return response, False
+            success = True
+        if not answer:
+            logger.warning(f"No answer found in response: {response}")
+        return answer, success
 
     def _format_question(self, data: Dict[str, Any]) -> str:
         """
@@ -115,7 +116,7 @@ class MedQADataset(BaseMultimodalDataset):
                 + "\n".join(formatted_choices)
             )
         else:
-            formatted_question = f"Question: {question}\n" + "\n".join(
+            formatted_question = f"{question}\n" + "\n".join(
                 formatted_choices
             )
 

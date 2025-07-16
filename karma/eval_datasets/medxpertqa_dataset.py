@@ -77,8 +77,7 @@ class MedXpertQADataset(BaseMultimodalDataset):
 
         # Create medical QA prompt
         choices_text = "\n".join(formatted_choices)
-        prompt = self.confinement_instructions.replace("<QUESTION>", question)
-
+        prompt = self.confinement_instructions.replace("<QUESTION>", question+"\n\n"+choices_text)
         processed_sample = DataLoaderIterable(
             input=prompt,
             expected_output=label,
@@ -88,10 +87,12 @@ class MedXpertQADataset(BaseMultimodalDataset):
         return processed_sample
 
     def extract_prediction(self, response: str) -> Tuple[str, bool]:
+        answer, success = "", False
         if "Final Answer:" in response:
             answer = response.split("Final Answer:")[1].strip()
             if answer.startswith('(') and answer.endswith(')'):
                 answer = answer[1:-1]
-            return answer, True
-        else:
-            return response, False
+            success = True
+        if not answer:
+            logger.warning(f"No answer found in response: {response}")
+        return answer, success
