@@ -273,11 +273,11 @@ def eval_cmd(
         )
 
         # Dry run mode
-        if dry_run:
-            console.print(
-                "\n[yellow]Dry run completed. No evaluation performed.[/yellow]"
-            )
-            return
+        # if dry_run:
+        #     console.print(
+        #         "\n[yellow]Dry run completed. No evaluation performed.[/yellow]"
+        #     )
+        #     return
 
         # Confirm if not in quiet mode
         # if not ctx.obj.get("quiet", False):
@@ -306,6 +306,7 @@ def eval_cmd(
             show_progress=progress,
             max_samples=max_samples,
             verbose=verbose,
+            dry_run=dry_run,
         )
 
         # Display results
