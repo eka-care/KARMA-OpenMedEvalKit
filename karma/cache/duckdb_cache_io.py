@@ -31,12 +31,11 @@ class DuckDBCacheIO:
         self.db_io.execute("""
             CREATE TABLE IF NOT EXISTS inference_results (
                 cache_key VARCHAR(64) PRIMARY KEY,
-                dataset_row_hash VARCHAR(64) NOT NULL,
                 dataset_name VARCHAR(64) NOT NULL,
+                dataset_row_metadata TEXT,
+                dataset_row_hash VARCHAR(64) NOT NULL,
                 model_output TEXT NOT NULL,
-                model_output_reasoning TEXT,
                 ground_truth_output TEXT,
-                ground_truth_reasoning TEXT,
                 config_hash VARCHAR(64) NOT NULL,
                 success BOOLEAN NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -70,9 +69,8 @@ class DuckDBCacheIO:
         """Get a cached inference result by cache key from DuckDB."""
         result = self.db_io.fetchone(
             """
-            SELECT cache_key, dataset_row_hash, model_output, 
-                   model_output_reasoning, ground_truth_output, 
-                   ground_truth_reasoning, config_hash, dataset_name, success
+            SELECT cache_key, dataset_name, dataset_row_metadata, dataset_row_hash, 
+                   model_output, ground_truth_output, config_hash, success
             FROM inference_results 
             WHERE cache_key = ?
         """,
@@ -82,14 +80,13 @@ class DuckDBCacheIO:
         if result:
             return {
                 "cache_key": result[0],
-                "dataset_row_hash": result[1],
-                "model_output": result[2],
-                "model_output_reasoning": result[3],
-                "ground_truth_output": result[4],
-                "ground_truth_reasoning": result[5],
+                "dataset_name": result[1],
+                "dataset_row_metadata": result[2],
+                "dataset_row_hash": result[3],
+                "model_output": result[4],
+                "ground_truth_output": result[5],
                 "config_hash": result[6],
-                "dataset_name": result[7],
-                "success": result[8],
+                "success": result[7],
             }
         return None
 
@@ -104,9 +101,8 @@ class DuckDBCacheIO:
         placeholders = ",".join("?" for _ in cache_keys)
         results_data = self.db_io.fetchall(
             f"""
-            SELECT cache_key, dataset_row_hash, model_output, 
-                   model_output_reasoning, ground_truth_output, 
-                   ground_truth_reasoning, config_hash, dataset_name, success
+            SELECT cache_key, dataset_name, dataset_row_metadata, dataset_row_hash, 
+                   model_output, ground_truth_output, config_hash, success
             FROM inference_results 
             WHERE cache_key IN ({placeholders})
         """,
@@ -117,14 +113,13 @@ class DuckDBCacheIO:
         for row in results_data:
             results[row[0]] = {
                 "cache_key": row[0],
-                "dataset_row_hash": row[1],
-                "model_output": row[2],
-                "model_output_reasoning": row[3],
-                "ground_truth_output": row[4],
-                "ground_truth_reasoning": row[5],
+                "dataset_name": row[1],
+                "dataset_row_metadata": row[2],
+                "dataset_row_hash": row[3],
+                "model_output": row[4],
+                "ground_truth_output": row[5],
                 "config_hash": row[6],
-                "dataset_name": row[7],
-                "success": row[8],
+                "success": row[7],
             }
 
         # Add None entries for missing keys
@@ -145,23 +140,22 @@ class DuckDBCacheIO:
             batch_data.append(
                 [
                     data["cache_key"],
+                    data["dataset_name"],
+                    data.get("dataset_row_metadata"),
                     data["dataset_row_hash"],
                     data["model_output"],
-                    data.get("model_output_reasoning"),
                     data.get("ground_truth_output"),
-                    data.get("ground_truth_reasoning"),
                     data["config_hash"],
                     data["success"],
-                    data["dataset_name"],
                 ]
             )
 
         return self.db_io.executemany(
             """
             INSERT OR REPLACE INTO inference_results 
-            (cache_key, dataset_row_hash, model_output, model_output_reasoning,
-             ground_truth_output, ground_truth_reasoning, config_hash, success, dataset_name, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            (cache_key, dataset_name, dataset_row_metadata, dataset_row_hash,
+             model_output, ground_truth_output, config_hash, success, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
         """,
             batch_data,
         )

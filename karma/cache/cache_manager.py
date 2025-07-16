@@ -246,13 +246,10 @@ class CacheManager:
             inference_data = {
                 "cache_key": cache_keys[i],
                 "dataset_name": dataset_name,
-                "dataset_row_idx": data["sample"].get("idx", None),
-                "dataset_row_metadata": data["sample"].get("meta", {}),
+                "dataset_row_metadata": data["sample"].get("other_args", {}),
                 "dataset_row_hash": input_hashes[i],
                 "model_output": data.get("prediction", ""),
-                "model_output_reasoning": data.get("thinking_content", ""),
                 "ground_truth_output": data.get("expected_output", ""),
-                "ground_truth_reasoning": data.get("ground_truth_reasoning", ""),
                 "config_hash": self.config_hash,
                 "success": data.get("success", True),
             }
