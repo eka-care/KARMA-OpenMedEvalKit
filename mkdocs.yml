@@ -85,23 +85,12 @@ plugins:
         - Registry-based auto-discovery of models and datasets
         - Production-ready CLI with progress tracking
       sections:
-        Getting Started:
-          - getting-started.md
         User Guide:
-          - user-guide/installation.md
-          - user-guide/basic-usage.md
-          - user-guide/processor-usage.md
-        API Reference:
-          - api-reference/models.md
-          - api-reference/datasets.md
-          - api-reference/metrics.md
-          - api-reference/registries.md
-          - api-reference/cli.md
+          - user-guide/*.md
       full_output: "llms-full.txt"
 
 nav:
   - Home: index.md
-  - Getting Started: getting-started.md
   - Eval command reference: eval-command.md
   - User Guide:
     - Installation: user-guide/installation.md
