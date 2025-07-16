@@ -45,5 +45,5 @@ class EkaMedicalAsrDataset(BaseMultimodalDataset):
         return DataLoaderIterable(
             audio=sample.get("audio", {}).get("bytes"),
             expected_output=sample.get("text", ""),
-            other_args={"language": sample.get("audio_language", "unknown")},
+            other_args={"language": sample.get("audio_language", "unknown"), "recording_context": sample.get("recording_context", ""), "type_concept": sample.get("type_concept", "")},
         )

@@ -80,7 +80,7 @@ class ASRSemanticMetrics(BaseMetric):
                 alignments = aligner.align_words_dp(ref, hyp)
                 
                 # Print results
-                aligner.print_alignment_visual(alignments) #to be used for debugging
+                # aligner.print_alignment_visual(alignments) #to be used for debugging
                 
                 # Calculate statistics
                 stats = aligner.calculate_error_rates(alignments)
