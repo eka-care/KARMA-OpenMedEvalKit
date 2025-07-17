@@ -67,7 +67,7 @@ class ASRSemanticMetrics(BaseMetric):
         return aligner
 
     @staticmethod
-    def process_files(aligner: BaseCERAligner, predictions: List[str], references: List[str]) -> EvalResult:
+    def process_for_wer(aligner: BaseCERAligner, predictions: List[str], references: List[str]) -> EvalResult:
         """Process reference and hypothesis files with utterance ID alignment."""
         if len(predictions) != len(references):
             raise ValueError(f"Mismatch in ref/hyp count: {len(references)} refs vs {len(predictions)} predictions")
@@ -232,17 +232,13 @@ class ASRSemanticMetrics(BaseMetric):
             Dictionary containing evaluation results
         """
         # Extract language from cli
-        language_list = kwargs.get("language", [])
-        if language_list:
-            language = Counter(language_list).most_common(1)[0][0]
-        else:
-            language = "unknown"
+        language = kwargs.get("language")
         entities = kwargs.get("medical_entities", [])
         #language = self.language
         #if not language:
         #    raise ValueError("Language parameter is required. Pass it via cli: 'asr_metric:language=hi'")
-        if not language:
-            logger.info("Defaulting to English")
+        if language == "unknown":
+            logger.info("Unknown language, defaulting to English")
             language = "en"
         
         try:
@@ -258,7 +254,8 @@ class ASRSemanticMetrics(BaseMetric):
             # Process files
             logger.info(f"Processing {len(references)} utterances...")
             logger.info("No entities found, using default aligner")
-            results = self.process_files(aligner, predictions, references) 
+            results = self.process_for_wer(aligner, predictions, references) 
+            entity_wer = None
             if entities:
                 logger.info("Entities found, using keyword aligner")
                 entity_wer = self.process_keywords_for_wer(aligner, predictions, references, entities) 

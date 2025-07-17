@@ -19,8 +19,8 @@ COMMIT_HASH = "5f4495c91d500742a58d1be2ab07d77f73c0acf8"
     commit_hash=COMMIT_HASH,
     split=SPLIT,
     task_type="transcription",
-    #required_args=["language"],
-    #default_args={"language": "hindi"},
+    required_args=["language"],
+    default_args={"language": "hindi"},
     processors=["multilingual_text_processor"],
 )
 class IndicVoicesRDataset(BaseMultimodalDataset):
@@ -54,13 +54,8 @@ class IndicVoicesRDataset(BaseMultimodalDataset):
     def format_item(self, sample: Dict[str, Any]) -> DataLoaderIterable:
         audio_info = sample.get("audio", {})
         audio_data = audio_info.get("bytes")
-        language = sample.get("lang") or sample.get("language", "unknown")
-
+        
         return DataLoaderIterable(
             audio=audio_data,
             expected_output=sample.get("text", ""),
-            other_args={
-                "language": language,
-                "medical_entities": sample.get("medical_entities", []),
-            },
         )

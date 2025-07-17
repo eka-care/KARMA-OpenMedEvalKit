@@ -256,28 +256,27 @@ class Benchmark:
         predictions = []
         rubrics = []
         samples = []
-        langs = []
         entities = []
         for it in ground_truth_and_prediction:
             
             predictions.append(it["prediction"])
             references.append(it["expected_output"])
+            entities.append(it["medical_entities"])
             if it.get("sample"):
                 samples.append(it["sample"])
                 rubrics.append(it["sample"].rubric_to_evaluate)
-                langs.append(it["sample"].language)
-                entities.append(it["sample"].medical_entities)
-
         predictions = self.dataset.postprocess(predictions)
         references = self.dataset.postprocess(references)
-
+        
+        # Get language from derived dataset class if it exists
+        language = getattr(self.dataset, 'language', 'english')
         for metric in metrics:
             score = metric.evaluate(
                 predictions=predictions,
                 references=references,
+                language=language,
                 rubrics=rubrics,
                 samples=samples,
-                langs=langs,
                 entities=entities,
             )
             if isinstance(score, dict):
@@ -366,12 +365,13 @@ class Benchmark:
             for result, sample in zip(batch_results, samples, strict=False):
                 # Use dataset's extract_answer method (which uses template)
                 expected = sample.expected_output
-                lang = sample.language
+                entities = sample.other_args["medical_entities"]
 
                 # Create final prediction result
                 prediction_result = {
                     "prediction": result["prediction"],
                     "expected_output": expected,
+                    "medical_entities": entities,
                     "sample": sample,
                     "from_cache": result.get("from_cache", False),
                     "success": result.get("success", True),
