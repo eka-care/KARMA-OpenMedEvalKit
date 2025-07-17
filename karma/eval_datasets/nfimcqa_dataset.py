@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, Tuple, Generator
+from typing import Any, Dict, Tuple, Generator, Optional
 import os
 import pandas as pd
 from karma.data_models.dataloader_iterable import DataLoaderIterable
@@ -23,6 +23,7 @@ class NFIMCQADataset(BaseMultimodalDataset):
     def __init__(
         self,
         dataset_name: str = DATASET_NAME,
+        split: str = SPLIT,
         confinement_instructions: str = CONFINEMENT_INSTRUCTIONS,
         **kwargs,
     ):
@@ -34,14 +35,13 @@ class NFIMCQADataset(BaseMultimodalDataset):
             raise FileNotFoundError(f"Dataset file not found: {self.data_path}")
         self.df = pd.read_parquet(self.data_path)
 
-        kwargs.setdefault("split", SPLIT)
-
+        self.dataset = None
         super().__init__(
             dataset_name=dataset_name,
+            split=split,
             confinement_instructions=confinement_instructions,
             **kwargs,
         )
-        self.dataset = None
 
         self.dataset_name = dataset_name
         self.confinement_instructions = confinement_instructions
@@ -61,7 +61,7 @@ class NFIMCQADataset(BaseMultimodalDataset):
             Dictionary containing the sample data including 'expected_output'
         """
         if self.dataset is None:
-            self.dataset = list(self.load())  # cache once
+            self.dataset = list(self.load_eval_dataset())  # cache once
         for idx, sample in enumerate(self.dataset):
             if self.max_samples is not None and idx >= self.max_samples:
                 break
@@ -113,7 +113,13 @@ class NFIMCQADataset(BaseMultimodalDataset):
         formatted = [f"{l}. {opt}" for l, opt in zip(letters, options)]
         return f"{question}\n" + "\n".join(formatted)
 
-    def load_eval_dataset(self, **kwargs):
+    def load_eval_dataset(self,
+                          dataset_name: str,
+                          split: str = "test",
+                          config: Optional[str] = None,
+                          stream: bool = True,
+                          commit_hash: Optional[str] = None,
+                          **kwargs):
         logger.info("Using custom local load method")
         logger.info(f"Loading local dataset from {self.data_path}")
 
