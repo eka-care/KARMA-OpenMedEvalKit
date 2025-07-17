@@ -113,6 +113,11 @@ from karma.registries.processor_registry import processor_registry
     default=False,
     help="Pass this argument to have a verbose output",
 )
+@click.option(
+    "--refresh-cache",
+    is_flag=True,
+    help="Skip cache lookup and force regeneration of all results",
+)
 @click.pass_context
 def eval_cmd(
     ctx,
@@ -134,6 +139,7 @@ def eval_cmd(
     model_kwargs,
     max_samples,
     verbose,
+    refresh_cache,
 ):
     """
     Evaluate a model on healthcare datasets.
@@ -270,6 +276,7 @@ def eval_cmd(
             batch_size,
             cache,
             output,
+            refresh_cache,
         )
 
         # Dry run mode
@@ -307,6 +314,7 @@ def eval_cmd(
             max_samples=max_samples,
             verbose=verbose,
             dry_run=dry_run,
+            refresh_cache=refresh_cache,
         )
 
         # Display results
@@ -596,6 +604,7 @@ def _show_evaluation_plan(
     batch_size: int,
     use_cache: bool,
     output: str,
+    refresh_cache: bool,
 ) -> None:
     """
     Display the evaluation plan to the user.
@@ -612,6 +621,7 @@ def _show_evaluation_plan(
         batch_size: Batch size
         use_cache: Whether to use caching
         output: Output file path
+        refresh_cache: Whether to refresh cache
     """
     console.print("\n[bold cyan]Evaluation Plan[/bold cyan]")
     console.print("─" * 50)
@@ -628,7 +638,10 @@ def _show_evaluation_plan(
         )
 
     console.print(f"[cyan]Batch Size:[/cyan] {batch_size}")
-    console.print(f"[cyan]Cache:[/cyan] {'Enabled' if use_cache else 'Disabled'}")
+    cache_status = "Enabled" if use_cache else "Disabled"
+    if use_cache and refresh_cache:
+        cache_status += " (Refresh mode)"
+    console.print(f"[cyan]Cache:[/cyan] {cache_status}")
     console.print(f"[cyan]Output File:[/cyan] {output}")
 
     # Show dataset arguments if any
