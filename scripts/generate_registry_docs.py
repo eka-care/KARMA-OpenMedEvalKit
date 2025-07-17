@@ -129,7 +129,11 @@ def format_as_markdown(models_data, datasets_data, metrics_data):
     datasets_table = format_datasets_table(datasets_data)
     metrics_table = format_metrics_table(metrics_data)
 
-    markdown_content = f"""# Supported Resources
+    markdown_content = f"""
+    
+---
+title: Supported Resources
+---
 
 > **Note**: This page is auto-generated during the CI/CD pipeline. Last updated: {timestamp}
 
@@ -222,8 +226,8 @@ def main():
     # Format as markdown
     markdown_content = format_as_markdown(models_data, datasets_data, metrics_data)
 
-    # Write to docs directory
-    docs_dir = Path(__file__).parent.parent / "docs"
+    # Write to docs_v2 directory
+    docs_dir = Path(__file__).parent.parent / "docs_v2" / "src" / "content" / "docs"
     output_file = docs_dir / "supported-resources.md"
 
     # Create docs directory if it doesn't exist
