@@ -39,6 +39,9 @@ class MedMCQADataset(BaseMultimodalDataset):
 
     def __init__(
         self,
+        dataset_name: str = DATASET_NAME,
+        split: str = SPLIT,
+        commit_hash: str = COMMIT_HASH,
         **kwargs,
     ):
         """
@@ -47,7 +50,7 @@ class MedMCQADataset(BaseMultimodalDataset):
         Args:
             **kwargs: Additional arguments passed to base class
         """
-        super().__init__(dataset_name=DATASET_NAME, split=SPLIT, **kwargs)
+        super().__init__(dataset_name=dataset_name, split=split, commit_hash=commit_hash, **kwargs)
 
     def format_item(self, sample: Dict[str, Any], **kwargs):
         """

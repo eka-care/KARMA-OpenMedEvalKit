@@ -22,6 +22,9 @@ COMMIT_HASH = "5e20540ebd29868c8245e652412f27e40ca7acad"
 class EkaMedicalAsrDataset(BaseMultimodalDataset):
     def __init__(
         self,
+        dataset_name: str = DATASET_NAME,
+        split: str = SPLIT,
+        commit_hash: str = COMMIT_HASH,
         language: str = "hi",
         processors=None,
         **kwargs,
@@ -31,6 +34,9 @@ class EkaMedicalAsrDataset(BaseMultimodalDataset):
 
         """
         super().__init__(
+            dataset_name=dataset_name,
+            split=split,
+            commit_hash=commit_hash,
             config=language,
             processors=processors,
             **kwargs,
