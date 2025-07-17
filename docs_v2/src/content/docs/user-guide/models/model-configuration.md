@@ -3,6 +3,7 @@ title: Model Configuration
 ---
 
 Learn how to configure and customize models for optimal performance in medical AI evaluation.
+The loader_args that are defined on the ModelMeta can be tweaked
 
 ## Parameter Tuning
 

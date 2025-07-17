@@ -1,9 +1,9 @@
 ---
-title: KARMA
+title: KARMA-OpenMedEvalKit
 description: Knowledge Assessment and Reasoning for Medical Applications - A comprehensive evaluation framework for medical AI models.
 template: splash
 hero:
-  tagline: Fast, comprehensive, and production-ready medical AI evaluation framework
+  tagline: Comprehensive LLM evaluation framework for medical AI models and datasets.
   image:
     file: ../../assets/houston.webp
   actions:
@@ -14,26 +14,30 @@ hero:
       link: https://github.com/eka-care/KARMA-OpenMedEvalKit
       icon: external
       variant: minimal
+    - text: LLMs.txt
+      link: /user-guide/llm/
+      icon: external
+      variant: minimal
 ---
 
 import { Card, CardGrid } from '@astrojs/starlight/components';
 
 ## Why KARMA?
 
-KARMA is a comprehensive, high-performance evaluation framework for building medical AI benchmarks with Python 3.12+ based on standard PyTorch models. Designed for researchers, developers, and healthcare organizations who need reliable evaluation of medical AI systems.
+KARMA is designed for researchers, developers, and healthcare organizations who need reliable evaluation of medical AI systems.
 
-<CardGrid stagger>
-	<Card title="🚀 Fast & Efficient" icon="rocket">
+<CardGrid>
+	<Card title="Fast & Efficient" icon="rocket">
 		Process thousands of medical examples efficiently with intelligent caching and batch processing.
 	</Card>
-	<Card title="🎯 Multi-Modal Ready" icon="document">
-		Support for text, images, audio, and video evaluation across 12+ medical datasets.
+	<Card title="Multi-Modal Ready" icon="document">
+		Support for text, images, and audio evaluation across multiple datasets.
 	</Card>
-	<Card title="⚡ Model Agnostic" icon="setting">
+	<Card title="Model Agnostic" icon="setting">
 		Works with any model - Qwen, MedGemma, Bedrock-SDK, OpenAI-SDK or your custom architecture with unified interface.
 	</Card>
-	<Card title="📊 Extensible" icon="approve-check">
-		Bring your own model, dataset or even metric
+	<Card title="Extensible" icon="approve-check">
+		Bring your own model, dataset or even metric. Integrated with Huggingface artifacts and supports local evaluation.
 	</Card>
 </CardGrid>
 
@@ -47,38 +51,35 @@ git clone https://github.com/eka-care/KARMA-OpenMedEvalKit.git
 cd KARMA-OpenMedEvalKit && uv sync
 
 # Run your first evaluation
-karma eval --model "Qwen/Qwen3-0.6B" --datasets pubmedqa --max-samples 3
+karma eval --model "Qwen/Qwen3-0.6B" --datasets openlifescienceai/pubmedqa --max-samples 3
 ```
 
-## Core Components
+## Example Output
 
-<CardGrid>
-	<Card title="Models" icon="star">
-		Unified interface for 14+ medical AI models including Qwen, MedGemma, and audio models.
-		
-		[Explore Models →](/user-guide/models/built-in-models/)
-	</Card>
-	<Card title="Datasets" icon="document">
-		19+ standardized medical evaluation datasets across text, vision, audio, and translation tasks.
-		
-		[Browse Datasets →](/user-guide/datasets/datasets_overview/)
-	</Card>
-	<Card title="Metrics" icon="approve-check">
-		10+ comprehensive evaluation metrics from exact match to advanced rubric evaluation.
-		
-		[View Metrics →](/user-guide/metrics/metrics_overview/)
-	</Card>
-	<Card title="Processors" icon="setting">
-		Extensible text processing system with built-in multilingual and domain-specific processors.
-		
-		[Learn Processing →](/user-guide/processors/processors_overview/)
-	</Card>
-</CardGrid>
+```bash
+$ karma eval --model "Qwen/Qwen3-0.6B" --datasets openlifescienceai/pubmedqa --max-samples 5
+
+╭────────────────────────────────────────────────────────────────────╮
+│ KARMA: Knowledge Assessment and Reasoning for Medical Applications │
+╰────────────────────────────────────────────────────────────────────╯
+
+Evaluation Results:
+──────────────────────────────────────────────────
+Dataset: openlifescienceai/pubmedqa
+Model: Qwen/Qwen3-0.6B
+Samples: 5/5
+
+Metrics:
+  accuracy: 0.80
+  exact_match: 0.60
+
+Results saved to: results.json
+```
 
 ## Key Features
 
 - **Registry-Based Architecture**: Auto-discovery of models, datasets, and metrics
-- **Smart Caching**: DuckDB and DynamoDB backends for faster re-evaluations  
+- **Smart Caching**: DuckDB and DynamoDB backends for faster re-evaluations
 - **Extensible Design**: Easy integration of custom models, datasets, and metrics
 - **Rich CLI**: Beautiful progress bars, formatted outputs, and comprehensive help
 - **Standards-Based**: Built on PyTorch and HuggingFace Transformers
@@ -88,46 +89,26 @@ karma eval --model "Qwen/Qwen3-0.6B" --datasets pubmedqa --max-samples 3
 <CardGrid>
 	<Card title="Installation" icon="add-document">
 		Multiple installation methods with uv, pip, or development setup.
-		
+
 		[Install KARMA →](/user-guide/installation/)
 	</Card>
 	<Card title="Basic Usage" icon="pencil">
 		Learn the CLI commands and start evaluating your first model.
-		
+
 		[Learn CLI →](/user-guide/basic-usage/)
 	</Card>
 	<Card title="Add Your Own" icon="setting">
 		Extend KARMA with custom models, datasets, and evaluation metrics.
-		
+
 		[Customize →](/user-guide/add-your-own/add-model/)
 	</Card>
 	<Card title="Supported Resources" icon="open-book">
 		Complete list of available models, datasets, and metrics.
-		
+
 		[View Resources →](/supported-resources/)
 	</Card>
 </CardGrid>
 
-## Example Output
 
-```bash
-$ karma eval --model "Qwen/Qwen3-0.6B" --datasets pubmedqa --max-samples 5
-
-╭────────────────────────────────────────────────────────────────────╮
-│ KARMA: Knowledge Assessment and Reasoning for Medical Applications │
-╰────────────────────────────────────────────────────────────────────╯
-
-Evaluation Results:
-──────────────────────────────────────────────────
-Dataset: pubmedqa
-Model: Qwen/Qwen3-0.6B
-Samples: 5/5
-
-Metrics:
-  accuracy: 0.80
-  exact_match: 0.60
-  
-Results saved to: results.json
-```
 
 Ready to evaluate your medical AI models? [Get started with installation →](/user-guide/installation/)

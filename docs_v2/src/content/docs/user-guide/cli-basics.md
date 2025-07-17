@@ -33,6 +33,7 @@ The KARMA CLI is organized into several main commands:
 - **`karma eval`** - Run model evaluations
 - **`karma list`** - List available resources (models, datasets, metrics)
 - **`karma info`** - Get detailed information about specific resources
+- **`karma interactive`** - Interactive mode of the CLI
 - **`karma --help`** - Get help for any command
 
 ## Getting Help
@@ -52,9 +53,3 @@ karma list --help
 # Help for info command
 karma info --help
 ```
-
-## Next Steps
-
-- **Run your first evaluation**: See [Running Evaluations](running-evaluations)
-- **Learn about models**: Check out the [Models Guide](../models/overview)
-- **Explore datasets**: Read the [Datasets Guide](datasets/datasets_overview)
