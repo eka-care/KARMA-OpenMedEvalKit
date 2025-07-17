@@ -78,22 +78,13 @@ This includes:
 - `num2words` - Number to word conversion
 - `torchaudio` - Audio processing
 
-### Documentation Dependencies
-
-For building documentation locally:
-
-```bash
-# With uv
-uv install --group docs
-
-# With pip
-pip install "karma[docs]"
-```
-
 ### Install with all dependencies in developer mode
 ```bash
-With uv
+# With uv
 uv sync --all-extras
+
+# with pip
+pip install -e ".[all]"
 ```
 
 ## Environment Configuration
@@ -123,7 +114,7 @@ OPENAI_API_KEY=your_openai_key
 #### HuggingFace Token
 To access gated models or datasets, set this environment variable with your Huggingface token.
 
-You can see the guide to create tokens [here](https://huggingface.co/docs/hub/en/security-tokens) 
+You can see the guide to create tokens [here](https://huggingface.co/docs/hub/en/security-tokens)
 ```bash
 # Login to HuggingFace
 huggingface-cli login
