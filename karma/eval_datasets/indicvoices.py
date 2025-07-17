@@ -31,6 +31,8 @@ class IndicVoicesRDataset(BaseMultimodalDataset):
 
         """
         super().__init__(
+            dataset_name=DATASET_NAME,
+            split=SPLIT,
             config=language,
             processors=processors,
             **kwargs,

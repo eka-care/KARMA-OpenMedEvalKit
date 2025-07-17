@@ -1,6 +1,7 @@
 import os
 import logging
 from typing import List, Optional, Dict, Any
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from openai import OpenAI
 from karma.models.base_model_abs import BaseModel
 from karma.data_models.dataloader_iterable import DataLoaderIterable
@@ -25,6 +26,7 @@ class OpenAILLM(BaseModel):
         top_p: float = 1.0,
         frequency_penalty: float = 0.0,
         presence_penalty: float = 0.0,
+        max_workers: int = 4,
         **kwargs,
     ):
         """
@@ -38,6 +40,7 @@ class OpenAILLM(BaseModel):
             top_p: Top-p sampling parameter (0.0 to 1.0)
             frequency_penalty: Frequency penalty (-2.0 to 2.0)
             presence_penalty: Presence penalty (-2.0 to 2.0)
+            max_workers: Maximum number of concurrent API calls (default: 4)
             **kwargs: Additional arguments passed to BaseModel
         """
         super().__init__(
@@ -52,6 +55,7 @@ class OpenAILLM(BaseModel):
         self.top_p = top_p
         self.frequency_penalty = frequency_penalty
         self.presence_penalty = presence_penalty
+        self.max_workers = max_workers
 
         if not self.api_key:
             raise ValueError(
@@ -126,9 +130,28 @@ class OpenAILLM(BaseModel):
 
         return processed_inputs
 
+    def _make_single_call(self, api_input: Dict[str, Any]) -> str:
+        """
+        Make a single API call to OpenAI.
+        
+        Args:
+            api_input: Processed API input dictionary
+            
+        Returns:
+            Generated text string or error message
+        """
+        try:
+            response = self.client.chat.completions.create(**api_input)
+            # Extract the generated text
+            generated_text = response.choices[0].message.content
+            return generated_text
+        except Exception as e:
+            logger.error(f"Failed to generate text with OpenAI: {str(e)}")
+            return f"Error: {str(e)}"
+
     def run(self, inputs: List[DataLoaderIterable], **kwargs) -> List[str]:
         """
-        Run text generation on the input prompts.
+        Run text generation on the input prompts in parallel.
 
         Args:
             inputs: List of DataLoaderIterable objects containing text data
@@ -140,18 +163,27 @@ class OpenAILLM(BaseModel):
             raise RuntimeError("Model is not loaded.")
 
         processed_inputs = self.preprocess(inputs, **kwargs)
-        outputs = []
-        for api_input in processed_inputs:
-            try:
-                response = self.client.chat.completions.create(**api_input)
-
-                # Extract the generated text
-                generated_text = response.choices[0].message.content
-                outputs.append(generated_text)
-
-            except Exception as e:
-                logger.error(f"Failed to generate text with OpenAI: {str(e)}")
-                outputs.append(f"Error: {str(e)}")
+        
+        # Handle empty inputs
+        if not processed_inputs:
+            return []
+        
+        # Use ThreadPoolExecutor for parallel API calls
+        with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+            # Submit all API calls and track their order
+            future_to_index = {
+                executor.submit(self._make_single_call, api_input): i
+                for i, api_input in enumerate(processed_inputs)
+            }
+            
+            # Initialize results list with correct size
+            outputs = [None] * len(processed_inputs)
+            
+            # Collect results as they complete
+            for future in as_completed(future_to_index):
+                index = future_to_index[future]
+                result = future.result()
+                outputs[index] = result
 
         return self.postprocess(outputs, **kwargs)
 

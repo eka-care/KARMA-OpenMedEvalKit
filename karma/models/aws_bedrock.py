@@ -1,6 +1,7 @@
 import os
 import logging
 from typing import List, Optional, Dict, Any
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import boto3
 
@@ -25,6 +26,7 @@ class AWSBedrock(BaseModel):
         max_tokens: int = 2048,
         temperature: float = 0.0,
         top_p: float = 1.0,
+        max_workers: int = 4,
         **kwargs,
     ):
         """
@@ -39,6 +41,7 @@ class AWSBedrock(BaseModel):
             max_tokens: Maximum tokens to generate
             temperature: Sampling temperature (0.0 to 1.0)
             top_p: Top-p sampling parameter (0.0 to 1.0)
+            max_workers: Maximum number of concurrent API calls (default: 4)
             **kwargs: Additional arguments passed to BaseModel
         """
         super().__init__(
@@ -56,6 +59,7 @@ class AWSBedrock(BaseModel):
         self.max_tokens = max_tokens
         self.temperature = temperature
         self.top_p = top_p
+        self.max_workers = max_workers
 
         self.client = None
         self.load_model()
@@ -139,9 +143,28 @@ class AWSBedrock(BaseModel):
 
         return processed_inputs
 
+    def _make_single_call(self, api_input: Dict[str, Any]) -> str:
+        """
+        Make a single API call to AWS Bedrock.
+        
+        Args:
+            api_input: Processed API input dictionary
+            
+        Returns:
+            Generated text string or error message
+        """
+        try:
+            response = self.client.converse(**api_input)
+            # Extract the generated text from the response
+            generated_text = response["output"]["message"]["content"][0]["text"]
+            return generated_text
+        except Exception as e:
+            logger.error(f"Failed to generate text with AWS Bedrock: {str(e)}")
+            return f"Error: {str(e)}"
+
     def run(self, inputs: List[DataLoaderIterable], **kwargs) -> List[str]:
         """
-        Run text generation on the input prompts.
+        Run text generation on the input prompts in parallel.
 
         Args:
             inputs: List of DataLoaderIterable objects containing text data
@@ -153,19 +176,27 @@ class AWSBedrock(BaseModel):
             raise RuntimeError("Model is not loaded.")
 
         processed_inputs = self.preprocess(inputs, **kwargs)
-        outputs = []
-
-        for api_input in processed_inputs:
-            try:
-                response = self.client.converse(**api_input)
-
-                # Extract the generated text from the response
-                generated_text = response["output"]["message"]["content"][0]["text"]
-                outputs.append(generated_text)
-
-            except Exception as e:
-                logger.error(f"Failed to generate text with AWS Bedrock: {str(e)}")
-                outputs.append(f"Error: {str(e)}")
+        
+        # Handle empty inputs
+        if not processed_inputs:
+            return []
+        
+        # Use ThreadPoolExecutor for parallel API calls
+        with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+            # Submit all API calls and track their order
+            future_to_index = {
+                executor.submit(self._make_single_call, api_input): i
+                for i, api_input in enumerate(processed_inputs)
+            }
+            
+            # Initialize results list with correct size
+            outputs = [None] * len(processed_inputs)
+            
+            # Collect results as they complete
+            for future in as_completed(future_to_index):
+                index = future_to_index[future]
+                result = future.result()
+                outputs[index] = result
 
         return self.postprocess(outputs, **kwargs)
 

@@ -88,6 +88,8 @@ class IN22ConvDataset(BaseMultimodalDataset):
         self,
         source_language: str,
         target_language: str,
+        dataset_name=DATASET_NAME,
+        split=SPLIT,
         domain: str = "conversational",
         processors: Optional[List] = None,
         confinement_instructions: Optional[str] = CONFINEMENT_INSTRUCTIONS,

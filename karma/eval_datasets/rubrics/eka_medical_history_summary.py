@@ -1,3 +1,5 @@
+import os
+
 from karma.eval_datasets.rubrics.rubric_base_dataset import RubricBaseDataset
 from karma.registries.dataset_registry import register_dataset
 
@@ -5,7 +7,7 @@ base_default_system_prompt = """You are a helpful assistant. Generate a succinct
 
 DATASET_NAME = "ekacare/ekacare_medical_history_summarisation"
 SPLIT = "test"
-COMMIT_HASH = "68ca9cb775fbcc51ff30729905a7ea028b5796dd"
+COMMIT_HASH = "9098354aaa37633264117f74212d6b80983d0a21"
 
 
 @register_dataset(
@@ -18,5 +20,11 @@ COMMIT_HASH = "68ca9cb775fbcc51ff30729905a7ea028b5796dd"
 )
 class EkaMedicalHistorySummary(RubricBaseDataset):
     def __init__(self, system_prompt=base_default_system_prompt, **kwargs):
+        from huggingface_hub import login
+
+        try:
+            login(os.getenv("HUGGINGFACE_TOKEN"))
+        except ValueError as e:
+            raise e
         super().__init__(system_prompt=system_prompt, **kwargs)
         self.system_prompt = system_prompt

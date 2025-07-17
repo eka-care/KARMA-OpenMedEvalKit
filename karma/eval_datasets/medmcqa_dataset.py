@@ -47,7 +47,7 @@ class MedMCQADataset(BaseMultimodalDataset):
         Args:
             **kwargs: Additional arguments passed to base class
         """
-        super().__init__(**kwargs)
+        super().__init__(dataset_name=DATASET_NAME, split=SPLIT, **kwargs)
 
     def format_item(self, sample: Dict[str, Any], **kwargs):
         """
@@ -73,9 +73,7 @@ class MedMCQADataset(BaseMultimodalDataset):
         # }
 
         processed_sample = DataLoaderIterable(
-            input=prompt,
-            expected_output=correct_answer,
-            **kwargs
+            input=prompt, expected_output=correct_answer, **kwargs
         )
 
         # Add confinement instructions to the question and options
@@ -87,7 +85,7 @@ class MedMCQADataset(BaseMultimodalDataset):
         if "Final Answer:" in response:
             answer = response.split("Final Answer:")[1].strip()
             # Remove parentheses if present
-            if answer.startswith('(') and answer.endswith(')'):
+            if answer.startswith("(") and answer.endswith(")"):
                 answer = answer[1:-1]
             success = True
         if not answer:

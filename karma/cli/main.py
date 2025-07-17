@@ -43,7 +43,7 @@ def karma(ctx, verbose, quiet):
     multiple India centric datasets with automatic discovery and rich output formatting.
 
     Examples:
-        karma eval --model qwen --model-path "Qwen/Qwen2.5-0.5B-Instruct"
+        karma eval --model "Qwen/Qwen2.5-0.5B-Instruct"
         karma list models
         karma info dataset pubmedqa
     """
