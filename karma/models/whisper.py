@@ -208,7 +208,7 @@ WHISPER_LARGE_V3 = ModelMeta(
     description="OpenAI Whisper Large V3 ASR model for multilingual speech recognition",
     audio_sample_rate=16000,
     supported_audio_formats=["wav", "flac", "mp3", "m4a", "ogg"],
-    loader_class="karma.models.whisper_transformers.WhisperTransformersASR",
+    loader_class="karma.models.whisper.WhisperTransformersASR",
     loader_kwargs={
         "task": "transcribe",
         "target_sample_rate": 16000,
@@ -235,7 +235,7 @@ AUDIOX_NORTH_V1 = ModelMeta(
     description="Jiva AI AudioX North V1 ASR model for multilingual speech recognition",
     audio_sample_rate=16000,
     supported_audio_formats=["wav", "flac", "mp3", "m4a", "ogg"],
-    loader_class="karma.models.whisper_transformers.WhisperTransformersASR",
+    loader_class="karma.models.whisper.WhisperTransformersASR",
     loader_kwargs={
         "task": "transcribe",
         "target_sample_rate": 16000,
@@ -262,7 +262,7 @@ AUDIOX_SOUTH_V1 = ModelMeta(
     description="Jiva AI AudioX South V1 ASR model for multilingual speech recognition",
     audio_sample_rate=16000,
     supported_audio_formats=["wav", "flac", "mp3", "m4a", "ogg"],
-    loader_class="karma.models.whisper_transformers.WhisperTransformersASR",
+    loader_class="karma.models.whisper.WhisperTransformersASR",
     loader_kwargs={
         "task": "transcribe",
         "target_sample_rate": 16000,
