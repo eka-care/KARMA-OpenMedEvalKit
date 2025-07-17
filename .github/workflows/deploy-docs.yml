@@ -58,7 +58,7 @@ jobs:
           path: ./docs_v2/dist
 
   deploy:
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feature/move_to_starlight_docs'
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feature/move_to_starlight_docs')
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
