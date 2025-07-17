@@ -5,6 +5,7 @@ Base classes for CER-based word alignment with advanced features.
 
 import sys
 import re
+import editdistance
 from typing import List, Tuple, Dict, Optional, Set
 from dataclasses import dataclass
 from enum import Enum
@@ -351,6 +352,154 @@ class BaseCERAligner(ABC):
             return result
         
         _, alignments = solve(0, 0)
+        return alignments
+
+    def extract_keywords_from_text(self, text: str, annotations: List[Dict]) -> List[str]:
+        """
+        Extract keywords from text using the provided offset annotations.
+        
+        Args:
+            text: Original text
+            annotations: List of annotations with format [keyword, category, [[start, end]]]
+            
+        Returns:
+            List of extracted keywords
+        """
+        keywords = []
+        
+        for annotation in annotations:
+            keyword_text = annotation[0]
+            category = annotation[1]
+            offsets = annotation[2]
+            
+            # Extract text using offsets to verify
+            for offset_pair in offsets:
+                start, end = offset_pair
+                extracted_text = text[start:end]
+                keywords.append(extracted_text)
+        
+        return keywords
+
+    def align_keywords(self, reference_keywords: List[str], hypothesis_text: str, 
+                    cer_aligner=None) -> List:
+        """
+        Create alignments between reference keywords and hypothesis text.
+        Returns WordAlignment objects compatible with your existing BaseCERAligner.
+        
+        Args:
+            reference_keywords: List of reference keywords
+            hypothesis_text: System output text
+            cer_aligner: Optional BaseCERAligner instance for CER calculation
+            
+        Returns:
+            List of WordAlignment objects compatible with your existing calculate_error_rates method
+        """
+        # Import your existing classes (adjust import path as needed)
+        from base_aligner import WordAlignment, AlignmentType
+        
+        alignments = []
+        hypothesis_tokens = []
+        
+        # Tokenize hypothesis with positions (similar to your tokenize_with_positions)
+        import re
+        for match in re.finditer(r'\S+', hypothesis_text):
+            hypothesis_tokens.append((match.group(), match.start(), match.end()))
+        
+        used_positions = set()  # Track used positions in hypothesis
+        
+        for ref_keyword in reference_keywords:
+            best_alignment = None
+            best_score = float('inf')
+            best_position = None
+            
+            ref_tokens = ref_keyword.split() if ref_keyword else []
+            
+            # Try exact match first
+            if ref_keyword in hypothesis_text:
+                # Find position of exact match
+                start_pos = hypothesis_text.find(ref_keyword)
+                end_pos = start_pos + len(ref_keyword)
+                
+                # Find corresponding token positions
+                token_positions = []
+                for i, (token, token_start, token_end) in enumerate(hypothesis_tokens):
+                    if token_start >= start_pos and token_end <= end_pos:
+                        if i not in used_positions:
+                            token_positions.append(i)
+                
+                if token_positions:
+                    best_alignment = WordAlignment(
+                        ref_words=[ref_keyword],
+                        hyp_words=[hypothesis_tokens[i][0] for i in token_positions],
+                        alignment_type=AlignmentType.MATCH,
+                        character_error_rate=0.0,
+                        ref_positions=[(0, len(ref_keyword))],  # Simplified position
+                        hyp_positions=[(hypothesis_tokens[i][1], hypothesis_tokens[i][2]) for i in token_positions]
+                    )
+                    best_position = token_positions
+                    best_score = 0
+            
+            # If no exact match, try fuzzy matching
+            if best_score > 0:
+                # Sliding window approach
+                for i in range(len(hypothesis_tokens) - len(ref_tokens) + 1):
+                    if any(pos in used_positions for pos in range(i, i + len(ref_tokens))):
+                        continue
+                        
+                    window_tokens = hypothesis_tokens[i:i + len(ref_tokens)]
+                    window_words = [token[0] for token in window_tokens]
+                    window_text = " ".join(window_words)
+                    
+                    # Calculate CER
+                    if cer_aligner:
+                        cer = cer_aligner.calculate_character_error_rate(ref_keyword, window_text)
+                    else:
+                        # Fallback to simple edit distance
+                        ref_chars = ref_keyword.replace(' ', '')
+                        hyp_chars = window_text.replace(' ', '')
+                        if ref_chars:
+                            edit_dist = editdistance.eval(ref_chars, hyp_chars)
+                            cer = edit_dist / len(ref_chars)
+                        else:
+                            cer = 1.0 if hyp_chars else 0.0
+                    
+                    if cer < best_score:
+                        best_score = cer
+                        best_position = list(range(i, i + len(ref_tokens)))
+                        
+                        # Determine alignment type based on CER
+                        if cer < 0.05:  # Very close match
+                            alignment_type = AlignmentType.MATCH
+                        elif cer <= 0.4:  # Within threshold
+                            alignment_type = AlignmentType.SUBSTITUTION
+                        else:
+                            alignment_type = AlignmentType.SUBSTITUTION
+                        
+                        best_alignment = WordAlignment(
+                            ref_words=[ref_keyword],
+                            hyp_words=window_words,
+                            alignment_type=alignment_type,
+                            character_error_rate=cer,
+                            ref_positions=[(0, len(ref_keyword))],  # Simplified position
+                            hyp_positions=[(token[1], token[2]) for token in window_tokens]
+                        )
+            
+            # If we found a reasonable match
+            if best_alignment and best_score <= 0.5:  # Threshold for acceptable matches
+                alignments.append(best_alignment)
+                if best_position:
+                    used_positions.update(best_position)
+            else:
+                # No match found - this is a deletion
+                alignments.append(WordAlignment(
+                    ref_words=[ref_keyword],
+                    hyp_words=[],
+                    alignment_type=AlignmentType.DELETION,
+                    character_error_rate=1.0,
+                    ref_positions=[(0, len(ref_keyword))],  # Simplified position
+                    hyp_positions=[]
+                ))
+        
         return alignments
     
     def calculate_error_rates(self, alignments: List[WordAlignment]) -> Dict[str, float]:
