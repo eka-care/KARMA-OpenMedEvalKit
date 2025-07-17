@@ -34,6 +34,7 @@ export default defineConfig({
 				{
 					label: 'User Guide',
 					items: [
+						{ label: 'Interactive Mode', slug: 'user-guide/interactive-mode' },
 						{ label: 'Models',
 							items: [
 								{ label: 'Built-in Models', slug: 'user-guide/models/built-in-models' },
