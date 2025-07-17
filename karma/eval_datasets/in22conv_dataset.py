@@ -134,10 +134,6 @@ class IN22ConvDataset(BaseMultimodalDataset):
         self.dataset_name = (
             f"{DATASET_NAME}-{self.source_language}-{self.target_language}"
         )
-        self.dataset = super().load_eval_dataset(DATASET_NAME,
-                                                 config=None,
-                                                 split=SPLIT,
-                                                 commit_hash=COMMIT_HASH)
 
     def format_item(self, sample: Dict[str, Any]) -> DataLoaderIterable:
         """

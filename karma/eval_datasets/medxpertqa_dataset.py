@@ -54,10 +54,6 @@ class MedXpertQADataset(BaseMultimodalDataset):
             confinement_instructions=confinement_instructions,
             **kwargs,
         )
-        self.dataset = super().load_eval_dataset(DATASET_NAME,
-                                                 config=CONFIG,
-                                                 split=SPLIT,
-                                                 commit_hash=COMMIT_HASH)
         self.dataset = self.dataset.cast_column("images", [Image(decode=False)])
 
     def format_item(self, sample: Dict[str, Any]) -> DataLoaderIterable:

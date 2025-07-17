@@ -53,9 +53,6 @@ class ClinicalNoteGenerationDataset(BaseMultimodalDataset):
             split=split,
             **kwargs,
         )
-        self.dataset = super().load_eval_dataset(DATASET_NAME,
-                                                 config=None,
-                                                 split=SPLIT)
 
     def format_item(self, sample: Dict[str, Any]) -> DataLoaderIterable:
         """

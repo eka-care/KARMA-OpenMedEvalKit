@@ -46,10 +46,6 @@ class IndicVoicesRDataset(BaseMultimodalDataset):
         self.dataset = self.dataset.cast_column(
             "audio", Audio(sampling_rate=16000, decode=False)
         )
-        self.dataset = super().load_eval_dataset(DATASET_NAME,
-                                                 config=language,
-                                                 split=SPLIT,
-                                                 commit_hash=COMMIT_HASH)
 
     def format_item(self, sample: Dict[str, Any]) -> DataLoaderIterable:
         audio_info = sample.get("audio", {})

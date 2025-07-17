@@ -38,9 +38,6 @@ class MMLUProfessionalMedicineDataset(MedQADataset):
             **kwargs,
         )
         self.dataset_name = "openlifescienceai/mmlu_professional_medicine"
-        self.dataset = super().load_eval_dataset(self.dataset_name,
-                                                 config=None,
-                                                 split=SPLIT)
 
 
 @register_dataset(

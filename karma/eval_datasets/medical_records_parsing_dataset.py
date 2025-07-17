@@ -58,9 +58,6 @@ class MedicalRecordsParsingDataset(BaseMultimodalDataset):
         )
         self.system_prompt = system_prompt
         # Cast the image column to handle image bytes properly
-        self.dataset = super().load_eval_dataset(DATASET_NAME,
-                                                 config=None,
-                                                 split=SPLIT,)
         self.dataset = self.dataset.cast_column("image", Image(decode=False))
 
     def format_item(self, sample: Dict[str, Any]) -> DataLoaderIterable:
