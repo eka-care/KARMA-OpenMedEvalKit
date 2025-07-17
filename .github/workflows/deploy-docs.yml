@@ -2,9 +2,9 @@ name: Deploy Astro Docs to GitHub Pages
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, feature/move_to_starlight_docs ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, feature/move_to_starlight_docs ]
 
 permissions:
   contents: read
@@ -58,7 +58,7 @@ jobs:
           path: ./docs_v2/dist
 
   deploy:
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feature/move_to_starlight_docs'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
