@@ -1,0 +1,244 @@
+---
+title: Datasets Guide
+---
+
+This guide covers working with datasets in KARMA, from using built-in datasets to creating your own custom implementations.
+
+## Built-in Datasets
+
+KARMA supports 12+ medical datasets across multiple modalities:
+
+```bash
+# List available datasets
+karma list datasets
+
+# Get dataset information
+karma info dataset openlifescienceai/pubmedqa
+
+# Use a dataset
+karma eval --model qwen --model-path "Qwen/Qwen3-0.6B" \
+  --datasets openlifescienceai/pubmedqa
+```
+
+
+### Text-based Datasets
+
+- **openlifescienceai/pubmedqa** - PubMed Question Answering
+- **openlifescienceai/medmcqa** - Medical Multiple Choice QA
+- **openlifescienceai/medqa** - Medical Question Answering
+- **ChuGyouk/MedXpertQA** - Medical Expert QA
+
+### Vision-Language Datasets
+
+- **mdwiratathya/SLAKE-vqa-english** - Structured Language And Knowledge Extraction
+- **flaviagiammarino/vqa-rad** - Visual Question Answering for Radiology
+
+### Audio Datasets
+
+- **ai4bharat/indicvoices_r** - Text to speech dataset that could be used for ASR evaluation as well.
+- **ai4bharat/indicvoices** - ASR dataset - Indic Voices Recognition
+
+### Translation Datasets
+
+- **ai4bharat/IN22-Conv** - Indic Language Conversation Translation
+
+### Rubric-Based Evaluation Datasets
+
+- **ekacare/ekacare_medical_history_summarisation** - Medical History Summarization with rubric evaluation
+- **Tonic/Health-Bench-Eval-OSS-2025-07** - Health-Bench evaluation with rubric scoring
+
+These datasets include structured rubric criteria that define evaluation points, scoring weights, and categorization tags. The rubric evaluation is performed by an LLM evaluator (OpenAI or AWS Bedrock) that assesses model responses against multiple criteria simultaneously.
+
+## Viewing Available Datasets
+
+```bash
+# List all available datasets
+karma list datasets
+
+# Get detailed information about a specific dataset
+karma info dataset openlifescienceai/pubmedqa
+```
+
+## Using Datasets
+
+```bash
+# Use specific dataset
+karma eval --model qwen --model-path "Qwen/Qwen3-0.6B" \
+  --datasets openlifescienceai/pubmedqa
+
+# Use multiple datasets
+karma eval --model qwen --model-path "Qwen/Qwen3-0.6B" \
+  --datasets "openlifescienceai/pubmedqa,openlifescienceai/medmcqa"
+```
+
+## Dataset Configuration
+
+### Dataset-Specific Arguments
+
+Some datasets require additional configuration:
+
+```bash
+# Translation datasets with language pairs
+karma eval --model qwen --model-path "Qwen/Qwen3-0.6B" \
+    --datasets "ai4bharat/IN22-Conv" \
+    --dataset-args "ai4bharat/IN22-Conv:source_language=en,target_language=hi"
+
+# Datasets with specific splits
+karma eval --model qwen --model-path "Qwen/Qwen3-0.6B" \
+  --datasets "openlifescienceai/medmcqa" \
+  --dataset-args "openlifescienceai/medmcqa:split=validation"
+
+# Rubric-based datasets with custom system prompts
+karma eval --model qwen --model-path "Qwen/Qwen3-0.6B" \
+  --datasets "Tonic/Health-Bench-Eval-OSS-2025-07" \
+  --metrics "rubric_evaluation" \
+  --dataset-args "Tonic/Health-Bench-Eval-OSS-2025-07:system_prompt=You are a medical expert assistant" \
+  --metric-args "rubric_evaluation:provider_to_use=openai,model_id=gpt-4o-mini,batch_size=5"
+```
+
+## DataLoaderIterable: The Universal Data Format
+
+All datasets in KARMA format their data using the `DataLoaderIterable` class, which provides a unified interface for different modalities and data types. The `format_item` method in each dataset transforms raw data into this standardized format.
+
+### DataLoaderIterable Structure
+
+```python
+from karma.data_models.dataloader_iterable import DataLoaderIterable
+
+# The complete structure
+data_item = DataLoaderIterable(
+    input=None,                    # Text input for the model
+    images=None,                   # Image data (PIL Image or bytes)
+    audio=None,                    # Audio data (bytes)
+    conversation=None,             # Multi-turn conversation structure
+    system_prompt=None,            # System instructions for the model
+    expected_output=None,          # Ground truth answer
+    rubric_to_evaluate=None,       # Rubric criteria for evaluation
+    other_args=None               # Additional metadata
+)
+```
+
+### Text Dataset Example: PubMedMCQA
+
+Text-based datasets use the `input` and `expected_output` fields:
+
+```python
+# karma/eval_datasets/pubmedmcqa_dataset.py
+def format_item(self, sample: Dict[str, Any], **kwargs):
+    input_text = self._format_question(sample["data"])
+    
+    # Parse correct answer from Correct Option field
+    correct_option = sample["data"]["Correct Option"]
+    context = "\n".join(sample["data"]["Context"])
+    prompt = self.confinement_instructions.replace("<CONTEXT>", context).replace(
+        "<QUESTION>", input_text
+    )
+    
+    processed_sample = DataLoaderIterable(
+        input=prompt,                    # Formatted question with context
+        expected_output=correct_option,  # Correct answer (e.g., "A")
+    )
+    
+    return processed_sample
+```
+
+**Key Features:**
+- `input`: Contains the formatted question with context and instructions
+- `expected_output`: Contains the correct answer for evaluation
+- No other modalities are used for pure text tasks
+
+### Audio Dataset Example: IndicVoices
+
+Audio datasets use the `audio` field for input data:
+
+```python
+# karma/eval_datasets/indicvoices.py
+def format_item(self, sample: Dict[str, Any]) -> DataLoaderIterable:
+    audio_info = sample.get("audio_filepath", {})
+    audio_data = audio_info.get("bytes")
+    
+    return DataLoaderIterable(
+        audio=audio_data,                           # Audio bytes for ASR
+        expected_output=sample.get("text", ""),     # Ground truth transcription
+        other_args={"language": sample.get("lang", "unknown")},  # Language metadata
+    )
+```
+
+**Key Features:**
+- `audio`: Contains the raw audio data as bytes
+- `expected_output`: Contains the ground truth transcription
+- `other_args`: Stores additional metadata like language information
+- No `input` field needed as audio is the primary input
+
+### Image Dataset Example: SLAKE VQA
+
+Vision-language datasets combine text and images:
+
+```python
+# karma/eval_datasets/slake_dataset.py
+def format_item(self, sample: Dict[str, Any]) -> DataLoaderIterable:
+    question = sample.get("question", "")
+    answer = sample.get("answer", "").lower()
+    image = sample["image"]["bytes"]
+    
+    # Create VQA prompt
+    prompt = self.confinement_instructions.replace("<QUESTION>", question)
+    
+    processed_sample = DataLoaderIterable(
+        input=prompt,              # Text question with instructions
+        expected_output=answer,    # Ground truth answer
+        images=[image],           # Image data as bytes (in a list)
+    )
+    
+    return processed_sample
+```
+
+**Key Features:**
+- `input`: Contains the formatted question text
+- `images`: Contains image data as bytes (wrapped in a list for batch processing)
+- `expected_output`: Contains the ground truth answer
+- Multi-modal models can process both text and image inputs
+
+### Rubric Dataset Example: Health-Bench
+
+Rubric-based datasets use conversations and structured evaluation criteria:
+
+```python
+# karma/eval_datasets/rubrics/rubric_base_dataset.py
+def format_item(self, sample: Dict[str, Any]) -> DataLoaderIterable:
+    # Extract conversation turns
+    conversation = []
+    for conversation_turn in sample["prompt"]:
+        conversation.append(
+            ConversationTurn(
+                content=conversation_turn["content"],
+                role=conversation_turn["role"],
+            )
+        )
+    conversation = Conversation(conversation_turns=conversation)
+    
+    # Extract rubric criteria
+    criterions = []
+    for rubric_item in sample["rubrics"]:
+        criterions.append(
+            RubricCriteria(
+                criterion=rubric_item["criterion"],
+                points=rubric_item["points"],
+                tags=rubric_item.get("tags", []),
+            )
+        )
+    
+    processed_sample = DataLoaderIterable(
+        conversation=conversation,           # Multi-turn conversation
+        rubric_to_evaluate=criterions,      # Structured evaluation criteria
+        system_prompt=self.system_prompt,   # System instructions
+    )
+    
+    return processed_sample
+```
+
+**Key Features:**
+- `conversation`: Contains structured multi-turn conversations
+- `rubric_to_evaluate`: Contains structured evaluation criteria
+- `system_prompt`: Contains system-level instructions
+- No `expected_output` as evaluation is done via rubric scoring

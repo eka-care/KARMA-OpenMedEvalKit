@@ -83,8 +83,8 @@
   color: black;
 }
 
-.md-header .md-header__button {
-  color: black;
+.md-header__source {
+  color: #333333;
 }
 
 
@@ -202,6 +202,8 @@
   --md-primary-fg-color--dark: #444444;
   --eka-gradient-start: #666666;
   --eka-gradient-end: #888888;
+  --md-accent-fg-color: #ffffff;
+  --md-accent-fg-color--transparent: rgba(255, 255, 255, 0.1);
 }
 
 [data-md-color-scheme="slate"] .md-header {
@@ -214,4 +216,38 @@
 
 [data-md-color-scheme="slate"] .md-header .md-header__button {
   color: white;
+}
+
+/* Dark mode text color overrides */
+[data-md-color-scheme="slate"] .md-typeset h1 {
+  color: #f1f5f9 !important;
+}
+
+[data-md-color-scheme="slate"] .md-typeset h2 {
+  color: #f1f5f9 !important;
+}
+
+[data-md-color-scheme="slate"] .md-typeset h3 {
+  color: #f1f5f9 !important;
+}
+
+[data-md-color-scheme="slate"] .md-typeset p {
+  color: #cbd5e1;
+}
+
+[data-md-color-scheme="slate"] .md-content article > p:first-of-type em {
+  color: #f1f5f9 !important;
+}
+
+/* Dark mode navigation improvements */
+[data-md-color-scheme="slate"] .md-nav__item .md-nav__link {
+  color: #cbd5e1;
+}
+
+[data-md-color-scheme="slate"] .md-nav__item .md-nav__link:hover {
+  color: #ffffff;
+}
+
+[data-md-color-scheme="slate"] .md-nav__item .md-nav__link--active {
+  color: #ffffff;
 }

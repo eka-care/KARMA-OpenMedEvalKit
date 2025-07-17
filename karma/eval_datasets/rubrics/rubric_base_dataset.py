@@ -65,6 +65,7 @@ class RubricBaseDataset(BaseMultimodalDataset):
             conversation=conversation,
             rubric_to_evaluate=criterions,
             system_prompt=self.system_prompt,
+            other_args={"additional_info": sample.get("ideal_completions_data")},
         )
 
         return processed_sample

@@ -71,6 +71,7 @@ class BaseMultimodalDataset(IterableDataset, ABC):
         # check if max samples is None then set it max integer
         self.max_samples = max_samples if max_samples is not None else float("inf")
         self.confinement_instructions = confinement_instructions
+
     def __iter__(self) -> Generator[Dict[str, Any], None, None]:
         """
         Get a single sample from the dataset.

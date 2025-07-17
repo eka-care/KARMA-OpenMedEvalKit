@@ -1,4 +1,6 @@
-# CLI Basics
+---
+title: CLI Basics
+---
 
 KARMA provides a comprehensive CLI built with Click and Rich for an excellent user experience.
 
@@ -53,6 +55,6 @@ karma info --help
 
 ## Next Steps
 
-- **Run your first evaluation**: See [Running Evaluations](running-evaluations.md)
-- **Learn about models**: Check out the [Models Guide](../models/overview.md)
-- **Explore datasets**: Read the [Datasets Guide](../datasets/datasets_overview.md)
+- **Run your first evaluation**: See [Running Evaluations](running-evaluations)
+- **Learn about models**: Check out the [Models Guide](../models/overview)
+- **Explore datasets**: Read the [Datasets Guide](datasets/datasets_overview)

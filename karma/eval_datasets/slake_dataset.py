@@ -21,6 +21,7 @@ CONFINEMENT_INSTRUCTIONS = """<QUESTION> You may write out your argument before 
 definitive, and concise answer (if possible, a single word or the letter corresponding to your answer
 choice) X in the format "Final Answer: X": """
 
+
 @register_dataset(
     DATASET_NAME,
     commit_hash=COMMIT_HASH,
@@ -37,6 +38,8 @@ class SLAKEDataset(VQARADDataset):
 
     def __init__(
         self,
+        dataset_name=DATASET_NAME,
+        split=SPLIT,
         confinement_instructions: str = CONFINEMENT_INSTRUCTIONS,
         **kwargs,
     ):
@@ -49,7 +52,7 @@ class SLAKEDataset(VQARADDataset):
         # Override the dataset name for SLAKE
 
         super().__init__(confinement_instructions=confinement_instructions, **kwargs)
-    
+
     def format_item(self, sample: Dict[str, Any]) -> DataLoaderIterable:
         """
         Format a sample into a VQA prompt.
@@ -74,7 +77,7 @@ class SLAKEDataset(VQARADDataset):
         )
 
         return processed_sample
-    
+
     def extract_prediction(self, response: str) -> Tuple[str, bool]:
         """
         Extract the answer from the answer string.

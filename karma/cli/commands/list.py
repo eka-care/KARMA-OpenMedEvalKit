@@ -6,6 +6,9 @@ datasets, and other resources in the Karma framework.
 """
 
 import click
+import csv
+import json
+import io
 from typing import Optional
 from rich.console import Console
 from rich.panel import Panel
@@ -16,6 +19,71 @@ from karma.registries.model_registry import model_registry
 from karma.registries.dataset_registry import dataset_registry
 from karma.registries.metrics_registry import metric_registry
 from karma.registries.registry_manager import discover_all_registries
+
+
+def format_models_csv(models):
+    """Format models list as CSV."""
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    # Write header
+    writer.writerow(['name'])
+    
+    # Write data
+    for model in sorted(models):
+        writer.writerow([model])
+    
+    return output.getvalue()
+
+
+def format_datasets_csv(datasets_info):
+    """Format datasets info as CSV."""
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    # Write header
+    writer.writerow([
+        'name', 'task_type', 'metrics', 'required_args', 'optional_args', 
+        'processors', 'split', 'commit_hash'
+    ])
+    
+    # Write data
+    for dataset_name in sorted(datasets_info.keys()):
+        info = datasets_info[dataset_name]
+        
+        # Format list fields as JSON for proper parsing
+        metrics = json.dumps(info.get('metrics', []))
+        required_args = json.dumps(info.get('required_args', []))
+        optional_args = json.dumps(info.get('optional_args', []))
+        processors = json.dumps(info.get('processors', []))
+        
+        writer.writerow([
+            dataset_name,
+            info.get('task_type', ''),
+            metrics,
+            required_args,
+            optional_args,
+            processors,
+            info.get('split', ''),
+            info.get('commit_hash', '')
+        ])
+    
+    return output.getvalue()
+
+
+def format_metrics_csv(metrics):
+    """Format metrics list as CSV."""
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    # Write header
+    writer.writerow(['name'])
+    
+    # Write data
+    for metric in sorted(metrics):
+        writer.writerow([metric])
+    
+    return output.getvalue()
 
 
 @click.group(name="list")
@@ -33,7 +101,7 @@ def list_cmd(ctx):
 @click.option(
     "--format",
     "output_format",
-    type=click.Choice(["table", "simple"], case_sensitive=False),
+    type=click.Choice(["table", "simple", "csv"], case_sensitive=False),
     default="table",
     help="Output format",
 )
@@ -71,6 +139,10 @@ def list_models(ctx, output_format):
             table = ModelFormatter.format_models_list(models)
             console.print("\n")
             console.print(table)
+        elif output_format == "csv":
+            csv_output = format_models_csv(models)
+            print(csv_output, end='')  # Use plain print to avoid rich formatting
+            return  # Don't print success message for CSV
         else:
             console.print(f"\n[cyan]Available Models ({len(models)}):[/cyan]")
             for model in sorted(models):
@@ -92,7 +164,7 @@ def list_models(ctx, output_format):
 @click.option(
     "--format",
     "output_format",
-    type=click.Choice(["table", "simple"], case_sensitive=False),
+    type=click.Choice(["table", "simple", "csv"], case_sensitive=False),
     default="table",
     help="Output format",
 )
@@ -169,6 +241,10 @@ def list_datasets(ctx, task_type, metric, output_format, show_args):
             if show_args:
                 _show_detailed_args(console, filtered_datasets)
 
+        elif output_format == "csv":
+            csv_output = format_datasets_csv(filtered_datasets)
+            print(csv_output, end='')  # Use plain print to avoid rich formatting
+            return  # Don't print success message for CSV
         else:
             console.print(
                 f"\n[cyan]Available Datasets ({len(filtered_datasets)}):[/cyan]"
@@ -215,7 +291,7 @@ def list_datasets(ctx, task_type, metric, output_format, show_args):
 @click.option(
     "--format",
     "output_format",
-    type=click.Choice(["table", "simple"], case_sensitive=False),
+    type=click.Choice(["table", "simple", "csv"], case_sensitive=False),
     default="table",
     help="Output format",
 )
@@ -262,6 +338,10 @@ def list_metrics(ctx, output_format):
 
             console.print("\n")
             console.print(table)
+        elif output_format == "csv":
+            csv_output = format_metrics_csv(metrics)
+            print(csv_output, end='')  # Use plain print to avoid rich formatting
+            return  # Don't print success message for CSV
         else:
             console.print(f"\n[cyan]Available Metrics ({len(metrics)}):[/cyan]")
             for metric in sorted(metrics):
@@ -373,7 +453,7 @@ def _show_detailed_args(console: Console, datasets_info: dict) -> None:
 @click.option(
     "--format",
     "output_format",
-    type=click.Choice(["table", "simple"], case_sensitive=False),
+    type=click.Choice(["table", "simple", "csv"], case_sensitive=False),
     default="table",
     help="Output format",
 )
@@ -386,6 +466,15 @@ def list_all(ctx, output_format):
     and datasets in one go.
     """
     console = ctx.obj["console"]
+
+    if output_format == "csv":
+        # For CSV output, we need to handle it differently
+        # Let's create a combined CSV output
+        console.print(ClickFormatter.error("CSV format not yet supported for 'list all' command. Use individual commands instead."))
+        console.print("Try: karma list models --format csv")
+        console.print("     karma list datasets --format csv")
+        console.print("     karma list metrics --format csv")
+        return
 
     # Show header
     console.print(

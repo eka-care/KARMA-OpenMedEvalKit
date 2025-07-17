@@ -32,12 +32,12 @@ karma eval --help
 
 #### Evaluate specific datasets
 ```bash
-karma eval --model qwen --model-path "path/to/model" --datasets "pubmedqa,medmcqa"
+karma eval --model "Qwen/Qwen3-0.6B" --datasets "pubmedqa,medmcqa"
 ```
 
 #### With dataset and processor arguments
 ```bash
-karma eval --model qwen --model-path "path" --datasets "in22conv" \
+karma eval --model ai4bharat/indic-conformer-600m-multilingual --datasets "in22conv" \
   --dataset-args "in22conv:source_language=en,target_language=hi" \
   --processor-args "in22conv.devnagari_transliterator:source_script=en,target_script=hi"
 ```

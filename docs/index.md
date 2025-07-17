@@ -53,66 +53,19 @@ Commands:
 
 ### Discover Models and Datasets
 
-```console
-$ karma list all
-╭─────────────────────────╮
-│ Karma Registry Overview │
-╰─────────────────────────╯
+KARMA supports a wide range of models, datasets, and metrics for medical AI evaluation. To see the complete list of currently supported resources, visit our [**Supported Resources**](supported-resources.md) page, which is automatically updated with each release.
 
-MODELS
-────────────────────
-                      Available Models                       
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┓
-┃ Model Name                                  ┃ Status      ┃
-┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━┩
-│ Qwen/Qwen3-0.6B                             │ ✓ Available │
-│ Qwen/Qwen3-1.7B                             │ ✓ Available │
-│ ai4bharat/indic-conformer-600m-multilingual │ ✓ Available │
-│ google/medgemma-4b-it                       │ ✓ Available │
-└─────────────────────────────────────────────┴─────────────┘
+**Quick commands to explore available resources:**
 
-✓ Found 4 models
+```bash
+# List all resources
+karma list all
 
-DATASETS
-────────────────────
-Discovering datasets...
-                                                                                         Available Datasets                                                                                          
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━┓
-┃ Dataset                                      ┃ Task Type     ┃ Metrics        ┃ Processors                                          ┃ Required Args                    ┃ Commit Hash ┃ Split      ┃
-┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━╇━━━━━━━━━━━━┩
-│ ChuGyouk/MedXpertQA                          │ mcqa          │ exact_match    │ —                                                   │ —                                │ 7186bd59    │ test       │
-│ ai4bharat/IN22-Conv                          │ translation   │ bleu           │ devnagari_transliterator                            │ source_language, target_language │ 18cd4587    │ test       │
-│ ai4bharat/indicvoices_r                      │ transcription │ bleu, wer, cer │ general_text_processor, multilingual_text_processor │ language                         │ 5f4495c9    │ test       │
-│ flaviagiammarino/vqa-rad                     │ vqa           │ exact_match    │ —                                                   │ —                                │ bcf91e76    │ test       │
-│ mdwiratathya/SLAKE-vqa-english               │ vqa           │ exact_match    │ —                                                   │ —                                │ 8d18b4d5    │ test       │
-│ openlifescienceai/medmcqa                    │ mcqa          │ exact_match    │ —                                                   │ —                                │ 91c6572c    │ validation │
-│ openlifescienceai/medqa                      │ mcqa          │ exact_match    │ —                                                   │ —                                │ 153e61cd    │ test       │
-│ openlifescienceai/mmlu_anatomy               │ mcqa          │ exact_match    │ —                                                   │ —                                │ a7a792bd    │ test       │
-│ openlifescienceai/mmlu_clinical_knowledge    │ mcqa          │ exact_match    │ —                                                   │ —                                │ e1511676    │ test       │
-│ openlifescienceai/mmlu_college_biology       │ mcqa          │ exact_match    │ —                                                   │ —                                │ 94b1278b    │ test       │
-│ openlifescienceai/mmlu_college_medicine      │ mcqa          │ exact_match    │ —                                                   │ —                                │ 62ba72a3    │ test       │
-│ openlifescienceai/mmlu_professional_medicine │ mcqa          │ exact_match    │ —                                                   │ —                                │ 0f2cda02    │ test       │
-│ openlifescienceai/pubmedqa                   │ mcqa          │ exact_match    │ —                                                   │ —                                │ 50fc41dc    │ test       │
-└──────────────────────────────────────────────┴───────────────┴────────────────┴─────────────────────────────────────────────────────┴──────────────────────────────────┴─────────────┴────────────┘
-
-✓ Found 13 datasets
-
-METRICS
-────────────────────
-Discovering metrics...
-
-
-            Available Metrics             
-┏━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━┓
-┃ Metric Name          ┃ Status          ┃
-┡━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━┩
-│ bleu                 │ ✓ Available     │
-│ cer                  │ ✓ Available     │
-│ exact_match          │ ✓ Available     │
-│ wer                  │ ✓ Available     │
-└──────────────────────┴─────────────────┘
-
-✓ Found 4 metrics
+# List specific resource types
+karma list models
+karma list datasets
+karma list metrics
+karma list processors
 ```
 
 ### Preview Your Evaluation
@@ -148,16 +101,10 @@ The CLI provides rich formatting, auto-discovery of models and datasets, and cle
 
 KARMA is built around four core components:
 
-1. **[Models](api-reference/models.md)** - Unified interface for medical AI models
-2. **[Datasets](api-reference/datasets.md)** - Standardized medical evaluation datasets
-3. **[Metrics](api-reference/metrics.md)** - Comprehensive evaluation metrics
-5. **[Processors]** - A way to post process the output of the model 
-
-## What's Next?
-
-- **New to KARMA?** Start with our [Getting Started](getting-started.md) guide
-- **Need help with installation?** Check the [Installation Guide](user-guide/installation.md)
-- **Want to add custom models?** See the [API Reference](api-reference/models.md)
+1. **[Models](user-guide/models/built-in-models.md)** - Unified interface for medical AI models
+2. **[Datasets](user-guide/datasets/datasets_overview.md)** - Standardized medical evaluation datasets
+3. **[Metrics](user-guide/metrics/metrics_overview.md)** - Comprehensive evaluation metrics
+5. **[Processors](user-guide/processors/processors_overview.md)** - A way to post process the output of the model 
 
 ## License
 

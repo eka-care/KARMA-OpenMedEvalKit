@@ -104,22 +104,11 @@ karma eval --model openai-whisper \
   --model-kwargs '{"model": "whisper-1", "language": "en"}'
 ```
 
-## Model Selection Guide
-
-### Task-Specific Recommendations
-
-| Task Type | Recommended Models | Best For |
-|-----------|------------------|----------|
-| **Medical Q&A** | Qwen, MedGemma | Complex reasoning, medical accuracy |
-| **Diagnostic Support** | MedGemma, Qwen | Evidence-based responses |
-| **Medical Transcription** | IndicConformer, Whisper | Multilingual audio processing |
-| **Clinical Documentation** | AWS Transcribe, Gemini ASR | Production environments |
-
 ## Getting Model Information
 
 ```bash
 # Get detailed information about any model
-karma info model qwen
+karma info model "Qwen/Qwen3-0.6B"
 
 # Example output shows:
 # - Model capabilities

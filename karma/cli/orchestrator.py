@@ -75,6 +75,7 @@ class MultiDatasetOrchestrator:
         show_progress: bool = True,
         max_samples: Optional[int] = None,
         verbose: bool = False,
+        dry_run: bool = False,
     ) -> Dict[str, Any]:
         """
         Evaluate model on multiple datasets with enhanced CLI support.
@@ -172,6 +173,7 @@ class MultiDatasetOrchestrator:
                         cache_manager,
                         max_samples,
                         verbose,
+                        dry_run=dry_run,
                     )
 
                     progress.advance(main_task)
@@ -188,6 +190,7 @@ class MultiDatasetOrchestrator:
                     None,
                     cache_manager,
                     max_samples,
+                    dry_run=dry_run,
                 )
 
         # Add summary
@@ -270,6 +273,7 @@ class MultiDatasetOrchestrator:
         cache_manager: Optional[CacheManager] = None,
         max_samples: Optional[int] = None,
         verbose: bool = False,
+        dry_run: bool = False,
     ) -> None:
         """
         Evaluate model on a single dataset.
@@ -360,7 +364,9 @@ class MultiDatasetOrchestrator:
             for metric_name in metrics:
                 # Get metric class from registry
                 metric_kwargs = metric_args.get(metric_name, {}) if metric_args else {}
-                metric_instance = metric_registry.get_metric_class(metric_name, **metric_kwargs)
+                metric_instance = metric_registry.get_metric_class(
+                    metric_name, **metric_kwargs
+                )
                 metrics_classes.append(metric_instance)
                 # Create benchmark instance
             benchmark = Benchmark(
@@ -373,7 +379,9 @@ class MultiDatasetOrchestrator:
             )
 
             # Run evaluation
-            result = benchmark.evaluate(metrics=metrics_classes, batch_size=batch_size)
+            result = benchmark.evaluate(
+                metrics=metrics_classes, batch_size=batch_size, dry_run=dry_run
+            )
 
             for metric_key, score in result["overall_score"].items():
                 dataset_results[metric_key] = {
