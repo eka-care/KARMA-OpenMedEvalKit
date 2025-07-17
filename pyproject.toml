@@ -36,6 +36,8 @@ dependencies = [
     "num2words>=0.5.14",
     "indic-nlp-library>=0.92",
     "simple-term-menu>=1.6.6",
+    "langdetect>=1.0.9",
+    "google-transliteration-api>=1.0.3",
 ]
 
 [dependency-groups]

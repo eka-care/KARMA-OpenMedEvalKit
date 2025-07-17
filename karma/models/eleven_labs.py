@@ -47,7 +47,7 @@ class ElevenLabsASR(BaseModel):
         return transcriptions
 
 ElevenLabsASRModel = ModelMeta(
-    name="eleven_labs",
+    name="eleven_labs_scribe_v1",
     description="ElevenLabs ASR model",
     loader_class="karma.models.eleven_labs.ElevenLabsASR",
     revision=None,
