@@ -48,6 +48,10 @@ class PubMedMCQADataset(MedQADataset):
             **kwargs: Additional arguments passed to base class
         """
         super().__init__(confinement_instructions=confinement_instructions, **kwargs)
+        self.dataset = super().load_eval_dataset(DATASET_NAME,
+                                                 config=None,
+                                                 split=SPLIT,
+                                                 commit_hash=COMMIT_HASH)
     
     def format_item(self, sample: Dict[str, Any], **kwargs):
         input_text = self._format_question(sample["data"])

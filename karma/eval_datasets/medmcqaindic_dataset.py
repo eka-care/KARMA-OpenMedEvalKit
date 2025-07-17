@@ -46,7 +46,17 @@ class MedMCQAIndicDataset(MedMCQADataset):
         """
         self.subset = subset
         self.dataset_name = f"{DATASET_NAME}-{self.subset}"
-        super().__init__(dataset_name=self.dataset_name,config=subset,confinement_instructions=confinement_instructions,**kwargs)
+        kwargs.pop('dataset_name', None)
+        super().__init__(
+            dataset_name=DATASET_NAME,
+            config=self.subset,
+            confinement_instructions=confinement_instructions,
+            **kwargs
+        )
+        self.dataset = super().load_eval_dataset(DATASET_NAME,
+                                                 config=self.subset,
+                                                 split=SPLIT,
+                                                 commit_hash=COMMIT_HASH)
 
     def format_item(self, sample: Dict[str, Any],**kwargs):
         return super().format_item(sample=sample, subset=self.subset)

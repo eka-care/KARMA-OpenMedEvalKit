@@ -89,10 +89,11 @@ class OpenAILLM(BaseModel):
             messages = []
 
             # Check if conversation field exists and has data
-            if item.conversation and len(item.conversation.conversation_turns) > 0:
-                for turn in item.conversation.conversation_turns:
-                    # Map conversation turn to OpenAI message format
-                    messages.append({"role": turn.role, "content": turn.content})
+            if item.conversation:
+                if len(item.conversation.conversation_turns) > 0:
+                    for turn in item.conversation.conversation_turns:
+                        # Map conversation turn to OpenAI message format
+                        messages.append({"role": turn.role, "content": turn.content})
 
             # Fall back to input field if no conversation data
             elif item.input:

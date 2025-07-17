@@ -50,27 +50,35 @@ class BaseMultimodalDataset(IterableDataset, ABC):
             processors = []
         self.dataset_name = f"{dataset_name}_{config}" if config else dataset_name
         self.kwargs = kwargs
-        self.dataset = (
-            load_dataset(
+        self.config = config
+        self.processors = processors
+        # check if max samples is None then set it max integer
+        self.max_samples = max_samples if max_samples is not None else float("inf")
+        self.confinement_instructions = confinement_instructions
+        self.split = split
+        self.stream = stream
+        self.commit_hash = commit_hash
+        self.dataset = None
+
+    def load_eval_dataset(self,dataset_name: str, split: str = "test", config: Optional[str] = None, stream: bool = True, commit_hash: Optional[str] = None) -> IterableDataset:
+        """Load the evaluation dataset."""
+        if config:
+            dataset = load_dataset(
                 dataset_name,
                 name=config,
                 split=split,
                 streaming=stream,
                 revision=commit_hash,
             )
-            if config
-            else load_dataset(
+        else:
+            dataset = load_dataset(
                 dataset_name,
                 split=split,
                 streaming=stream,
                 revision=commit_hash,
             )
-        )
-        self.config = config
-        self.processors = processors
-        # check if max samples is None then set it max integer
-        self.max_samples = max_samples if max_samples is not None else float("inf")
-        self.confinement_instructions = confinement_instructions
+        return dataset
+
     def __iter__(self) -> Generator[Dict[str, Any], None, None]:
         """
         Get a single sample from the dataset.

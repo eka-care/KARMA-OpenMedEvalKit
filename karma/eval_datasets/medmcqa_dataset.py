@@ -38,8 +38,8 @@ class MedMCQADataset(BaseMultimodalDataset):
     """
 
     def __init__(
-        self,
-        **kwargs,
+            self,
+            **kwargs,
     ):
         """
         Initialize MedMCQA dataset.
@@ -48,6 +48,14 @@ class MedMCQADataset(BaseMultimodalDataset):
             **kwargs: Additional arguments passed to base class
         """
         super().__init__(**kwargs)
+
+        # Load the dataset
+        self.dataset = super().load_eval_dataset(
+            DATASET_NAME,
+            config=None,
+            split=SPLIT,
+            commit_hash=COMMIT_HASH
+        )
 
     def format_item(self, sample: Dict[str, Any], **kwargs):
         """
