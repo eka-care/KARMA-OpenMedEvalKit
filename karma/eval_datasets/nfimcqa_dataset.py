@@ -11,6 +11,8 @@ logger = logging.getLogger(__name__)
 CONFINEMENT_INSTRUCTIONS = """Instructions: The following are multiple choice questions about medical knowledge. Solve them in a step-by-step fashion. Output only the final answer (e.g., A, B, C, or D) at the end using the format "Final Answer: (X)". Question: <QUESTION>"""
 SPLIT = "test"
 DATASET_NAME = "nfi_mcqa"
+
+
 @register_dataset(
     dataset_name=DATASET_NAME,
     split=SPLIT,
@@ -18,20 +20,26 @@ DATASET_NAME = "nfi_mcqa"
     task_type="mcqa",
 )
 class NFIMCQADataset(BaseMultimodalDataset):
-    def __init__(self, dataset_name: str = DATASET_NAME, confinement_instructions: str = CONFINEMENT_INSTRUCTIONS,
-                 **kwargs):
+    def __init__(
+        self,
+        dataset_name: str = DATASET_NAME,
+        confinement_instructions: str = CONFINEMENT_INSTRUCTIONS,
+        **kwargs,
+    ):
         # Load local data first
-        self.data_path = '/Users/hardikchhallani/Downloads/nfi-questions-10-generics.parquet'
+        self.data_path = (
+            "/Users/hardikchhallani/Downloads/nfi-questions-10-generics.parquet"
+        )
         if not os.path.exists(self.data_path):
             raise FileNotFoundError(f"Dataset file not found: {self.data_path}")
         self.df = pd.read_parquet(self.data_path)
 
-        kwargs.setdefault('split', SPLIT)
+        kwargs.setdefault("split", SPLIT)
 
         super().__init__(
             dataset_name=dataset_name,
             confinement_instructions=confinement_instructions,
-            **kwargs
+            **kwargs,
         )
         self.dataset = None
 
@@ -39,11 +47,8 @@ class NFIMCQADataset(BaseMultimodalDataset):
         self.confinement_instructions = confinement_instructions
         self.split = SPLIT
         self.stream = False
-        self.processors = kwargs.get('processors', [])
-        self.max_samples = kwargs.get('max_samples', None)
-
-        # CRITICAL: Override the dataset attribute to use our local data
-        self.dataset = None  # We'll handle iteration through our load() method
+        self.processors = kwargs.get("processors", [])
+        self.max_samples = kwargs.get("max_samples", None)
 
     def __iter__(self) -> Generator[Dict[str, Any], None, None]:
         """
@@ -75,8 +80,7 @@ class NFIMCQADataset(BaseMultimodalDataset):
 
         # Create DataLoaderIterable with input field for OpenAI LLM
         dataloader_item = DataLoaderIterable(
-            input=prompt,
-            expected_output=correct_answer
+            input=prompt, expected_output=correct_answer
         )
 
         # Ensure conversation is None so OpenAI LLM uses input field
@@ -109,7 +113,7 @@ class NFIMCQADataset(BaseMultimodalDataset):
         formatted = [f"{l}. {opt}" for l, opt in zip(letters, options)]
         return f"{question}\n" + "\n".join(formatted)
 
-    def load(self):
+    def load_eval_dataset(self, **kwargs):
         logger.info("Using custom local load method")
         logger.info(f"Loading local dataset from {self.data_path}")
 
@@ -125,12 +129,12 @@ class NFIMCQADataset(BaseMultimodalDataset):
                 "data": {
                     "question": row["question"],
                     "options": row["options"],
-                    "ground_truth": row["ground_truth"]
+                    "ground_truth": row["ground_truth"],
                 },
                 "prediction": prediction,
                 "metadata": {
                     "generic_name": row.get("generic_name", None),
                     "category": row.get("category", None),
-                    "citation": row.get("citation", None)
+                    "citation": row.get("citation", None),
                 },
             }

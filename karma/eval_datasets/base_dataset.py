@@ -58,10 +58,18 @@ class BaseMultimodalDataset(IterableDataset, ABC):
         self.split = split
         self.stream = stream
         self.commit_hash = commit_hash
-        self.dataset = None
-        self.dataset = self.load_eval_dataset(dataset_name, split, config, stream, commit_hash)
+        self.dataset = self.load_eval_dataset(
+            dataset_name, split, config, stream, commit_hash
+        )
 
-    def load_eval_dataset(self,dataset_name: str, split: str = "test", config: Optional[str] = None, stream: bool = True, commit_hash: Optional[str] = None) -> IterableDataset:
+    def load_eval_dataset(
+        self,
+        dataset_name: str,
+        split: str = "test",
+        config: Optional[str] = None,
+        stream: bool = True,
+        commit_hash: Optional[str] = None,
+    ) -> IterableDataset:
         """Load the evaluation dataset."""
         if config:
             dataset = load_dataset(
@@ -78,8 +86,8 @@ class BaseMultimodalDataset(IterableDataset, ABC):
                 streaming=stream,
                 revision=commit_hash,
             )
+        print(dataset)
         return dataset
-
 
     def __iter__(self) -> Generator[Dict[str, Any], None, None]:
         """
@@ -95,6 +103,7 @@ class BaseMultimodalDataset(IterableDataset, ABC):
             if idx >= self.max_samples:
                 break
             item = self.format_item(sample)
+            print(sample)
             yield item
             # if isinstance(sample, dict):
             #     item = self.format_item(sample)

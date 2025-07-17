@@ -88,7 +88,6 @@ class OpenAILLM(BaseModel):
             List of message dictionaries ready for API calls
         """
         processed_inputs = []
-
         for item in inputs:
             messages = []
 
@@ -133,10 +132,10 @@ class OpenAILLM(BaseModel):
     def _make_single_call(self, api_input: Dict[str, Any]) -> str:
         """
         Make a single API call to OpenAI.
-        
+
         Args:
             api_input: Processed API input dictionary
-            
+
         Returns:
             Generated text string or error message
         """
@@ -163,11 +162,11 @@ class OpenAILLM(BaseModel):
             raise RuntimeError("Model is not loaded.")
 
         processed_inputs = self.preprocess(inputs, **kwargs)
-        
+
         # Handle empty inputs
         if not processed_inputs:
             return []
-        
+
         # Use ThreadPoolExecutor for parallel API calls
         with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
             # Submit all API calls and track their order
@@ -175,10 +174,10 @@ class OpenAILLM(BaseModel):
                 executor.submit(self._make_single_call, api_input): i
                 for i, api_input in enumerate(processed_inputs)
             }
-            
+
             # Initialize results list with correct size
             outputs = [None] * len(processed_inputs)
-            
+
             # Collect results as they complete
             for future in as_completed(future_to_index):
                 index = future_to_index[future]

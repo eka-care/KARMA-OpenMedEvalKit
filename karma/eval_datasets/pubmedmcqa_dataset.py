@@ -24,6 +24,7 @@ options): Context: <CONTEXT> Question: <QUESTION> Response (think step by step a
 then end with "Final Answer:" followed by *only* the letter corresponding to the correct answer enclosed
 in parentheses)"""
 
+
 @register_dataset(
     DATASET_NAME,
     commit_hash=COMMIT_HASH,
@@ -38,6 +39,8 @@ class PubMedMCQADataset(MedQADataset):
 
     def __init__(
         self,
+        dataset_name=DATASET_NAME,
+        split=SPLIT,
         confinement_instructions: str = CONFINEMENT_INSTRUCTIONS,
         **kwargs,
     ):
@@ -47,15 +50,25 @@ class PubMedMCQADataset(MedQADataset):
         Args:
             **kwargs: Additional arguments passed to base class
         """
-        super().__init__(confinement_instructions=confinement_instructions, **kwargs)
-    
+        super().__init__(
+            dataset_name=dataset_name,
+            split=split,
+            confinement_instructions=confinement_instructions,
+            **kwargs,
+        )
+        self.dataset = super().load_eval_dataset(
+            DATASET_NAME, config=None, split=SPLIT, commit_hash=COMMIT_HASH
+        )
+
     def format_item(self, sample: Dict[str, Any], **kwargs):
         input_text = self._format_question(sample["data"])
 
         # Parse correct answer from Correct Option field
         correct_option = sample["data"]["Correct Option"]
-        context = '\n'.join(sample["data"]["Context"])
-        prompt = self.confinement_instructions.replace("<CONTEXT>", context).replace("<QUESTION>", input_text)
+        context = "\n".join(sample["data"]["Context"])
+        prompt = self.confinement_instructions.replace("<CONTEXT>", context).replace(
+            "<QUESTION>", input_text
+        )
 
         processed_sample = DataLoaderIterable(
             input=prompt,
