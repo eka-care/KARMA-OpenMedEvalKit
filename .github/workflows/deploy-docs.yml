@@ -1,4 +1,4 @@
-name: Deploy MkDocs to GitHub Pages
+name: Deploy Astro Docs to GitHub Pages
 
 on:
   push:
@@ -36,8 +36,18 @@ jobs:
       - name: Generate registry documentation
         run: uv run python scripts/generate_registry_docs.py
 
-      - name: Build MkDocs
-        run: uv run mkdocs build
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install Astro dependencies
+        run: npm install
+        working-directory: ./docs_v2
+
+      - name: Build Astro docs
+        run: npm run build
+        working-directory: ./docs_v2
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
@@ -45,7 +55,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./site
+          path: ./docs_v2/dist
 
   deploy:
     if: github.ref == 'refs/heads/main'
