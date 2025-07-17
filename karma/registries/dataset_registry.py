@@ -191,9 +191,9 @@ class DatasetRegistry:
             logger.debug(
                 f"Creating dataset '{name}' with validated args: {list(validated_kwargs.keys())}"
             )
+            # validated_kwargs["dataset_name"] = name
+            # validated_kwargs["split"] = info["split"]
             return dataset_class(
-                dataset_name=name,
-                split=info["split"],
                 **validated_kwargs,
             )
         else:
