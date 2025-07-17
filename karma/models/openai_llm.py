@@ -88,7 +88,6 @@ class OpenAILLM(BaseModel):
             List of message dictionaries ready for API calls
         """
         processed_inputs = []
-        print(inputs)
         for item in inputs:
             messages = []
 
