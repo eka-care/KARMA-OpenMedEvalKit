@@ -27,7 +27,7 @@ class EvalResult:
 
 @register_metric(
     name = "asr_semantic_metric",
-#  required_args = ["language"]     #obtained from the dataset at the sample level
+#  required_args = ["language"]     #obtained from the dataset argument
 )
 class ASRSemanticMetrics(BaseMetric):
     def __init__(self, metric_name: str, language = "en", **kwargs):
@@ -57,8 +57,7 @@ class ASRSemanticMetrics(BaseMetric):
                 reference_text, reference_annotations, hypothesis_text, aligner
             )
             results = aligner.calculate_error_rates(alignments)
-            print("Keyword Alignments:")
-            aligner.print_alignment_visual(alignments) #enable for debugging
+            #aligner.print_alignment_visual(alignments) #enable for debugging
             return results
         
         # Bind the method to the aligner instance
@@ -233,7 +232,7 @@ class ASRSemanticMetrics(BaseMetric):
         """
         # Extract language from cli
         language = kwargs.get("language")
-        entities = kwargs.get("medical_entities", [])
+        entities = kwargs.get("entities", [])
         #language = self.language
         #if not language:
         #    raise ValueError("Language parameter is required. Pass it via cli: 'asr_metric:language=hi'")
@@ -253,7 +252,7 @@ class ASRSemanticMetrics(BaseMetric):
             
             # Process files
             logger.info(f"Processing {len(references)} utterances...")
-            logger.info("No entities found, using default aligner")
+            logger.info("Using default aligner to obtain semWER")
             results = self.process_for_wer(aligner, predictions, references) 
             entity_wer = None
             if entities:

@@ -34,9 +34,8 @@ class EkaMedicalAsrDataset(BaseMultimodalDataset):
 
         """
         super().__init__(
-            dataset_name=dataset_name,
-            split=split,
-            commit_hash=commit_hash,
+            dataset_name=DATASET_NAME,
+            split=SPLIT,
             config=language,
             processors=processors,
             **kwargs,
@@ -51,5 +50,10 @@ class EkaMedicalAsrDataset(BaseMultimodalDataset):
         return DataLoaderIterable(
             audio=sample.get("audio", {}).get("bytes"),
             expected_output=sample.get("text", ""),
-            other_args={"language": sample.get("audio_language", "unknown"), "recording_context": sample.get("recording_context", ""), "type_concept": sample.get("type_concept", "")},
+            other_args={
+                "language": sample.get("audio_language", "unknown"), 
+                "recording_context": sample.get("recording_context", ""), 
+                "type_concept": sample.get("type_concept", ""), 
+                "medical_entities": sample.get("medical_entities", []),
+            },
         )

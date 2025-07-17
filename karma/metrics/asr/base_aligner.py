@@ -394,14 +394,12 @@ class BaseCERAligner(ABC):
         Returns:
             List of WordAlignment objects compatible with your existing calculate_error_rates method
         """
-        # Import your existing classes (adjust import path as needed)
-        from base_aligner import WordAlignment, AlignmentType
+        from karma.metrics.asr.base_aligner import WordAlignment, AlignmentType
         
         alignments = []
         hypothesis_tokens = []
         
-        # Tokenize hypothesis with positions (similar to your tokenize_with_positions)
-        import re
+        # Tokenize hypothesis with positions (similar to tokenize_with_positions)
         for match in re.finditer(r'\S+', hypothesis_text):
             hypothesis_tokens.append((match.group(), match.start(), match.end()))
         

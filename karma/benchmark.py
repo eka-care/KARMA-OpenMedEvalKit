@@ -267,7 +267,7 @@ class Benchmark:
                 rubrics.append(it["sample"].rubric_to_evaluate)
         predictions = self.dataset.postprocess(predictions)
         references = self.dataset.postprocess(references)
-        
+        entities = self.dataset.postprocess(entities)
         # Get language from derived dataset class if it exists
         language = getattr(self.dataset, 'language', 'english')
         for metric in metrics:
