@@ -59,6 +59,7 @@ class BaseMultimodalDataset(IterableDataset, ABC):
         self.stream = stream
         self.commit_hash = commit_hash
         self.dataset = None
+        self.dataset = self.load_eval_dataset(dataset_name, split, config, stream, commit_hash)
 
     def load_eval_dataset(self,dataset_name: str, split: str = "test", config: Optional[str] = None, stream: bool = True, commit_hash: Optional[str] = None) -> IterableDataset:
         """Load the evaluation dataset."""
@@ -78,6 +79,7 @@ class BaseMultimodalDataset(IterableDataset, ABC):
                 revision=commit_hash,
             )
         return dataset
+
 
     def __iter__(self) -> Generator[Dict[str, Any], None, None]:
         """
