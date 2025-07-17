@@ -76,6 +76,7 @@ class MultiDatasetOrchestrator:
         max_samples: Optional[int] = None,
         verbose: bool = False,
         dry_run: bool = False,
+        refresh_cache: bool = False,
     ) -> Dict[str, Any]:
         """
         Evaluate model on multiple datasets with enhanced CLI support.
@@ -90,6 +91,8 @@ class MultiDatasetOrchestrator:
             show_progress: Whether to show progress bars
             max_samples: Maximum number of samples to evaluate
             verbose: Whether to display verbose output
+            dry_run: Whether to run in dry-run mode
+            refresh_cache: Whether to skip cache lookup and force regeneration
 
         Returns:
             Dictionary containing evaluation results
@@ -174,6 +177,7 @@ class MultiDatasetOrchestrator:
                         max_samples,
                         verbose,
                         dry_run=dry_run,
+                        refresh_cache=refresh_cache,
                     )
 
                     progress.advance(main_task)
@@ -191,6 +195,7 @@ class MultiDatasetOrchestrator:
                     cache_manager,
                     max_samples,
                     dry_run=dry_run,
+                    refresh_cache=refresh_cache,
                 )
 
         # Add summary
@@ -274,6 +279,7 @@ class MultiDatasetOrchestrator:
         max_samples: Optional[int] = None,
         verbose: bool = False,
         dry_run: bool = False,
+        refresh_cache: bool = False,
     ) -> None:
         """
         Evaluate model on a single dataset.
@@ -376,6 +382,7 @@ class MultiDatasetOrchestrator:
                 progress=progress,
                 # console=self.console,
                 verbose_mode=verbose,
+                refresh_cache=refresh_cache,
             )
 
             # Run evaluation
