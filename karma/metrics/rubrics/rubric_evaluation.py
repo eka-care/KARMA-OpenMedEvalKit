@@ -1,6 +1,7 @@
 import json
 import numpy as np
 import logging
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from typing import List, Dict, Any, Optional
 from karma.metrics.base_metric_abs import BaseMetric
@@ -104,22 +105,25 @@ Return just the JSON array, no need for markdown beginning. Do not include any o
 
 @register_metric(
     name="rubric_evaluation",
-    optional_args=["batch_size"],
-    default_args={"batch_size": 100},
+    optional_args=["batch_size", "max_workers"],
+    default_args={"batch_size": 100, "max_workers": 4},
 )
 class RubricMetric(BaseMetric):
     """
     LLM driven rubric evaluation metric.
     """
 
-    def __init__(self, metric_name, provider_to_use, model_id, batch_size=1, **kwargs):
+    def __init__(self, metric_name, provider_to_use, model_id, batch_size=1, max_workers=4, **kwargs):
         super().__init__(metric_name=metric_name, **kwargs)
         self.provider = provider_to_use
         if isinstance(batch_size, str):
             batch_size = int(batch_size)
         self.batch_size = batch_size
+        if isinstance(max_workers, str):
+            max_workers = int(max_workers)
+        self.max_workers = max_workers
         logger.info(
-            f"Got {provider_to_use} rubric evaluation metric with batch_size={batch_size}"
+            f"Got {provider_to_use} rubric evaluation metric with batch_size={batch_size}, max_workers={max_workers}"
         )
         if self.provider == "openai":
             self.model = OpenAILLM(model_name_or_path=model_id)
@@ -139,40 +143,31 @@ class RubricMetric(BaseMetric):
         Returns:
             Dict containing evaluation results
         """
-        question_results = []
         samples = kwargs["samples"]
         logger.info(
             f"Evaluating {len(predictions)} conversations with {self.provider} model - {self.model}"
         )
-        # self.model.load_model()
-        for prediction, sample, sample_rubrics in zip(predictions, samples, rubrics):
-            # Format conversation as string
-            sample.conversation.conversation_turns.append(
-                ConversationTurn(content=prediction, role="assistant")
-            )
-
-            # Get conversation JSON once
-            conversation_json = sample.conversation.model_dump_json()
-
-            # Evaluate rubrics in batches
-            grading_responses = []
-            for i in range(0, len(sample_rubrics), self.batch_size):
-                batch_end = min(i + self.batch_size, len(sample_rubrics))
-                rubric_batch = sample_rubrics[i:batch_end]
-
-                # Evaluate this batch
-                batch_results = self._evaluate_batch(conversation_json, rubric_batch)
-                grading_responses.extend(batch_results)
-
-            # Calculate score for this question
-            question_score = self.calculate_score(sample_rubrics, grading_responses)
-
-            question_results.append(
-                {
-                    "rubric_evaluations": grading_responses,
-                    "question_score": question_score,
-                }
-            )
+        
+        # Handle empty predictions
+        if not predictions:
+            return {"rubric_evaluation": self._aggregate_results([])}
+        
+        # Use ThreadPoolExecutor for parallel conversation processing
+        with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+            # Submit all conversation processing tasks and track their order
+            future_to_index = {
+                executor.submit(self._process_single_conversation, prediction, sample, sample_rubrics): i
+                for i, (prediction, sample, sample_rubrics) in enumerate(zip(predictions, samples, rubrics))
+            }
+            
+            # Initialize results list with correct size
+            question_results = [None] * len(predictions)
+            
+            # Collect results as they complete
+            for future in as_completed(future_to_index):
+                index = future_to_index[future]
+                result = future.result()
+                question_results[index] = result
 
         # Aggregate results
         return {"rubric_evaluation": self._aggregate_results(question_results)}
@@ -305,6 +300,44 @@ class RubricMetric(BaseMetric):
                 )
 
         return results
+
+    def _process_single_conversation(self, prediction, sample, sample_rubrics):
+        """
+        Process a single conversation and its rubrics.
+        
+        Args:
+            prediction: The prediction text for this conversation
+            sample: The sample containing conversation data
+            sample_rubrics: List of rubric criteria for this sample
+            
+        Returns:
+            Dict containing rubric evaluations and question score
+        """
+        # Format conversation as string
+        sample.conversation.conversation_turns.append(
+            ConversationTurn(content=prediction, role="assistant")
+        )
+
+        # Get conversation JSON once
+        conversation_json = sample.conversation.model_dump_json()
+
+        # Evaluate rubrics in batches
+        grading_responses = []
+        for i in range(0, len(sample_rubrics), self.batch_size):
+            batch_end = min(i + self.batch_size, len(sample_rubrics))
+            rubric_batch = sample_rubrics[i:batch_end]
+
+            # Evaluate this batch
+            batch_results = self._evaluate_batch(conversation_json, rubric_batch)
+            grading_responses.extend(batch_results)
+
+        # Calculate score for this question
+        question_score = self.calculate_score(sample_rubrics, grading_responses)
+
+        return {
+            "rubric_evaluations": grading_responses,
+            "question_score": question_score,
+        }
 
     def calculate_score(
         self, rubric_items: List[RubricCriteria], grading_responses: List[Dict]

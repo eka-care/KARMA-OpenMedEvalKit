@@ -116,6 +116,9 @@ nav:
     - Metrics: user-guide/metrics/metrics_overview.md
     - Registry: user-guide/registry/registries.md
     - Processors: user-guide/processors/processors_overview.md
+    - Add your own:
+        - Add a dataset: user-guide/add-your-own/add-dataset.md
+        - Add a model: user-guide/add-your-own/add-model.md
   - API Reference:
     - Models: api-reference/models.md
     - Datasets: api-reference/datasets.md
