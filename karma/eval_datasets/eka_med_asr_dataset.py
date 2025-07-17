@@ -54,6 +54,6 @@ class EkaMedicalAsrDataset(BaseMultimodalDataset):
                 "language": sample.get("audio_language", "unknown"), 
                 "recording_context": sample.get("recording_context", ""), 
                 "type_concept": sample.get("type_concept", ""), 
-                "medical_entities": sample.get("medical_entities", []),
+                "entities": sample.get("medical_entities", []),
             },
         )
