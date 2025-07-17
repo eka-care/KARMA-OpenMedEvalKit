@@ -37,6 +37,9 @@ class MedMCQAIndicDataset(MedMCQADataset):
     def __init__(
         self,
         subset: str = "as",
+        dataset_name: str = DATASET_NAME,
+        split: str = SPLIT,
+        commit_hash: str = COMMIT_HASH,
         confinement_instructions: str = CONFINEMENT_INSTRUCTIONS,
         **kwargs,
     ):
@@ -49,7 +52,9 @@ class MedMCQAIndicDataset(MedMCQADataset):
         self.subset = subset
         self.dataset_name = f"{DATASET_NAME}-{self.subset}"
         super().__init__(
-            dataset_name=self.dataset_name,
+            dataset_name=dataset_name,
+            split=split,
+            commit_hash=commit_hash,
             config=subset,
             confinement_instructions=confinement_instructions,
             **kwargs,

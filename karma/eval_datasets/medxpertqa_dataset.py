@@ -38,6 +38,8 @@ class MedXpertQADataset(BaseMultimodalDataset):
     def __init__(
         self,
         dataset_name: str = DATASET_NAME,
+        split: str = SPLIT,
+        commit_hash: str = COMMIT_HASH,
         config: str = CONFIG,
         confinement_instructions: str = CONFINEMENT_INSTRUCTIONS,
         **kwargs,
@@ -50,6 +52,8 @@ class MedXpertQADataset(BaseMultimodalDataset):
         """
         super().__init__(
             dataset_name=dataset_name,
+            split=split,
+            commit_hash=commit_hash,
             config=config,
             confinement_instructions=confinement_instructions,
             **kwargs,

@@ -41,6 +41,7 @@ class VQARADDataset(BaseMultimodalDataset):
         self,
         dataset_name=DATASET_NAME,
         split=SPLIT,
+        commit_hash=COMMIT_HASH,
         confinement_instructions: str = CONFINEMENT_INSTRUCTIONS,
         **kwargs,
     ):
@@ -50,7 +51,13 @@ class VQARADDataset(BaseMultimodalDataset):
         Args:
             **kwargs: Additional arguments passed to base class
         """
-        super().__init__(confinement_instructions=confinement_instructions, **kwargs)
+        super().__init__(
+            dataset_name=dataset_name,
+            split=split,
+            commit_hash=commit_hash,
+            confinement_instructions=confinement_instructions,
+            **kwargs,
+        )
         self.dataset = self.dataset.cast_column("image", Image(decode=False))
 
     def format_item(self, sample: Dict[str, Any]) -> DataLoaderIterable:

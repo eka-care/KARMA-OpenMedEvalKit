@@ -40,6 +40,7 @@ class SLAKEDataset(VQARADDataset):
         self,
         dataset_name=DATASET_NAME,
         split=SPLIT,
+        commit_hash=COMMIT_HASH,
         confinement_instructions: str = CONFINEMENT_INSTRUCTIONS,
         **kwargs,
     ):
@@ -51,7 +52,13 @@ class SLAKEDataset(VQARADDataset):
         """
         # Override the dataset name for SLAKE
 
-        super().__init__(confinement_instructions=confinement_instructions, **kwargs)
+        super().__init__(
+            dataset_name=dataset_name,
+            split=split,
+            commit_hash=commit_hash,
+            confinement_instructions=confinement_instructions,
+            **kwargs,
+        )
 
     def format_item(self, sample: Dict[str, Any]) -> DataLoaderIterable:
         """

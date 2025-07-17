@@ -22,6 +22,9 @@ COMMIT_HASH = "21fd45013ce5870e52d89d38b2cb88b834e02f8e"
 class IndicVoicesRDataset(BaseMultimodalDataset):
     def __init__(
         self,
+        dataset_name: str = DATASET_NAME,
+        split: str = SPLIT,
+        commit_hash: str = COMMIT_HASH,
         language: str = "hindi",
         processors=None,
         **kwargs,
@@ -31,8 +34,9 @@ class IndicVoicesRDataset(BaseMultimodalDataset):
 
         """
         super().__init__(
-            dataset_name=DATASET_NAME,
-            split=SPLIT,
+            dataset_name=dataset_name,
+            split=split,
+            commit_hash=commit_hash,
             config=language,
             processors=processors,
             **kwargs,
