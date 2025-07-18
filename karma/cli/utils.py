@@ -46,16 +46,23 @@ def parse_dataset_args(dataset_args_str: str) -> Dict[str, Dict[str, Any]]:
     # Split by semicolon for different datasets
     for dataset_spec in dataset_args_str.split(";"):
         if ":" not in dataset_spec:
-            continue
+            raise click.ClickException(
+                f"Invalid dataset argument format: '{dataset_spec}'. "
+                f"Expected format: 'dataset_name:key=value[,key2=value2]'"
+            )
 
         dataset_name, args_str = dataset_spec.split(":", 1)
         args = {}
 
         # Split by comma for different arguments
         for arg_pair in args_str.split(","):
-            if "=" in arg_pair:
-                key, value = arg_pair.split("=", 1)
-                args[key.strip()] = value.strip()
+            if "=" not in arg_pair:
+                raise click.ClickException(
+                    f"Invalid argument in dataset '{dataset_name}': '{arg_pair}'. "
+                    f"Expected format: 'key=value'"
+                )
+            key, value = arg_pair.split("=", 1)
+            args[key.strip()] = value.strip()
 
         dataset_args[dataset_name.strip()] = args
 
@@ -133,16 +140,23 @@ def parse_metric_args(metric_args_str: str) -> Dict[str, Dict[str, Any]]:
     # Split by semicolon for different metrics
     for metric_spec in metric_args_str.split(";"):
         if ":" not in metric_spec:
-            continue
+            raise click.ClickException(
+                f"Invalid metric argument format: '{metric_spec}'. "
+                f"Expected format: 'metric_name:key=value[,key2=value2]'"
+            )
 
         metric_name, args_str = metric_spec.split(":", 1)
         args = {}
 
         # Split by comma for different arguments
         for arg_pair in args_str.split(","):
-            if "=" in arg_pair:
-                key, value = arg_pair.split("=", 1)
-                args[key.strip()] = value.strip()
+            if "=" not in arg_pair:
+                raise click.ClickException(
+                    f"Invalid argument in metric '{metric_name}': '{arg_pair}'. "
+                    f"Expected format: 'key=value'"
+                )
+            key, value = arg_pair.split("=", 1)
+            args[key.strip()] = value.strip()
 
         metric_args[metric_name.strip()] = args
 
@@ -194,9 +208,13 @@ def parse_processor_args(
 
         # Split by comma for different arguments
         for arg_pair in args_str.split(","):
-            if "=" in arg_pair:
-                key, value = arg_pair.split("=", 1)
-                args[key.strip()] = value.strip()
+            if "=" not in arg_pair:
+                raise click.ClickException(
+                    f"Invalid argument in dataset '{dataset_name}': '{arg_pair}'. "
+                    f"Expected format: 'key=value'"
+                )
+            key, value = arg_pair.split("=", 1)
+            args[key.strip()] = value.strip()
 
         # Initialize dataset dict if not exists
         if dataset_name not in processor_args:
