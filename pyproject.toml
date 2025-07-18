@@ -60,3 +60,8 @@ audio = [
     "torchaudio>=2.7.1",
     "librosa>=0.11.0",
 ]
+
+# This enables pip install karma[all]
+all = [
+    "karma-medeval[dev,audio]",
+]
