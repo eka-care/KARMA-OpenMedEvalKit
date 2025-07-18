@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="karma",
+    name="karma-medeval",
     version="1.0",
     author="Vasanth",
     author_email="vasanth.murukuri@eka.care",

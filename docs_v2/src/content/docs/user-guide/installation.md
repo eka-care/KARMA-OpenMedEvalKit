@@ -6,44 +6,17 @@ This guide provides detailed installation instructions for KARMA on different pl
 
 ## Installation Methods
 
-### Method 1: Using uv (Recommended)
-
-[uv](https://docs.astral.sh/uv/) is the fastest Python package manager and is our recommended installation method.
+### Method 1: Using PyPI
 
 ```bash
-# Install uv if you haven't already
-curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# Clone the repository
-git clone https://github.com/eka-care/KARMA-OpenMedEvalKit.git
-cd KARMA-OpenMedEvalKit
-
-# Install KARMA
-uv sync
+# Install from PyPI
+pip install karma-medeval
 
 # Verify installation
 karma --version
 ```
 
-### Method 2: Using pip
-
-```bash
-# Clone the repository
-git clone https://github.com/eka-care/KARMA-OpenMedEvalKit.git
-cd KARMA-OpenMedEvalKit
-
-# Create a virtual environment (recommended)
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install in editable mode
-pip install -e .
-
-# Verify installation
-karma --version
-```
-
-### Method 3: Development Installation
+### Method 2: Development Installation
 
 For contributors and developers:
 
@@ -66,10 +39,10 @@ uv install --group dev --group docs --group audio
 For audio-related datasets and ASR metrics:
 
 ```bash
-# With uv
-uv install --group audio
+# From PyPI
+pip install karma-medeval[audio]
 
-# With pip
+# From source
 pip install -e ".[audio]"
 ```
 
@@ -78,12 +51,12 @@ This includes:
 - `num2words` - Number to word conversion
 - `torchaudio` - Audio processing
 
-### Install with all dependencies in developer mode
+### Install with all dependencies
 ```bash
-# With uv
-uv sync --all-extras
+# From PyPI
+pip install karma-medeval[all]
 
-# with pip
+# From source
 pip install -e ".[all]"
 ```
 
