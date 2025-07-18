@@ -1,5 +1,5 @@
 [project]
-name = "karma"
+name = "karma-medeval"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
@@ -69,10 +69,4 @@ audio = [
     "langdetect>=1.0.9",
     "num2words>=0.5.14",
     "torchaudio>=2.7.1",
-]
-docs = [
-    "mkdocs>=1.6.1",
-    "mkdocs-llmstxt>=0.2.0",
-    "mkdocs-material>=9.6.15",
-    "mkdocstrings[python]>=0.29.1",
 ]
