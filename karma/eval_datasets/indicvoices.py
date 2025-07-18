@@ -54,5 +54,4 @@ class IndicVoicesRDataset(BaseMultimodalDataset):
         return DataLoaderIterable(
             audio=audio_data,
             expected_output=sample.get("text", ""),
-            other_args={"language": sample.get("lang", "unknown")},
         )

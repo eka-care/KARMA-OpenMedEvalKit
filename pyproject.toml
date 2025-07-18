@@ -63,6 +63,7 @@ karma = "karma.cli.main:main"
 
 [project.optional-dependencies]
 audio = [
+    "editdistance>=0.8.1",
     "google-transliteration-api>=1.0.3",
     "jiwer>=4.0.0",
     "langdetect>=1.0.9",

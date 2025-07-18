@@ -37,6 +37,7 @@ class Benchmark:
         project_name: str = "benchmark-evaluation",
         progress=None,
         cache_manager: Optional[CacheManager] = None,
+        refresh_cache: bool = False,
     ):
         """
         Initialize benchmark for any dataset/task combination.
@@ -51,11 +52,13 @@ class Benchmark:
             cache_manager: Optional pre-initialized CacheManager instance
             console: Optional rich Console for output (from orchestrator)
             progress: Optional rich Progress instance for progress bars (from orchestrator)
+            refresh_cache: Whether to skip cache lookup and force regeneration
         """
         self.logger = logger
         self.model = model
         self.verbose_mode = verbose_mode
         self.progress = progress
+        self.refresh_cache = refresh_cache
 
         if self.verbose_mode:
             self.logger.info(f"Initializing benchmark with model: {model}")
@@ -122,6 +125,13 @@ class Benchmark:
         """
         results = []
         samples_to_generate = []
+        
+        # Skip cache lookup if refresh_cache is True
+        if self.refresh_cache:
+            if self.verbose_mode:
+                self.logger.info(f"Cache refresh enabled - skipping cache lookup for {len(samples)} samples")
+            return [], samples
+        
         # Step 1: Check cache for existing results
         cache_results = self.cache_manager.batch_fetch_rows(samples)
         cache_hits = 0
@@ -256,23 +266,27 @@ class Benchmark:
         predictions = []
         rubrics = []
         samples = []
+        entities = []
         for it in ground_truth_and_prediction:
             
             predictions.append(it["prediction"])
             references.append(it["expected_output"])
+            entities.append(it["entities"])
             if it.get("sample"):
                 samples.append(it["sample"])
                 rubrics.append(it["sample"].rubric_to_evaluate)
-
         predictions = self.dataset.postprocess(predictions)
         references = self.dataset.postprocess(references)
-
+        # Get language from derived dataset class if it exists
+        language = getattr(self.dataset, 'language', 'english')
         for metric in metrics:
             score = metric.evaluate(
                 predictions=predictions,
                 references=references,
+                language=language,
                 rubrics=rubrics,
                 samples=samples,
+                entities=entities,
             )
             if isinstance(score, dict):
                 scores[metric.metric_name] = score[metric.metric_name]
@@ -285,6 +299,7 @@ class Benchmark:
         metrics: List[BaseMetric],
         batch_size: int = 1,
         dry_run: bool = False,
+        refresh_cache: Optional[bool] = None,
     ) -> Dict[str, Any]:
         """
         Generic evaluate function that works with any dataset.
@@ -294,10 +309,16 @@ class Benchmark:
             metric_config: Configuration dictionary containing metric name and processors
             batch_size: Batch size for evaluation
             dry_run: If True, only check cache status without running model inference
+            refresh_cache: If True, skip cache lookup and force regeneration (overrides instance setting)
 
         Returns:
             Dictionary containing overall score, predictions, and summary data
         """
+        # Override instance refresh_cache setting if parameter is provided
+        if refresh_cache is not None:
+            original_refresh_cache = self.refresh_cache
+            self.refresh_cache = refresh_cache
+        
         if dry_run:
             self.logger.info(
                 f"🔍 Starting DRY RUN with {self.dataset.__class__.__name__}"
@@ -360,11 +381,13 @@ class Benchmark:
             for result, sample in zip(batch_results, samples, strict=False):
                 # Use dataset's extract_answer method (which uses template)
                 expected = sample.expected_output
+                entities = sample.other_args.get('entities')
 
                 # Create final prediction result
                 prediction_result = {
                     "prediction": result["prediction"],
                     "expected_output": expected,
+                    "entities": entities,
                     "sample": sample,
                     "from_cache": result.get("from_cache", False),
                     "success": result.get("success", True),
@@ -432,6 +455,10 @@ class Benchmark:
                     f"🔄 {self.cache_manager.database_misses} samples would need inference"
                 )
 
+        # Restore original refresh_cache setting if it was overridden
+        if refresh_cache is not None:
+            self.refresh_cache = original_refresh_cache
+        
         return {
             "overall_score": overall_scores,
             "predictions": all_prediction_results,

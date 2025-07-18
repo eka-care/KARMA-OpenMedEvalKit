@@ -259,6 +259,24 @@ class CacheManager:
         # Save to database
         return self.cache_io.batch_save_inference_results(inference_data_list)
 
+    def invalidate_cache_for_keys(self, cache_keys: List[str]) -> bool:
+        """
+        Invalidate specific cache entries by keys.
+        
+        Args:
+            cache_keys: List of cache keys to invalidate
+            
+        Returns:
+            True if successfully invalidated, False otherwise
+        """
+        try:
+            # This would need to be implemented in the cache_io backends
+            # For now, we can implement a simple version
+            return self.cache_io.invalidate_cache_keys(cache_keys)
+        except AttributeError:
+            # Fallback if cache_io doesn't support invalidation
+            return False
+    
     def close_connections(self):
         """Close cache connections."""
         self.cache_io.close_connections()

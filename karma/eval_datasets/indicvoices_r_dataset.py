@@ -54,9 +54,8 @@ class IndicVoicesRDataset(BaseMultimodalDataset):
     def format_item(self, sample: Dict[str, Any]) -> DataLoaderIterable:
         audio_info = sample.get("audio", {})
         audio_data = audio_info.get("bytes")
-
+        
         return DataLoaderIterable(
             audio=audio_data,
             expected_output=sample.get("text", ""),
-            other_args={"language": sample.get("lang", "unknown")},
         )
