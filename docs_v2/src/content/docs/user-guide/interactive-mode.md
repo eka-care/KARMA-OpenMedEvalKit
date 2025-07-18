@@ -4,9 +4,9 @@ description: Step-by-step guide for using Interactive Mode in KARMA for LLM and 
 sidebar_label: Interactive Mode
 ---
 
-# Interactive Mode User Guide
+KARMA's **Interactive Mode** provides a terminal-based experience for benchmarking language and speech models. 
 
-KARMA's **Interactive Mode** provides a guided, beginner-friendly, and terminal-based experience for benchmarking language and speech models. This mode walks you through choosing a model, configuring arguments, selecting datasets, reviewing a summary, and executing the evaluation—all without needing custom scripts.
+This mode walks you through choosing a model, configuring arguments, selecting datasets, reviewing a summary, and executing the evaluations.
 
 ---
 
@@ -19,7 +19,9 @@ karma interactive
 ```
 
 
-This starts the interactive workflow. You will see a welcome screen indicating that the system is ready.
+This starts the interactive workflow. 
+
+You will see a welcome screen indicating that the system is ready.
 
 ![Welcome screen](../../../assets/interactive-welcome.png)
 
@@ -27,17 +29,19 @@ This starts the interactive workflow. You will see a welcome screen indicating t
 
 ## 2. Choose a Model
 
-You'll be shown a list of available models that fit your selected mode. Navigate using the arrow keys and press Enter to select.
+Next, you’ll get a list of available models. 
+
+Use the arrow keys to scroll through and hit Enter to select the one you want.
 
 ![Model selection](../../../assets/interactive-model.png)
 
 ---
 ## 3. Configure Model Arguments (Optional)
 
-Some models accept additional parameters, like `temperature` or `max_tokens`. If prompted, you can:
+Some models let you tweak parameters like `temperature` or `max_tokens`. If that’s the case, you’ll be prompted to either:
 
-- Enter custom values for the arguments.
-- Skip this step to use each argument's default value.
+- Enter your own values  
+- Or press Enter to skip
 
 ![Argument configuration](../../../assets/interactive-model-args.png)
 
@@ -45,40 +49,47 @@ Some models accept additional parameters, like `temperature` or `max_tokens`. If
 
 ## 4. Select a Dataset
 
-Choose one or more datasets against which you want to evaluate the model. Press Space to select and Enter to confirm. You can also filter datasets using the provided search option.
+Choose datasets against which you want to evaluate the model. 
+- Press `Space` to select one or more datasets  
+- Hit `Enter` to confirm your selection  
+- Use the `/` to search for specific datasets
 
 ![Dataset selection](../../../assets/interactive-dataset.png)
 
 ---
 
-## 6. Review Configuration Summary
+## 5. Review Configuration Summary
 
 Before continuing, you’ll be shown an **overall summary** of the configuration:
 
 - Selected model and its arguments
 - Chosen dataset(s)
 
-Review to ensure all selections are correct.
+Make sure everything looks right before continuing.
 
 ![Summary screen](../../../assets/interactive-summary.png)
 
 ---
 
-## 7. Save and Execute Evaluation
+## 6. Save and Execute Evaluation
 
 You’ll be asked if you want to:
 
-- **Save this configuration** for future use
-- **Execute the evaluation now**
+- Save this configuration for later  
+- Run the evaluation now or later
 
-Choose the appropriate option based on your preference.
+Choose whatever works best for your workflow..
 
 ![Save and execute prompt](../../../assets/interactive-save-execute.png)
 
 ---
 
-## 8. View Results
+## 7. View Results
 
-Once the evaluation begins, progress is displayed live in the terminal. When it’s complete, the output (metrics/results) will be shown on screen for review.
+Once the evaluation begins, you’ll see real-time progress in your terminal. 
+
+When it’s finished, the results will be displayed right away for you to review.
 
 ![Execution output](../../../assets/interactive-results.png)
+
+---
