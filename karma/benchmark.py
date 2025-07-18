@@ -299,7 +299,7 @@ class Benchmark:
         metrics: List[BaseMetric],
         batch_size: int = 1,
         dry_run: bool = False,
-        refresh_cache: Optional[bool] = None,
+        refresh_cache: Optional[bool] = False
     ) -> Dict[str, Any]:
         """
         Generic evaluate function that works with any dataset.
@@ -315,7 +315,7 @@ class Benchmark:
             Dictionary containing overall score, predictions, and summary data
         """
         # Override instance refresh_cache setting if parameter is provided
-        if refresh_cache is not None:
+        if refresh_cache:
             original_refresh_cache = self.refresh_cache
             self.refresh_cache = refresh_cache
         
