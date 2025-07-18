@@ -21,9 +21,11 @@ karma info dataset openlifescienceai/pubmedqa
 
 ### Speech Recognition Metrics
 
-- **wer**: Word Error Rate for speech recognition tasks
-- **cer**: Character Error Rate for speech recognition tasks
-
+- **wer**: Word Error Rate (WER) for speech recognition tasks
+- **cer**: Character Error (CER) Rate for speech recognition tasks
+- **asr_semantic_metrics**:  
+  - *semantic_wer/semantic_cer*: Semantic WER/CER after applying language-specific orthographic normalizations
+  - *entity_wer*: Entity WER using the enttity taggings from the dataset
 ## Metric Interpretation
 
 ### Exact Match
