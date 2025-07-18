@@ -266,23 +266,27 @@ class Benchmark:
         predictions = []
         rubrics = []
         samples = []
+        entities = []
         for it in ground_truth_and_prediction:
             
             predictions.append(it["prediction"])
             references.append(it["expected_output"])
+            entities.append(it["entities"])
             if it.get("sample"):
                 samples.append(it["sample"])
                 rubrics.append(it["sample"].rubric_to_evaluate)
-
         predictions = self.dataset.postprocess(predictions)
         references = self.dataset.postprocess(references)
-
+        # Get language from derived dataset class if it exists
+        language = getattr(self.dataset, 'language', 'english')
         for metric in metrics:
             score = metric.evaluate(
                 predictions=predictions,
                 references=references,
+                language=language,
                 rubrics=rubrics,
                 samples=samples,
+                entities=entities,
             )
             if isinstance(score, dict):
                 scores[metric.metric_name] = score[metric.metric_name]
@@ -377,11 +381,13 @@ class Benchmark:
             for result, sample in zip(batch_results, samples, strict=False):
                 # Use dataset's extract_answer method (which uses template)
                 expected = sample.expected_output
+                entities = sample.other_args.get('entities')
 
                 # Create final prediction result
                 prediction_result = {
                     "prediction": result["prediction"],
                     "expected_output": expected,
+                    "entities": entities,
                     "sample": sample,
                     "from_cache": result.get("from_cache", False),
                     "success": result.get("success", True),

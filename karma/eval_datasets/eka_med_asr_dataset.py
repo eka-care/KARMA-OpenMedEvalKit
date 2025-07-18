@@ -4,10 +4,10 @@ from karma.eval_datasets.base_dataset import BaseMultimodalDataset
 from karma.registries.dataset_registry import register_dataset
 from datasets import Audio
 
-DATASET_NAME = "ekacare/eka-medical-asr-eval-dataset"
+DATASET_NAME = "ekacare/eka-medical-asr-evaluation-dataset"
 SPLIT = "test"
 COMMIT_HASH = "5e20540ebd29868c8245e652412f27e40ca7acad"
-
+git 
 
 @register_dataset(
     DATASET_NAME,
@@ -34,9 +34,8 @@ class EkaMedicalAsrDataset(BaseMultimodalDataset):
 
         """
         super().__init__(
-            dataset_name=dataset_name,
-            split=split,
-            commit_hash=commit_hash,
+            dataset_name=DATASET_NAME,
+            split=SPLIT,
             config=language,
             processors=processors,
             **kwargs,
@@ -51,5 +50,10 @@ class EkaMedicalAsrDataset(BaseMultimodalDataset):
         return DataLoaderIterable(
             audio=sample.get("audio", {}).get("bytes"),
             expected_output=sample.get("text", ""),
-            other_args={"language": sample.get("audio_language", "unknown"), "recording_context": sample.get("recording_context", ""), "type_concept": sample.get("type_concept", "")},
+            other_args={
+                "language": sample.get("audio_language", "unknown"), 
+                "recording_context": sample.get("recording_context", ""), 
+                "type_concept": sample.get("type_concept", ""), 
+                "entities": sample.get("medical_entities", []),
+            },
         )
