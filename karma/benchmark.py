@@ -381,7 +381,7 @@ class Benchmark:
             for result, sample in zip(batch_results, samples, strict=False):
                 # Use dataset's extract_answer method (which uses template)
                 expected = sample.expected_output
-                entities = sample.other_args["entities"]
+                entities = sample.other_args.get('entities')
 
                 # Create final prediction result
                 prediction_result = {

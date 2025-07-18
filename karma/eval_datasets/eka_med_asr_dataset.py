@@ -4,10 +4,10 @@ from karma.eval_datasets.base_dataset import BaseMultimodalDataset
 from karma.registries.dataset_registry import register_dataset
 from datasets import Audio
 
-DATASET_NAME = "ekacare/eka-medical-asr-eval-dataset"
+DATASET_NAME = "ekacare/eka-medical-asr-evaluation-dataset"
 SPLIT = "test"
 COMMIT_HASH = "5e20540ebd29868c8245e652412f27e40ca7acad"
-
+git 
 
 @register_dataset(
     DATASET_NAME,
