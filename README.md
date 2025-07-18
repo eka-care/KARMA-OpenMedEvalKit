@@ -73,7 +73,7 @@ git clone https://github.com/eka-care/KARMA-OpenMedEvalKit.git
 cd KARMA-OpenMedEvalKit
 
 # Install with uv (recommended)
-uv install
+uv sync
 
 # Or install with pip
 pip install -e .
