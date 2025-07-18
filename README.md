@@ -5,13 +5,10 @@
 </p>
 <p align="center">
     <a href="https://github.com/eka-care/KARMA-OpenMedEvalKit" target="_blank">
-        <img src="https://img.shields.io/badge/python-3.12+-blue.svg" alt="Python Version">
+        <img src="https://img.shields.io/badge/python-3.10+-blue.svg" alt="Python Version">
     </a>
     <a href="https://github.com/eka-care/KARMA-OpenMedEvalKit/blob/main/LICENSE" target="_blank">
         <img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License">
-    </a>
-    <a href="https://pytorch.org/" target="_blank">
-        <img src="https://img.shields.io/badge/framework-PyTorch-orange.svg" alt="Framework">
     </a>
 </p>
 
@@ -34,6 +31,10 @@ The key features are:
 * **Smart Caching**: Intelligent result caching with DuckDB/DynamoDB backends for faster re-evaluations
 * **Production Ready**: Built-in CLI, progress tracking, and formatted outputs for production workflows
 * **Standards-based**: Extensible architecture with registry-based auto-discovery of models and datasets
+
+```bash
+pip install karma-medeval
+```
 
 ## Table of Contents
 
