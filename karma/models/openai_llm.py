@@ -22,7 +22,7 @@ class OpenAILLM(BaseModel):
         self,
         model_name_or_path: str = "gpt-4o",
         api_key: Optional[str] = None,
-        max_tokens: int = 2048,
+        max_tokens: int = 4096,
         temperature: float = 0.0,
         top_p: float = 1.0,
         frequency_penalty: float = 0.0,
@@ -108,7 +108,7 @@ class OpenAILLM(BaseModel):
                 # Insert system message at the beginning if not already present
                 if not messages or messages[0]["role"] != "system":
                     messages.insert(
-                        0, {"role": "system", "content": item.system_prompt}
+                        0, {"role": "developer", "content": item.system_prompt}
                     )
             if item.images:
                 for image in item.images:
@@ -151,10 +151,10 @@ class OpenAILLM(BaseModel):
     def _make_single_call(self, api_input: Dict[str, Any]) -> str:
         """
         Make a single API call to OpenAI.
-        
+
         Args:
             api_input: Processed API input dictionary
-            
+
         Returns:
             Generated text string or error message
         """
@@ -181,11 +181,11 @@ class OpenAILLM(BaseModel):
             raise RuntimeError("Model is not loaded.")
 
         processed_inputs = self.preprocess(inputs, **kwargs)
-        
+
         # Handle empty inputs
         if not processed_inputs:
             return []
-        
+
         # Use ThreadPoolExecutor for parallel API calls
         with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
             # Submit all API calls and track their order
@@ -193,10 +193,10 @@ class OpenAILLM(BaseModel):
                 executor.submit(self._make_single_call, api_input): i
                 for i, api_input in enumerate(processed_inputs)
             }
-            
+
             # Initialize results list with correct size
             outputs = [None] * len(processed_inputs)
-            
+
             # Collect results as they complete
             for future in as_completed(future_to_index):
                 index = future_to_index[future]
@@ -225,8 +225,8 @@ GPT4o_LLM = ModelMeta(
     loader_class="karma.models.openai_llm.OpenAILLM",
     loader_kwargs={
         "model_name_or_path": "gpt-4o",
-        "max_tokens": 1024,
-        "temperature": 0.7,
+        "max_tokens": 4096,
+        "temperature": 0.0,
         "top_p": 1.0,
         "frequency_penalty": 0.0,
         "presence_penalty": 0.0,
@@ -246,8 +246,8 @@ GPT4o_Mini_LLM = ModelMeta(
     loader_class="karma.models.openai_llm.OpenAILLM",
     loader_kwargs={
         "model_name_or_path": "gpt-4o-mini",
-        "max_tokens": 1024,
-        "temperature": 0.7,
+        "max_tokens": 4096,
+        "temperature": 0.0,
         "top_p": 1.0,
         "frequency_penalty": 0.0,
         "presence_penalty": 0.0,
@@ -273,7 +273,7 @@ GPT35_Turbo_LLM = ModelMeta(
     loader_class="karma.models.openai_llm.OpenAILLM",
     loader_kwargs={
         "model_name_or_path": "gpt-3.5-turbo",
-        "max_tokens": 1024,
+        "max_tokens": 4096,
         "temperature": 0.7,
         "top_p": 1.0,
         "frequency_penalty": 0.0,

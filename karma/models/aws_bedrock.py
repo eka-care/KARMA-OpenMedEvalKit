@@ -23,9 +23,9 @@ class AWSBedrock(BaseModel):
         aws_access_key_id: Optional[str] = None,
         aws_secret_access_key: Optional[str] = None,
         aws_session_token: Optional[str] = None,
-        max_tokens: int = 2048,
+        max_tokens: int = 4092,
         temperature: float = 0.0,
-        top_p: float = 1.0,
+        top_p: float = 0.9,
         max_workers: int = 4,
         **kwargs,
     ):
@@ -220,9 +220,9 @@ claude_sonnet_35_v2_bedrock = ModelMeta(
     loader_class="karma.models.aws_bedrock.AWSBedrock",
     loader_kwargs={
         "model_name_or_path": "us.anthropic.claude-3-5-sonnet-20241022-v2:0",
-        "max_tokens": 1024,
-        "temperature": 0.7,
-        "top_p": 1.0,
+        "max_tokens": 4096,
+        "temperature": 0.0,
+        "top_p": 0.9,
     },
     revision=None,
     reference="https://docs.aws.amazon.com/bedrock/latest/userguide/model-parameters-anthropic-claude-3-5-sonnet.html",
@@ -238,6 +238,32 @@ claude_sonnet_35_v2_bedrock = ModelMeta(
     license=None,
     open_weights=False,
 )
+
+claude_sonnet_35_bedrock = ModelMeta(
+    name="us.anthropic.claude-3-5-sonnet-20240620-v1:0",
+    description="Anthropic Claude 3.5 Sonnet via AWS Bedrock",
+    loader_class="karma.models.aws_bedrock.AWSBedrock",
+    loader_kwargs={
+        "model_name_or_path": "us.anthropic.claude-3-5-sonnet-20240620-v1:0",
+        "max_tokens": 4096,
+        "temperature": 0.0,
+        "top_p": 0.9,
+    },
+    revision=None,
+    reference="https://docs.aws.amazon.com/bedrock/latest/userguide/model-parameters-anthropic-claude-3-5-sonnet.html",
+    model_type=ModelType.TEXT_GENERATION,
+    modalities=[ModalityType.TEXT],
+    n_parameters=None,
+    memory_usage_mb=None,  # API-based, no local memory usage
+    max_tokens=8192,
+    embed_dim=None,
+    framework=["bedrock"],
+    release_date="2024-06-20",
+    version="1.0",
+    license=None,
+    open_weights=False,
+)
+
 
 claude_Sonnet4_bedrock = ModelMeta(
     name="us.anthropic.claude-sonnet-4-20250514-v1:0",
@@ -265,5 +291,6 @@ claude_Sonnet4_bedrock = ModelMeta(
 )
 
 # Register the models
+register_model_meta(claude_sonnet_35_bedrock)
 register_model_meta(claude_sonnet_35_v2_bedrock)
 register_model_meta(claude_Sonnet4_bedrock)
