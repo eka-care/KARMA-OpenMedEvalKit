@@ -52,7 +52,7 @@ karma list --help
 # Help for info command
 karma info --help
 ```
-### Evaluate With Additional Args
+## Evaluate With Additional Args
 
 This guide explains how to pass additional arguments to control datasets, models, processors, and metrics during evaluation using the `karma eval` command.
 
