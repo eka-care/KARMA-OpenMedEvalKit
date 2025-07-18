@@ -84,7 +84,7 @@ pip install -e .
 Evaluate your first medical AI model Using the Example of Qwen3 Model:
 
 ```bash
-$ karma eval --model "Qwen/Qwen3-0.6B" --datasets pubmedqa
+$ karma eval --model "Qwen/Qwen3-0.6B" --datasets openlifescienceai/pubmedqa
 ```
 
 ## Supported Models

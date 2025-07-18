@@ -719,7 +719,7 @@ name = "exceptiongroup"
 version = "1.3.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "typing-extensions", marker = "python_full_version < '3.13'" },
+    { name = "typing-extensions", marker = "python_full_version < '3.11'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/0b/9f/a65090624ecf468cdca03533906e7c69ed7588582240cfe7cc9e770b50eb/exceptiongroup-1.3.0.tar.gz", hash = "sha256:b241f5885f560bc56a59ee63ca4c6a8bfa46ae4ad651af316d4e81817bb9fd88", size = 29749 }
 wheels = [
@@ -1375,7 +1375,7 @@ wheels = [
 
 [[package]]
 name = "karma-medeval"
-version = "0.1.1"
+version = "0.1.2"
 source = { editable = "." }
 dependencies = [
     { name = "accelerate" },
@@ -1383,22 +1383,13 @@ dependencies = [
     { name = "click" },
     { name = "datasets" },
     { name = "duckdb" },
-    { name = "elevenlabs" },
     { name = "evaluate" },
     { name = "google-genai" },
-    { name = "google-transliteration-api" },
-    { name = "indic-nlp-library" },
-    { name = "indic-transliteration" },
-    { name = "jiwer" },
-    { name = "langdetect" },
-    { name = "librosa" },
     { name = "mysql-connector-python" },
-    { name = "num2words" },
     { name = "numpy" },
     { name = "onnxruntime" },
     { name = "openai" },
     { name = "pillow" },
-    { name = "pip" },
     { name = "pytest" },
     { name = "python-dotenv" },
     { name = "requests" },
@@ -1415,9 +1406,13 @@ dependencies = [
 [package.optional-dependencies]
 audio = [
     { name = "editdistance" },
+    { name = "elevenlabs" },
     { name = "google-transliteration-api" },
+    { name = "indic-nlp-library" },
+    { name = "indic-transliteration" },
     { name = "jiwer" },
     { name = "langdetect" },
+    { name = "librosa" },
     { name = "num2words" },
     { name = "torchaudio" },
 ]
@@ -1443,26 +1438,21 @@ requires-dist = [
     { name = "datasets", specifier = ">=3.6.0" },
     { name = "duckdb", specifier = ">=0.9.0" },
     { name = "editdistance", marker = "extra == 'audio'", specifier = ">=0.8.1" },
-    { name = "elevenlabs", specifier = ">=2.5.0" },
+    { name = "elevenlabs", marker = "extra == 'audio'", specifier = ">=2.5.0" },
     { name = "evaluate", specifier = ">=0.4.0" },
     { name = "google-genai", specifier = ">=1.24.0" },
-    { name = "google-transliteration-api", specifier = ">=1.0.3" },
     { name = "google-transliteration-api", marker = "extra == 'audio'", specifier = ">=1.0.3" },
-    { name = "indic-nlp-library", specifier = ">=0.92" },
-    { name = "indic-transliteration", specifier = ">=2.0.0" },
-    { name = "jiwer", specifier = ">=4.0.0" },
+    { name = "indic-nlp-library", marker = "extra == 'audio'", specifier = ">=0.92" },
+    { name = "indic-transliteration", marker = "extra == 'audio'", specifier = ">=2.0.0" },
     { name = "jiwer", marker = "extra == 'audio'", specifier = ">=4.0.0" },
-    { name = "langdetect", specifier = ">=1.0.9" },
     { name = "langdetect", marker = "extra == 'audio'", specifier = ">=1.0.9" },
-    { name = "librosa", specifier = ">=0.11.0" },
+    { name = "librosa", marker = "extra == 'audio'", specifier = ">=0.11.0" },
     { name = "mysql-connector-python", specifier = ">=9.3.0" },
-    { name = "num2words", specifier = ">=0.5.14" },
     { name = "num2words", marker = "extra == 'audio'", specifier = ">=0.5.14" },
     { name = "numpy", specifier = ">=2.2.6" },
     { name = "onnxruntime", specifier = ">=1.22.0" },
     { name = "openai", specifier = ">=1.93.0" },
     { name = "pillow", specifier = ">=11.1.0" },
-    { name = "pip", specifier = ">=25.1.1" },
     { name = "pytest", specifier = ">=8.4.1" },
     { name = "python-dotenv", specifier = ">=1.1.0" },
     { name = "requests", specifier = ">=2.32.4" },
@@ -2264,7 +2254,7 @@ name = "nvidia-cudnn-cu12"
 version = "9.5.1.17"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "nvidia-cublas-cu12" },
+    { name = "nvidia-cublas-cu12", marker = "sys_platform == 'linux'" },
 ]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/2a/78/4535c9c7f859a64781e43c969a3a7e84c54634e319a996d43ef32ce46f83/nvidia_cudnn_cu12-9.5.1.17-py3-none-manylinux_2_28_x86_64.whl", hash = "sha256:30ac3869f6db17d170e0e556dd6cc5eee02647abc31ca856634d5a40f82c15b2", size = 570988386 },
@@ -2275,7 +2265,7 @@ name = "nvidia-cufft-cu12"
 version = "11.3.0.4"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "nvidia-nvjitlink-cu12" },
+    { name = "nvidia-nvjitlink-cu12", marker = "sys_platform == 'linux'" },
 ]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/8f/16/73727675941ab8e6ffd86ca3a4b7b47065edcca7a997920b831f8147c99d/nvidia_cufft_cu12-11.3.0.4-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:ccba62eb9cef5559abd5e0d54ceed2d9934030f51163df018532142a8ec533e5", size = 200221632 },
@@ -2304,9 +2294,9 @@ name = "nvidia-cusolver-cu12"
 version = "11.7.1.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "nvidia-cublas-cu12" },
-    { name = "nvidia-cusparse-cu12" },
-    { name = "nvidia-nvjitlink-cu12" },
+    { name = "nvidia-cublas-cu12", marker = "sys_platform == 'linux'" },
+    { name = "nvidia-cusparse-cu12", marker = "sys_platform == 'linux'" },
+    { name = "nvidia-nvjitlink-cu12", marker = "sys_platform == 'linux'" },
 ]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/f0/6e/c2cf12c9ff8b872e92b4a5740701e51ff17689c4d726fca91875b07f655d/nvidia_cusolver_cu12-11.7.1.2-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:e9e49843a7707e42022babb9bcfa33c29857a93b88020c4e4434656a655b698c", size = 158229790 },
@@ -2318,7 +2308,7 @@ name = "nvidia-cusparse-cu12"
 version = "12.5.4.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "nvidia-nvjitlink-cu12" },
+    { name = "nvidia-nvjitlink-cu12", marker = "sys_platform == 'linux'" },
 ]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/06/1e/b8b7c2f4099a37b96af5c9bb158632ea9e5d9d27d7391d7eb8fc45236674/nvidia_cusparse_cu12-12.5.4.2-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:7556d9eca156e18184b94947ade0fba5bb47d69cec46bf8660fd2c71a4b48b73", size = 216561367 },
@@ -2581,15 +2571,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/f6/20/5c0a0aa83b213b7a07ec01e71a3d6ea2cf4ad1d2c686cc0168173b6089e7/pillow-11.2.1-pp311-pypy311_pp73-manylinux_2_28_aarch64.whl", hash = "sha256:036e53f4170e270ddb8797d4c590e6dd14d28e15c7da375c18978045f7e6c37b", size = 3527165 },
     { url = "https://files.pythonhosted.org/packages/58/0e/2abab98a72202d91146abc839e10c14f7cf36166f12838ea0c4db3ca6ecb/pillow-11.2.1-pp311-pypy311_pp73-manylinux_2_28_x86_64.whl", hash = "sha256:14f73f7c291279bd65fda51ee87affd7c1e097709f7fdd0188957a16c264601f", size = 3571586 },
     { url = "https://files.pythonhosted.org/packages/21/2c/5e05f58658cf49b6667762cca03d6e7d85cededde2caf2ab37b81f80e574/pillow-11.2.1-pp311-pypy311_pp73-win_amd64.whl", hash = "sha256:208653868d5c9ecc2b327f9b9ef34e0e42a4cdd172c2988fd81d62d2bc9bc044", size = 2674751 },
-]
-
-[[package]]
-name = "pip"
-version = "25.1.1"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/59/de/241caa0ca606f2ec5fe0c1f4261b0465df78d786a38da693864a116c37f4/pip-25.1.1.tar.gz", hash = "sha256:3de45d411d308d5054c2168185d8da7f9a2cd753dbac8acbfa88a8909ecd9077", size = 1940155 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/29/a2/d40fb2460e883eca5199c62cfc2463fd261f760556ae6290f88488c362c0/pip-25.1.1-py3-none-any.whl", hash = "sha256:2913a38a2abf4ea6b64ab507bd9e967f3b53dc1ede74b01b0931e1ce548751af", size = 1825227 },
 ]
 
 [[package]]
@@ -4284,7 +4265,7 @@ name = "triton"
 version = "3.3.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "setuptools" },
+    { name = "setuptools", marker = "sys_platform == 'linux'" },
 ]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/8d/a9/549e51e9b1b2c9b854fd761a1d23df0ba2fbc60bd0c13b489ffa518cfcb7/triton-3.3.1-cp310-cp310-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:b74db445b1c562844d3cfad6e9679c72e93fdfb1a90a24052b03bb5c49d1242e", size = 155600257 },

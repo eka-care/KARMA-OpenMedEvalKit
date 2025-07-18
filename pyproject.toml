@@ -1,6 +1,6 @@
 [project]
 name = "karma-medeval"
-version = "0.1.1"
+version = "0.1.2"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -11,7 +11,6 @@ dependencies = [
     "datasets>=3.6.0",
     "duckdb>=0.9.0",
     "evaluate>=0.4.0",
-    "indic-transliteration>=2.0.0",
     "mysql-connector-python>=9.3.0",
     "pillow>=11.1.0",
     "pytest>=8.4.1",
@@ -24,20 +23,16 @@ dependencies = [
     "transformers==4.53.0",
     "weave>=0.50.0",
     "numpy>=2.2.6",
-    "librosa>=0.11.0",
     "onnxruntime>=1.22.0",
-    "elevenlabs>=2.5.0",
     "google-genai>=1.24.0",
-    "pip>=25.1.1",
     "openai>=1.93.0",
     "requests>=2.32.4",
-    "jiwer>=4.0.0",
-    "num2words>=0.5.14",
-    "indic-nlp-library>=0.92",
     "simple-term-menu>=1.6.6",
-    "langdetect>=1.0.9",
-    "google-transliteration-api>=1.0.3",
 ]
+
+[project.urls]
+Repository = "https://github.com/eka-care/KARMA-OpenMedEvalKit"
+Documentation = "https://karma.eka.care"
 
 [dependency-groups]
 dev = [
@@ -62,10 +57,17 @@ karma = "karma.cli.main:main"
 
 [project.optional-dependencies]
 audio = [
+    "elevenlabs>=2.5.0",
+    "indic-nlp-library>=0.92",
+    "langdetect>=1.0.9",
+     "indic-transliteration>=2.0.0",
     "editdistance>=0.8.1",
     "google-transliteration-api>=1.0.3",
     "jiwer>=4.0.0",
     "langdetect>=1.0.9",
     "num2words>=0.5.14",
     "torchaudio>=2.7.1",
+    "google-transliteration-api>=1.0.3",
+    "num2words>=0.5.14",
+    "librosa>=0.11.0",
 ]
