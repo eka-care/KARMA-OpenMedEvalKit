@@ -84,31 +84,44 @@ def format_item(self, item):
 
 The `DataLoaderIterable` format ensures that all datasets work seamlessly with any model type, whether it's text-only, multi-modal, or conversation-based. Models receive the appropriate data fields and can process them according to their capabilities.
 
-### Local Dataset Example
-This example shows how to integrate a local dataset saved, for example, as a Parquet file on disk. It demonstrates loading, formatting, and iterating over the dataset with optional filtering and caching.
+### Using Local Datasets with KARMA
+This guide will walk you through how to plug that dataset into KARMA’s evaluation pipeline.
+
+#### Step 1: Organize Your Dataset
+Ensure your dataset is structured correctly. 
+
+Each row should ideally include:
+
+- A question
+
+- A list of options (for multiple-choice) (Optional)
+
+- The correct answer
+
+- Optionally: metadata like category, generic name, or citation
+
+#### Step 2: Set Up a Custom Dataset Class
+KARMA supports registering your own datasets using a decorator.
 
 ```python
-import os
-import pandas as pd
-from typing import Any, Dict, Tuple, Generator, Optional
-from karma.data_models.dataloader_iterable import DataLoaderIterable
-from karma.eval_datasets.base_dataset import BaseMultimodalDataset
-from karma.registries.dataset_registry import register_dataset
-
-
-CONFINEMENT_INSTRUCTIONS = """<Confinement Instructions>"""
-SPLIT = "<Split Type>"  # e.g., "test", "train", "validation"
-DATASET_NAME = "<Dataset Name>"
-
-
 @register_dataset(
-    dataset_name=DATASET_NAME,
-    split=SPLIT,
+    dataset_name="nfi-mcqa-local",
+    split="test",
     metrics=["exact_match"],
-    task_type="mcqa",
+    task_type="mcqa",  # Multiple Choice Q&A
 )
 class LocalDataset(BaseMultimodalDataset):
-    def __init__(
+    ...
+```
+
+This decorator registers your dataset with KARMA, allowing it to be used in evaluations. 
+
+The `task_type` should match the type of task your dataset is designed for (e.g., `mcqa` for multiple-choice question answering).
+
+#### Step 3: Load your Dataset
+In your Dataset class, load your dataset file. You can use any format supported by pandas, such as CSV or Parquet.
+```python
+def __init__(
         self,
         dataset_name: str = DATASET_NAME,
         split: str = SPLIT,
@@ -117,7 +130,7 @@ class LocalDataset(BaseMultimodalDataset):
     ):
         # Load local data first
         self.data_path = (
-            <paht_to_your_local_dataset>  # e.g., "data/nfi_mcqa.parquet"
+            <path_to_your_dataset>  # e.g., "data/nfi_mcqa.parquet"
         )
         if not os.path.exists(self.data_path):
             raise FileNotFoundError(f"Dataset file not found: {self.data_path}")
@@ -138,73 +151,83 @@ class LocalDataset(BaseMultimodalDataset):
         self.processors = kwargs.get("processors", [])
         self.max_samples = kwargs.get("max_samples", None)
 
-    def __iter__(self) -> Generator[Dict[str, Any], None, None]:
-        if self.dataset is None:
-            self.dataset = list(self.load_eval_dataset())  # cache once
-        for idx, sample in enumerate(self.dataset):
-            if self.max_samples is not None and idx >= self.max_samples:
-                break
-            item = self.format_item(sample)
-            yield item
-
-    def __len__(self):
-        return len(self.df)
-
-    def format_item(self, sample: Dict[str, Any]) -> DataLoaderIterable:
-        input_text = self._format_question(sample["data"])
-        correct_answer = sample["data"]["ground_truth"]
-
-        prompt = self.confinement_instructions.replace("<QUESTION>", input_text)
-
-        dataloader_item = DataLoaderIterable(
-            input=prompt, expected_output=correct_answer
-        )
-
-        dataloader_item.conversation = None
-
-        return dataloader_item
-
-    def extract_prediction(self, response: str) -> Tuple[str, bool]:
-        answer, success = "", False
-        if "Final Answer:" in response:
-            answer = response.split("Final Answer:")[1].strip()
-            if answer.startswith("(") and answer.endswith(")"):
-                answer = answer[1:-1]
-            success = True
-        return answer, success
-
-    def _format_question(self, data: Dict[str, Any]) -> str:
-        question = data["question"]
-        options = data["options"]
-        letters = ["A", "B", "C", "D"]
-        formatted = [f"{l}. {opt}" for l, opt in zip(letters, options)]
-        return f"{question}\n" + "\n".join(formatted)
-
-    def load_eval_dataset(self,
-                          dataset_name: str,
-                          split: str = "test",
-                          config: Optional[str] = None,
-                          stream: bool = True,
-                          commit_hash: Optional[str] = None,
-                          **kwargs):
-        for _, row in self.df.iterrows():
-            prediction = None
-            parsed_output = row.get("model_output_parsed", None)
-            if isinstance(parsed_output, dict):
-                prediction = parsed_output.get("prediction", None)
-
-            yield {
-                "id": row["index"],
-                "data": {
-                    "question": row["question"],
-                    "options": row["options"],
-                    "ground_truth": row["ground_truth"],
-                },
-                "prediction": prediction,
-                "metadata": {
-                    "generic_name": row.get("generic_name", None),
-                    "category": row.get("category", None),
-                    "citation": row.get("citation", None),
-                },
-            }
 ```
+
+#### Step 4: Implement the `format_item` Method
+Each row in your dataset will eventually be converted into an input-output pair for the model. 
+
+```python
+def format_item(self, sample: Dict[str, Any]) -> DataLoaderIterable:
+    input_text = self._format_question(sample["data"])
+    correct_answer = sample["data"]["ground_truth"]
+
+    prompt = self.confinement_instructions.replace("<QUESTION>", input_text)
+
+    dataloader_item = DataLoaderIterable(
+        input=prompt, expected_output=correct_answer
+    )
+
+    dataloader_item.conversation = None
+
+    return dataloader_item
+```
+This method should return a `DataLoaderIterable` object containing the formatted input and expected output for each sample.
+
+#### 5: Iterate Over the Dataset
+KARMA will use __iter__() to go through your dataset, so we implement it to yield formatted examples:
+```python
+def __iter__(self) -> Generator[Dict[str, Any], None, None]:
+    if self.dataset is None:
+        self.dataset = list(self.load_eval_dataset())  # cache once
+    for idx, sample in enumerate(self.dataset):
+        if self.max_samples is not None and idx >= self.max_samples:
+            break
+        item = self.format_item(sample)
+        yield item
+```
+
+#### Step 6: Handle Model Output
+To extract the model's predictions, implement the `extract_prediction` method. 
+```python
+def extract_prediction(self, response: str) -> Tuple[str, bool]:
+    answer, success = "", False
+    if "Final Answer:" in response:
+        answer = response.split("Final Answer:")[1].strip()
+        if answer.startswith("(") and answer.endswith(")"):
+            answer = answer[1:-1]
+        success = True
+    return answer, success
+```
+
+#### Step 7: Yield Examples for Evaluation
+Finally, load_eval_dataset reads from your DataFrame and returns structured examples.
+```python
+def load_eval_dataset(self,
+                      dataset_name: str,
+                      split: str = "test",
+                      config: Optional[str] = None,
+                      stream: bool = True,
+                      commit_hash: Optional[str] = None,
+                      **kwargs):
+    for _, row in self.df.iterrows():
+        prediction = None
+        parsed_output = row.get("model_output_parsed", None)
+        if isinstance(parsed_output, dict):
+            prediction = parsed_output.get("prediction", None)
+
+        yield {
+            "id": row["index"],
+            "data": {
+                "question": row["question"],
+                "options": row["options"],
+                "ground_truth": row["ground_truth"],
+            },
+            "prediction": prediction,
+            "metadata": {
+                "generic_name": row.get("generic_name", None),
+                "category": row.get("category", None),
+                "citation": row.get("citation", None),
+            },
+        }
+```
+If your dataset already includes previous model outputs, this is where you can plug them in.
