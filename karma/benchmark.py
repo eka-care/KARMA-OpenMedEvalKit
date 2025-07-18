@@ -456,7 +456,7 @@ class Benchmark:
                 )
 
         # Restore original refresh_cache setting if it was overridden
-        if refresh_cache is not None:
+        if refresh_cache:
             self.refresh_cache = original_refresh_cache
         
         return {
