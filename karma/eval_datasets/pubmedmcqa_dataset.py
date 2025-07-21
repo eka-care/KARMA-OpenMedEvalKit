@@ -50,14 +50,12 @@ class PubMedMCQADataset(MedQADataset):
         Args:
             **kwargs: Additional arguments passed to base class
         """
+        self.dataset = None
         super().__init__(
             dataset_name=dataset_name,
             split=split,
             confinement_instructions=confinement_instructions,
             **kwargs,
-        )
-        self.dataset = super().load_eval_dataset(
-            DATASET_NAME, config=None, split=SPLIT, commit_hash=COMMIT_HASH
         )
 
     def format_item(self, sample: Dict[str, Any], **kwargs):

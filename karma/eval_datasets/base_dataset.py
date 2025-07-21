@@ -86,7 +86,6 @@ class BaseMultimodalDataset(IterableDataset, ABC):
                 streaming=stream,
                 revision=commit_hash,
             )
-        print(dataset)
         return dataset
 
     def __iter__(self) -> Generator[Dict[str, Any], None, None]:
@@ -103,7 +102,6 @@ class BaseMultimodalDataset(IterableDataset, ABC):
             if idx >= self.max_samples:
                 break
             item = self.format_item(sample)
-            print(sample)
             yield item
             # if isinstance(sample, dict):
             #     item = self.format_item(sample)
