@@ -1,17 +1,16 @@
 # KARMA: Knowledge Assessment and Reasoning for Medical Applications
 
 <p align="center">
-    <em>High-performance, easy to learn, fast to benchmark, ready for production</em>
-</p>
-<p align="center">
     <a href="https://github.com/eka-care/KARMA-OpenMedEvalKit" target="_blank">
         <img src="https://img.shields.io/badge/python-3.10+-blue.svg" alt="Python Version">
     </a>
     <a href="https://github.com/eka-care/KARMA-OpenMedEvalKit/blob/main/LICENSE" target="_blank">
         <img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License">
     </a>
+    <a href="https://pepy.tech/project/karma-medeval" target="_blank">
+        <img src="https://static.pepy.tech/badge/karma-medeval/month" alt="Downloads">
+    </a>
 </p>
-
 ---
 
 **Documentation**: <https://karma.eka.care>
