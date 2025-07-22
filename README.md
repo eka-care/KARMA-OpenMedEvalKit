@@ -4,14 +4,11 @@
     <em>High-performance, easy to learn, fast to benchmark, ready for production</em>
 </p>
 <p align="center">
-    <a href="https://github.com/your-org/KARMA-OpenMedEvalKit" target="_blank">
-        <img src="https://img.shields.io/badge/python-3.12+-blue.svg" alt="Python Version">
+    <a href="https://github.com/eka-care/KARMA-OpenMedEvalKit" target="_blank">
+        <img src="https://img.shields.io/badge/python-3.10+-blue.svg" alt="Python Version">
     </a>
-    <a href="https://github.com/your-org/KARMA-OpenMedEvalKit/blob/main/LICENSE" target="_blank">
+    <a href="https://github.com/eka-care/KARMA-OpenMedEvalKit/blob/main/LICENSE" target="_blank">
         <img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License">
-    </a>
-    <a href="https://pytorch.org/" target="_blank">
-        <img src="https://img.shields.io/badge/framework-PyTorch-orange.svg" alt="Framework">
     </a>
 </p>
 
@@ -34,6 +31,10 @@ The key features are:
 * **Smart Caching**: Intelligent result caching with DuckDB/DynamoDB backends for faster re-evaluations
 * **Production Ready**: Built-in CLI, progress tracking, and formatted outputs for production workflows
 * **Standards-based**: Extensible architecture with registry-based auto-discovery of models and datasets
+
+```bash
+pip install karma-medeval
+```
 
 ## Table of Contents
 
@@ -58,15 +59,21 @@ The key features are:
 
 ## Installation
 
-Clone the repository and install KARMA from source:
+Install KARMA from PyPI:
+
+```bash
+pip install karma-medeval
+```
+
+Or install from source:
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-org/KARMA-OpenMedEvalKit.git
+git clone https://github.com/eka-care/KARMA-OpenMedEvalKit.git
 cd KARMA-OpenMedEvalKit
 
 # Install with uv (recommended)
-uv install
+uv sync
 
 # Or install with pip
 pip install -e .
@@ -77,17 +84,17 @@ pip install -e .
 Evaluate your first medical AI model Using the Example of Qwen3 Model:
 
 ```bash
-$ karma eval --model qwen --model-path "Qwen/Qwen3-0.6B" --datasets pubmedqa
+$ karma eval --model "Qwen/Qwen3-0.6B" --datasets openlifescienceai/pubmedqa
 ```
 
 ## Supported Models
 
 KARMA depends on PyTorch and HuggingFace Transformers.
 
-### Built-in models
-
-* **qwen** - for Qwen3 series models with thinking capabilities
-* **medgemma** - for google/medgemma-4b-it from Google
+Check supported models through
+```bash
+$ karma list models
+```
 
 ### Adding Custom Models
 
