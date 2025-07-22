@@ -29,7 +29,7 @@ cd KARMA-OpenMedEvalKit
 uv install --group dev
 
 # Install with all optional dependencies
-uv install --group dev --group docs --group audio
+uv install --group dev --group audio
 ```
 
 ## Optional Dependencies
