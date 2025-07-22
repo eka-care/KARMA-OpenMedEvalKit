@@ -1,8 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Union
 import torch
-from IPython.lib.display import Audio
-from PIL import Image
 from transformers import PreTrainedModel, PreTrainedTokenizer
 
 

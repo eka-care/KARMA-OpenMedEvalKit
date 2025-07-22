@@ -97,10 +97,10 @@ class MultiDatasetOrchestrator:
         Returns:
             Dictionary containing evaluation results
         """
-        # Discover models and datasets
-        model_registry.discover_models()
-        dataset_registry.discover_datasets()
-        metric_registry.discover_metrics()
+        # # Discover models and datasets
+        # model_registry.discover_models()
+        # dataset_registry.discover_datasets()
+        # metric_registry.discover_metrics()
 
         # Get dataset list
         if dataset_names is None:
@@ -112,8 +112,12 @@ class MultiDatasetOrchestrator:
         self._validate_all_dataset_args(dataset_names, dataset_args)
 
         # Initialize model once
-        self.console.print(f"\n[cyan]Initializing model: {self.model_name}[/cyan]")
-        model = model_registry.get_model(self.model_name)
+        self.console.print(
+            f"\n[cyan]Initializing model: {self.model_name} with {self.model_kwargs.get('model_kwargs')}[/cyan]"
+        )
+        model = model_registry.get_model(
+            self.model_name, **self.model_kwargs.get("model_kwargs")
+        )
         model_meta = model_registry.get_model_meta(self.model_name)
         # try:
         #     model = model_class(self.model_path, **self.model_kwargs)
