@@ -15,7 +15,6 @@ const title = Astro.locals.starlightRoute.entry.data.title;
 <style>
   @layer starlight.core {
     .page-title-container h1 {
-      margin-top: 1rem;
       font-size: var(--sl-text-h1);
       line-height: var(--sl-line-height-headings);
       font-weight: 600;
@@ -28,7 +27,6 @@ const title = Astro.locals.starlightRoute.entry.data.title;
     align-items: flex-start;
     justify-content: space-between;
     gap: 1rem;
-    margin-bottom: 2rem;
   }
   
   .page-title-container h1 {
@@ -38,7 +36,6 @@ const title = Astro.locals.starlightRoute.entry.data.title;
   
   .copy-button-wrapper {
     flex-shrink: 0;
-    margin-top: 1.25rem; /* Align with h1's margin-top + a bit more */
   }
   
   @media (max-width: 768px) {
