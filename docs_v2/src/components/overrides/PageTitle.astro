@@ -1,0 +1,55 @@
+---
+import CopyPageButton from '../CopyPageButton.astro';
+
+// Access the title through Astro.locals like the default implementation
+const title = Astro.locals.starlightRoute.entry.data.title;
+---
+
+<div class="page-title-container">
+  <h1 id="_top">{title}</h1>
+  <div class="copy-button-wrapper">
+    <CopyPageButton />
+  </div>
+</div>
+
+<style>
+  @layer starlight.core {
+    .page-title-container h1 {
+      margin-top: 1rem;
+      font-size: var(--sl-text-h1);
+      line-height: var(--sl-line-height-headings);
+      font-weight: 600;
+      color: var(--sl-color-white);
+    }
+  }
+  
+  .page-title-container {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+  
+  .page-title-container h1 {
+    margin-bottom: 0;
+    flex: 1;
+  }
+  
+  .copy-button-wrapper {
+    flex-shrink: 0;
+    margin-top: 1.25rem; /* Align with h1's margin-top + a bit more */
+  }
+  
+  @media (max-width: 768px) {
+    .page-title-container {
+      flex-direction: column;
+      gap: 1rem;
+    }
+    
+    .copy-button-wrapper {
+      align-self: flex-end;
+      margin-top: 0;
+    }
+  }
+</style>

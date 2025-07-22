@@ -10,6 +10,9 @@ export default defineConfig({
   integrations: [
     starlight({
       title: "KARMA",
+      components: {
+        PageTitle: './src/components/overrides/PageTitle.astro',
+      },
       plugins: [
         starlightLlmsTxt({
           projectName: "KARMA OpenMedEvalKit",
