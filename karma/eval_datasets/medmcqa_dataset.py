@@ -50,6 +50,7 @@ class MedMCQADataset(BaseMultimodalDataset):
             **kwargs: Additional arguments passed to base class
         """
         super().__init__(dataset_name=dataset_name, split=split, **kwargs)
+        # Confinement instructions
         self.confinement_instructions = CONFINEMENT_INSTRUCTIONS
 
     def format_item(self, sample: Dict[str, Any], **kwargs):
