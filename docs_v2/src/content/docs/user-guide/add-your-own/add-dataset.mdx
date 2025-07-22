@@ -1,11 +1,11 @@
 ---
 title: Add dataset
-import { Steps, Step } from 'starlight/components';
 ---
+import { Steps } from '@astrojs/starlight/components';
 
 You can create custom datasets by inheriting from `BaseMultimodalDataset` and implementing the `format_item` method to return a properly formatted `DataLoaderIterable`:
 
-```python
+```
 from karma.eval_datasets.base_dataset import BaseMultimodalDataset
 from karma.registries.dataset_registry import register_dataset
 from karma.data_models.dataloader_iterable import DataLoaderIterable
@@ -43,7 +43,7 @@ class MyMedicalDataset(BaseMultimodalDataset):
 
 For datasets that combine multiple modalities:
 
-```python
+```
 def format_item(self, item):
     """Format multi-modal item."""
     return DataLoaderIterable(
@@ -62,7 +62,7 @@ def format_item(self, item):
 
 For datasets with multi-turn conversations:
 
-```python
+```
 from karma.data_models.dataloader_iterable import Conversation, ConversationTurn
 
 def format_item(self, item):
@@ -89,16 +89,18 @@ The `DataLoaderIterable` format ensures that all datasets work seamlessly with a
 This guide will walk you through how to plug that dataset into KARMA’s evaluation pipeline.
 
 <Steps>
-  <Step title="Organize Your Dataset">
+
+1. "Organize Your Dataset"
     Ensure your dataset is structured correctly.  
     Each row should ideally include:
     - A question
     - A list of options (optional)
     - The correct answer
     - Optionally: metadata like category, generic name, or citation
-  </Step>
-  <Step title="Set Up a Custom Dataset Class">
+
+2. "Set Up a Custom Dataset Class"
     KARMA supports registering your own datasets using a decorator.
+
     ```python
     @register_dataset(
         dataset_name="mcqa-local",
@@ -109,12 +111,14 @@ This guide will walk you through how to plug that dataset into KARMA’s evaluat
     class LocalDataset(BaseMultimodalDataset):
         ...
     ```
+
     This decorator registers your dataset with KARMA for evaluations.
-  </Step>
-  <Step title="Load your Dataset">
+
+3. "Load your Dataset"
     In your Dataset class, load your dataset file.  
     You can use any format supported by pandas, such as CSV or Parquet.
-    ```python
+
+    ```
     def __init__(self, ...):
         self.data_path = <path_to_your_dataset>
         if not os.path.exists(self.data_path):
@@ -122,10 +126,11 @@ This guide will walk you through how to plug that dataset into KARMA’s evaluat
         self.df = pd.read_parquet(self.data_path)
         ...
     ```
-  </Step>
-  <Step title="Implement the format_item Method">
+
+4. "Implement the format_item Method"
     Each row in your dataset will be converted into an input-output pair for the model.
-    ```python
+
+    ```
     def format_item(self, sample: Dict[str, Any]) -> DataLoaderIterable:
         input_text = self._format_question(sample["data"])
         correct_answer = sample["data"]["ground_truth"]
@@ -136,10 +141,10 @@ This guide will walk you through how to plug that dataset into KARMA’s evaluat
         dataloader_item.conversation = None
         return dataloader_item
     ```
-  </Step>
-  <Step title="Iterate Over the Dataset">
+5. "Iterate Over the Dataset"
     Implement `__iter__()` to yield formatted examples.
-    ```python
+
+    ```
     def __iter__(self) -> Generator[Dict[str, Any], None, None]:
         if self.dataset is None:
             self.dataset = list(self.load_eval_dataset())
@@ -149,10 +154,9 @@ This guide will walk you through how to plug that dataset into KARMA’s evaluat
             item = self.format_item(sample)
             yield item
     ```
-  </Step>
-  <Step title="Handle Model Output">
+6. "Handle Model Output"
     Extract the model's predictions.
-    ```python
+    ```
     def extract_prediction(self, response: str) -> Tuple[str, bool]:
         answer, success = "", False
         if "Final Answer:" in response:
@@ -162,8 +166,7 @@ This guide will walk you through how to plug that dataset into KARMA’s evaluat
             success = True
         return answer, success
     ```
-  </Step>
-  <Step title="Yield Examples for Evaluation">
+7. "Yield Examples for Evaluation"
     Read from your DataFrame and return structured examples.
     ```python
     def load_eval_dataset(self, ...):
@@ -185,8 +188,8 @@ This guide will walk you through how to plug that dataset into KARMA’s evaluat
                     "category": row.get("category", None),
                     "citation": row.get("citation", None),
                 },
-            }
+    }
     ```
-  </Step>
 </Steps>
+
 If your dataset already includes previous model outputs, this is where you can plug them in.
