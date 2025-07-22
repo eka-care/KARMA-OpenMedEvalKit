@@ -44,11 +44,11 @@ karma eval --model medgemma --model-path "google/medgemma-4b-it"
 ```bash
 # Adjust generation parameters
 karma eval --model Qwen/Qwen3-0.6B \
-  --model-kwargs '{"temperature":0.5,"max_tokens":512,"top_p":0.9}'
+  --model-args '{"temperature":0.5,"max_tokens":512,"top_p":0.9}'
 
 # Disable thinking mode (for Qwen)
 karma eval --model Qwen/Qwen3-0.6B \
-  --model-kwargs '{"enable_thinking":false}'
+  --model-args '{"enable_thinking":false}'
 ```
 
 ## Dataset Configuration
@@ -162,11 +162,11 @@ karma eval --model Qwen/Qwen3-0.6B \
 ```bash
 # Test different temperature settings
 karma eval --model Qwen/Qwen3-0.6B \
-  --model-kwargs '{"temperature":0.1}' --output temp_0.1.json
+  --model-args '{"temperature":0.1}' --output temp_0.1.json
 
 karma eval --model Qwen/Qwen3-0.6B \
-  --model-kwargs '{"temperature":0.7}' --output temp_0.7.json
+  --model-args '{"temperature":0.7}' --output temp_0.7.json
 
 karma eval --model Qwen/Qwen3-0.6B \
-  --model-kwargs '{"temperature":1.0}' --output temp_1.0.json
+  --model-args '{"temperature":1.0}' --output temp_1.0.json
 ```

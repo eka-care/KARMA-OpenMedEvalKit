@@ -47,7 +47,7 @@ karma eval --model "Qwen/Qwen3-0.6B" \
 # Advanced configuration with thinking mode
 karma eval --model "Qwen/Qwen3-0.6B" \
   --datasets openlifescienceai/pubmedqa \
-  --model-kwargs '{"enable_thinking": true, "temperature": 0.3}'
+  --model-args '{"enable_thinking": true, "temperature": 0.3}'
 ```
 
 **Available Models:**
@@ -61,12 +61,12 @@ Google's medical-specialized Gemma models with vision capabilities:
 # MedGemma for specialized medical tasks
 karma eval --model "google/medgemma-4b-it" \
   --datasets openlifescienceai/medmcqa \
-  --model-kwargs '{"temperature": 0.1, "max_tokens": 512}'
+  --model-args '{"temperature": 0.1, "max_tokens": 512}'
 
 # MedGemma with image analysis
 karma eval --model "google/medgemma-4b-it" \
   --datasets medical_image_dataset \
-  --model-kwargs '{"temperature": 0.01, "max_tokens": 1024}'
+  --model-args '{"temperature": 0.01, "max_tokens": 1024}'
 ```
 
 
@@ -78,17 +78,17 @@ When invoking OpenAI models, multiprocessing is leveraged to make multiple calls
 # GPT-4o for complex medical reasoning
 karma eval --model "gpt-4o" \
   --datasets openlifescienceai/pubmedqa \
-  --model-kwargs '{"temperature": 0.7, "max_tokens": 1024}'
+  --model-args '{"temperature": 0.7, "max_tokens": 1024}'
 
 # GPT-4o Mini for efficient processing
 karma eval --model "gpt-4o-mini" \
   --datasets medical_qa_dataset \
-  --model-kwargs '{"temperature": 0.3, "max_tokens": 512}'
+  --model-args '{"temperature": 0.3, "max_tokens": 512}'
 
 # GPT-3.5 Turbo for cost-effective inference
 karma eval --model "gpt-3.5-turbo" \
   --datasets simple_medical_tasks \
-  --model-kwargs '{"temperature": 0.5, "max_tokens": 1024}'
+  --model-args '{"temperature": 0.5, "max_tokens": 1024}'
 ```
 
 **Available Models:**
@@ -105,12 +105,12 @@ When invoking Bedrock models, multiprocessing is leveraged to make multiple call
 # Claude 3.5 Sonnet for advanced medical reasoning
 karma eval --model "us.anthropic.claude-3-5-sonnet-20241022-v2:0" \
   --datasets complex_medical_cases \
-  --model-kwargs '{"temperature": 0.7, "max_tokens": 1024}'
+  --model-args '{"temperature": 0.7, "max_tokens": 1024}'
 
 # Claude Sonnet 4 for cutting-edge performance
 karma eval --model "us.anthropic.claude-sonnet-4-20250514-v1:0" \
   --datasets advanced_medical_reasoning \
-  --model-kwargs '{"temperature": 0.3, "max_tokens": 2048}'
+  --model-args '{"temperature": 0.3, "max_tokens": 2048}'
 ```
 
 **Available Models:**
@@ -147,7 +147,7 @@ Enterprise-grade speech recognition for production deployments:
 # AWS Transcribe with automatic language detection
 karma eval --model aws-transcribe \
   --datasets medical_audio_dataset \
-  --model-kwargs '{"region_name": "us-east-1", "s3_bucket": "your-bucket"}'
+  --model-args '{"region_name": "us-east-1", "s3_bucket": "your-bucket"}'
 ```
 
 
@@ -156,12 +156,12 @@ karma eval --model aws-transcribe \
 # Gemini 2.0 Flash for audio transcription
 karma eval --model gemini-2.0-flash \
   --datasets medical_audio_dataset \
-  --model-kwargs '{"thinking_budget": 1000}'
+  --model-args '{"thinking_budget": 1000}'
 
 # Gemini 2.5 Flash for enhanced performance
 karma eval --model gemini-2.5-flash \
   --datasets medical_audio_dataset \
-  --model-kwargs '{"thinking_budget": 2000}'
+  --model-args '{"thinking_budget": 2000}'
 ```
 
 **Available Models:**
@@ -174,7 +174,7 @@ karma eval --model gemini-2.5-flash \
 # OpenAI Whisper for high-accuracy transcription
 karma eval --model gpt-4o-transcribe \
   --datasets medical_audio_dataset \
-  --model-kwargs '{"language": "en"}'
+  --model-args '{"language": "en"}'
 ```
 
 
@@ -183,7 +183,7 @@ karma eval --model gpt-4o-transcribe \
 # ElevenLabs for specialized audio processing
 karma eval --model eleven_labs \
   --datasets medical_audio_dataset \
-  --model-kwargs '{"diarize": false, "tag_audio_events": false}'
+  --model-args '{"diarize": false, "tag_audio_events": false}'
 ```
 
 ## Getting Model Information
