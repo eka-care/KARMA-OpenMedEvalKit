@@ -101,7 +101,7 @@ from karma.registries.processor_registry import processor_registry
     help="Path to model configuration file (JSON/YAML) with model-specific parameters",
 )
 @click.option(
-    "--model-kwargs",
+    "--model-args",
     help='Model parameter overrides as JSON string (e.g., \'{"temperature": 0.7, "top_p": 0.9}\')',
 )
 @click.option(
@@ -136,7 +136,7 @@ def eval_cmd(
     interactive,
     dry_run,
     model_config,
-    model_kwargs,
+    model_args,
     max_samples,
     verbose,
     refresh_cache,
@@ -200,22 +200,23 @@ def eval_cmd(
             raise click.Abort()
 
         # Handle model configuration and parameter overrides
+        # This either loads the file or else provided args from CLI.
         model_overrides = _prepare_model_overrides(
-            model, model_path, model_config, model_kwargs, console
+            model, model_path, model_config, model_args, console
         )
 
         # Extract final model path (could come from meta config)
         final_model_path = model_overrides.get("model_name_or_path", model_path)
 
-        # Validate final model path if provided
-        if final_model_path and not validate_model_path(final_model_path):
-            console.print(
-                ClickFormatter.warning(
-                    f"Model path '{final_model_path}' may not be valid"
-                )
-            )
-            if not click.confirm("Continue anyway?"):
-                raise click.Abort()
+        # # Validate final model path if provided
+        # if final_model_path and not validate_model_path(final_model_path):
+        #     console.print(
+        #         ClickFormatter.warning(
+        #             f"Model path '{final_model_path}' may not be valid"
+        #         )
+        #     )
+        #     if not click.confirm("Continue anyway?"):
+        #         raise click.Abort()
 
         # Parse datasets list
         dataset_names = parse_datasets_list(datasets) if datasets else None
@@ -765,8 +766,9 @@ def _prepare_model_overrides(
             cli_overrides = json.loads(model_kwargs)
             final_config.update(cli_overrides)
             console.print(
-                f"[dim]Applied {len(cli_overrides)} parameter overrides from CLI[/dim]"
+                f"[dim]Applied {len(cli_overrides)} model parameter overrides from CLI[/dim]"
             )
+            console.print(f"[dim]Loaded overrides {cli_overrides}[/dim]")
         except json.JSONDecodeError as e:
             console.print(ClickFormatter.warning(f"Invalid JSON in model-kwargs: {e}"))
 
