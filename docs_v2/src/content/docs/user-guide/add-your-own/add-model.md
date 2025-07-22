@@ -1,5 +1,5 @@
 ---
-title: Adding a New Model
+title: Add model
 ---
 
 This guide provides a comprehensive walkthrough for adding new models to the KARMA evaluation framework. KARMA supports diverse model types including local HuggingFace models, API-based services, and multi-modal models across text, audio, image, and video domains.

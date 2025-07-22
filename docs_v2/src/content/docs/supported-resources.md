@@ -110,7 +110,7 @@ karma info dataset "openlifescienceai/pubmedqa"
 To add new models, datasets, or metrics to KARMA:
 
 - **Models**: See [Adding Models](user-guide/add-your-own/add-model)
-- **Datasets**: See [Adding Datasets](user-guide/add-your-own/add-dataset)
+- **Datasets**: See [Adding Datasets](user-guide/add-your-own/add-dataset.mdx)
 - **Metrics**: See [Metrics Overview](user-guide/metrics/metrics_overview)
 
 For more detailed information about the registry system, see the [Registry Documentation](user-guide/registry/registries).

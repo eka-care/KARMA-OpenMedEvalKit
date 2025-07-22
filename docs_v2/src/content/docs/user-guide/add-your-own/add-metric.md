@@ -1,5 +1,5 @@
 ---
-title: Add a Custom Metric
+title: Add metric
 ---
 You can create custom evaluation metrics by inheriting from `BaseMetric`:
 

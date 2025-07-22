@@ -1,5 +1,5 @@
 ---
-title: Add Your Own Processor
+title: Add Processor
 ---
 Processors are used for tweak the output of the model and then running evaluation on that output.
 This is typically required in cases when normalizing text for different languages or dialects.
