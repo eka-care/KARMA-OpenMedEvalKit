@@ -22,6 +22,9 @@ COMMIT_HASH = "8b7b3e8d11d2da441c6c708c2d9a4a7958b57881"
 class VistaarSmallDataset(BaseMultimodalDataset):
     def __init__(
         self,
+        dataset_name: str = DATASET_NAME,
+        split: str = SPLIT,
+        commit_hash: str = COMMIT_HASH,
         language: str = "hi",
         processors=None,
         **kwargs,
@@ -31,6 +34,9 @@ class VistaarSmallDataset(BaseMultimodalDataset):
 
         """
         super().__init__(
+            dataset_name=dataset_name,
+            split=split,
+            commit_hash=commit_hash,
             config=language,
             processors=processors,
             **kwargs,

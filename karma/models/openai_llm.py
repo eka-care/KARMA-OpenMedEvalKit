@@ -1,5 +1,6 @@
 import os
 import logging
+import base64
 from typing import List, Optional, Dict, Any
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from openai import OpenAI
@@ -65,7 +66,7 @@ class OpenAILLM(BaseModel):
         self.client: OpenAI = None
         self.load_model()
 
-    def load_model(self):
+    def load_model(self, **kwargs) -> None:
         """Initialize the OpenAI client."""
         try:
             self.client = OpenAI(api_key=self.api_key)
@@ -108,6 +109,25 @@ class OpenAILLM(BaseModel):
                 if not messages or messages[0]["role"] != "system":
                     messages.insert(
                         0, {"role": "system", "content": item.system_prompt}
+                    )
+            if item.images:
+                for image in item.images:
+                    # Convert image bytes to base64 for OpenAI API
+                    image_b64 = base64.b64encode(image).decode("utf-8")
+
+                    # Add image content in OpenAI's multimodal format
+                    messages.append(
+                        {
+                            "role": "user",
+                            "content": [
+                                {
+                                    "type": "image_url",
+                                    "image_url": {
+                                        "url": f"data:image/jpeg;base64,{image_b64}"
+                                    },
+                                }
+                            ],
+                        }
                     )
 
             # Ensure we have at least one message

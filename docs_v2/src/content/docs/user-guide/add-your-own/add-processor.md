@@ -1,80 +1,9 @@
-# Processors Guide
-
-This guide covers working with text processors in KARMA, from using built-in processors to creating your own custom implementations.
-
-## Overview
-
-KARMA-OpenMedEvalKit provides a flexible processor system that allows you to apply custom text transformations to your datasets during evaluation. Processors are particularly useful for normalizing text, handling multilingual content, and preparing data for specific model requirements.
-
-## Quick Start
-
-```bash
-# List available processors
-karma list processors
-
-# Use processor with evaluation
-karma eval --model qwen --model-path "Qwen/Qwen3-0.6B" \
-  --datasets "ai4bharat/IN22-Conv" \
-  --processor-args "ai4bharat/IN22-Conv.devnagari_transliterator:source_script=en,target_script=hi"
-```
-
-
-## Architecture
-
-The processor system consists of:
-
-- **Base Processor**: `BaseProcessor` class that all processors inherit from
-- **Processor Registry**: Auto-discovery system that finds and registers processors
-- **Integration Points**: Processors can be applied at dataset level or via CLI
-
-Processors are defined with the datasets in the decorator.
-The processors are by default chained i.e., the output of the previous processor is the input of the next processor.
-
-## Available Processors
-
-**GeneralTextProcessor**
-
-- Handles common text normalization
-- Number to text conversion
-- Punctuation removal
-- Case normalization
-
-**DevanagariTransliterator**  
-
-- Multilingual text processing for indic Devanagri scripts
-- Script conversion between languages
-- Handles Devanagari text
-
-**MultilingualTextProcessor**
-
-- Audio transcription normalization
-- Specialized for STT tasks where numbers need to be normalized
-
-## Using Existing Processors
-
-### Through CLI
-
-```bash
-# Use processor with dataset
-karma eval --model qwen --model-path "Qwen/Qwen3-0.6B" \
-  --datasets "ai4bharat/IN22-Conv" \
-  --processor-args "ai4bharat/IN22-Conv.devnagari_transliterator:source_script=en,target_script=hi"
-```
-
-### Programmatic Usage
-
-```python
-from karma.registries.processor_registry import processor_registry
-
-# Create processor with custom configuration
-processor = processor_registry("general_text_processor", lowercase=True, remove_punctuation=True)
-
-# Apply to dataset
-processed_text = processor.process("Hello World! This has 123 numbers.")
-# Result: "hello world this has one hundred twenty three numbers"
-```
-
-## Creating Custom Processors
+---
+title: Add Your Own Processor
+---
+Processors are used for tweak the output of the model and then running evaluation on that output.
+This is typically required in cases when normalizing text for different languages or dialects.
+We have implmemented these for ASR specific datasets but you can use it for any dataset.
 
 ### Step 1: Create Processor Class
 
@@ -86,7 +15,7 @@ from karma.registries.processor_registry import register_processor
 @register_processor("medical_text_normalizer")
 class MedicalTextNormalizer(BaseProcessor):
     """Processor for normalizing medical text."""
-    
+
     def __init__(self, normalize_units=True, expand_abbreviations=True):
         self.normalize_units = normalize_units
         self.expand_abbreviations = expand_abbreviations
@@ -97,23 +26,23 @@ class MedicalTextNormalizer(BaseProcessor):
             "mg": "milligrams",
             "ml": "milliliters"
         }
-    
+
     def process(self, text: str, **kwargs) -> str:
         """Process medical text with normalization."""
         if self.expand_abbreviations:
             text = self._expand_abbreviations(text)
-        
+
         if self.normalize_units:
             text = self._normalize_units(text)
-        
+
         return text
-    
+
     def _expand_abbreviations(self, text: str) -> str:
         """Expand medical abbreviations."""
         for abbrev, expansion in self.medical_abbreviations.items():
             text = text.replace(abbrev, expansion)
         return text
-    
+
     def _normalize_units(self, text: str) -> str:
         """Normalize medical units."""
         # Add unit normalization logic

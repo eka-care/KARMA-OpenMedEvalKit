@@ -1,48 +1,8 @@
-# Basic Usage
+---
+title: Running evaluations
+---
 
 This guide covers the fundamental usage patterns of KARMA for medical AI evaluation.
-
-## Command Line Interface
-
-KARMA provides a comprehensive CLI built with Click and Rich for an excellent user experience.
-
-### Basic Commands
-
-```bash
-# Get help
-karma --help
-
-# Check version
-karma --version
-
-# List all available models
-karma list models
-
-# List all available datasets
-karma list datasets
-
-# Get detailed information about a model
-karma info model Qwen/Qwen3-0.6B
-
-# Get detailed information about a dataset
-karma info dataset openlifescienceai/pubmedqa
-```
-
-## Running Evaluations
-
-### Simple Evaluation
-
-The most basic evaluation requires specifying a model and model path:
-
-```bash
-karma eval --model Qwen/Qwen3-0.6B
-```
-
-This will:
-- Load the Qwen3-0.6B model
-- Run evaluation on all supported datasets
-- Display results with progress tracking
-- Cache results for faster re-runs
 
 ### Evaluate Specific Datasets
 
@@ -108,20 +68,6 @@ karma eval --model Qwen/Qwen3-0.6B --datasets "openlifescienceai/medmcqa" \
   --dataset-args "openlifescienceai/medmcqa:split=validation"
 ```
 
-### Supported Datasets
-
-KARMA supports 12+ medical datasets:
-
-- **openlifescienceai/pubmedqa** - PubMed Question Answering
-- **openlifescienceai/medmcqa** - Medical Multiple Choice QA
-- **openlifescienceai/medqa** - Medical Question Answering
-- **ChuGyouk/MedXpertQA** - Medical Expert QA
-- **mdwiratathya/SLAKE-vqa-english** - Structured Language And Knowledge Extraction
-- **flaviagiammarino/vqa-rad** - Visual Question Answering for Radiology
-- **ai4bharat/IN22-Conv** - Indic Language Conversation Translation
-- **ai4bharat/indicvoices_r** - Indic Voices Recognition
-- **openlifescienceai/mmlu_professional_medicine** - Medical MMLU benchmarks
-
 ## Performance Optimization
 
 ### Batch Processing
@@ -148,8 +94,8 @@ karma eval --model Qwen/Qwen3-0.6B --cache
 # Force fresh evaluation
 karma eval --model Qwen/Qwen3-0.6B --no-cache
 
-# Clear cache before evaluation
-karma eval --model Qwen/Qwen3-0.6B --clear-cache
+# Refresh cache
+karma eval --model Qwen/Qwen3-0.6B --refresh-cache
 ```
 
 ## Understanding Results
@@ -186,15 +132,6 @@ KARMA outputs comprehensive evaluation results:
   "timestamp": "2025-01-15T10:30:00Z"
 }
 ```
-
-### Metrics Explained
-
-- **exact_match**: Percentage of predictions that exactly match the ground truth
-- **accuracy**: Overall accuracy (same as exact_match for most datasets)
-- **bleu**: BLEU score for text generation tasks
-- **wer**: Word Error Rate for speech recognition tasks
-- **cer**: Character Error Rate for speech recognition tasks
-
 ## Common Workflows
 
 ### Model Comparison
@@ -202,11 +139,11 @@ KARMA outputs comprehensive evaluation results:
 ```bash
 # Compare different model sizes
 karma eval --model Qwen/Qwen3-0.6B --output qwen_0.6b.json
-karma eval --model Qwen/Qwen3-0.6B --model-path "Qwen/Qwen3-1.7B" --output qwen_1.7b.json
+karma eval --model "Qwen/Qwen3-1.7B" --output qwen_1.7b.json
 
 # Compare different models
 karma eval --model Qwen/Qwen3-0.6B --output qwen_results.json
-karma eval --model medgemma --model-path "google/medgemma-4b-it" --output medgemma_results.json
+karma eval --model "google/medgemma-4b-it" --output medgemma_results.json
 ```
 
 ### Dataset-Specific Evaluation
@@ -233,42 +170,3 @@ karma eval --model Qwen/Qwen3-0.6B \
 karma eval --model Qwen/Qwen3-0.6B \
   --model-kwargs '{"temperature":1.0}' --output temp_1.0.json
 ```
-
-## Error Handling
-
-### Common Issues
-
-#### Model Loading Errors
-
-```bash
-# Check if model exists
-karma info model qwen
-
-# Verify model path
-karma eval --model Qwen/Qwen3-0.6B --dry-run
-```
-
-#### Dataset Loading Errors
-
-```bash
-# Check dataset availability
-karma info dataset openlifescienceai/pubmedqa
-
-# Verify dataset arguments
-karma eval --model Qwen/Qwen3-0.6B --datasets openlifescienceai/pubmedqa --dry-run
-```
-
-#### Memory Issues
-
-```bash
-# Reduce batch size
-karma eval --model Qwen/Qwen3-0.6B --batch-size 1
-
-# Use smaller model
-karma eval --model Qwen/Qwen3-0.6B --datasets openlifescienceai/pubmedqa
-```
-
-## Next Steps
-
-- **Custom models?** See the [API Reference](../api-reference/models.md)
-- **Issues?** Visit our [GitHub Issues](https://github.com/eka-care/KARMA-OpenMedEvalKit/issues)

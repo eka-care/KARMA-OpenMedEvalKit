@@ -42,6 +42,11 @@ class MedMCQADataset(BaseMultimodalDataset):
             dataset_name: str = DATASET_NAME,
             split: str = SPLIT,
             **kwargs,
+        self,
+        dataset_name: str = DATASET_NAME,
+        split: str = SPLIT,
+        commit_hash: str = COMMIT_HASH,
+        **kwargs,
     ):
         """
         Initialize MedMCQA dataset.
@@ -49,9 +54,9 @@ class MedMCQADataset(BaseMultimodalDataset):
         Args:
             **kwargs: Additional arguments passed to base class
         """
-        super().__init__(dataset_name=dataset_name, split=split, **kwargs)
         # Confinement instructions
         self.confinement_instructions = CONFINEMENT_INSTRUCTIONS
+        super().__init__(dataset_name=dataset_name, split=split, commit_hash=commit_hash, **kwargs)
 
     def format_item(self, sample: Dict[str, Any], **kwargs):
         """

@@ -1,20 +1,16 @@
 # KARMA: Knowledge Assessment and Reasoning for Medical Applications
 
 <p align="center">
-    <em>High-performance, easy to learn, fast to benchmark, ready for production</em>
-</p>
-<p align="center">
-    <a href="https://github.com/your-org/KARMA-OpenMedEvalKit" target="_blank">
-        <img src="https://img.shields.io/badge/python-3.12+-blue.svg" alt="Python Version">
+    <a href="https://github.com/eka-care/KARMA-OpenMedEvalKit" target="_blank">
+        <img src="https://img.shields.io/badge/python-3.10+-blue.svg" alt="Python Version">
     </a>
-    <a href="https://github.com/your-org/KARMA-OpenMedEvalKit/blob/main/LICENSE" target="_blank">
+    <a href="https://github.com/eka-care/KARMA-OpenMedEvalKit/blob/main/LICENSE" target="_blank">
         <img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License">
     </a>
-    <a href="https://pytorch.org/" target="_blank">
-        <img src="https://img.shields.io/badge/framework-PyTorch-orange.svg" alt="Framework">
+    <a href="https://pepy.tech/project/karma-medeval" target="_blank">
+        <img src="https://static.pepy.tech/badge/karma-medeval/month" alt="Downloads">
     </a>
 </p>
-
 ---
 
 **Documentation**: <https://karma.eka.care>
@@ -23,17 +19,20 @@
 
 ---
 
-KARMA is a comprehensive, high-performance evaluation framework for building medical AI benchmarks with Python 3.12+ based on standard PyTorch models.
+KARMA provides a unified package for evaluating medical AI systems, supporting text, image, and audio-based models. The framework includes support for 12 medical datasets and offers standardized evaluation metrics commonly used in healthcare AI research.
 
 The key features are:
 
 * **Fast**: Very high performance evaluation, capable of processing thousands of medical examples efficiently
 * **Easy**: Designed to be easy to use and learn. Less time reading docs, more time evaluating models  
 * **Comprehensive**: Support for 12+ medical datasets across multiple modalities (text, images, VQA)
-* **Model Agnostic**: Works with any model - Qwen, MedGemma, or your custom architecture
+* **Model Agnostic**: Works with any model - Qwen, MedGemma, API providers (OpenAI, AWS Bedrock) or your custom architecture
 * **Smart Caching**: Intelligent result caching with DuckDB/DynamoDB backends for faster re-evaluations
-* **Production Ready**: Built-in CLI, progress tracking, and formatted outputs for production workflows
 * **Standards-based**: Extensible architecture with registry-based auto-discovery of models and datasets
+
+```bash
+pip install karma-medeval
+```
 
 ## Table of Contents
 
@@ -58,15 +57,21 @@ The key features are:
 
 ## Installation
 
-Clone the repository and install KARMA from source:
+Install KARMA from PyPI:
+
+```bash
+pip install karma-medeval
+```
+
+Or install from source:
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-org/KARMA-OpenMedEvalKit.git
+git clone https://github.com/eka-care/KARMA-OpenMedEvalKit.git
 cd KARMA-OpenMedEvalKit
 
 # Install with uv (recommended)
-uv install
+uv sync
 
 # Or install with pip
 pip install -e .
@@ -77,17 +82,17 @@ pip install -e .
 Evaluate your first medical AI model Using the Example of Qwen3 Model:
 
 ```bash
-$ karma eval --model qwen --model-path "Qwen/Qwen3-0.6B" --datasets pubmedqa
+$ karma eval --model "Qwen/Qwen3-0.6B" --datasets openlifescienceai/pubmedqa
 ```
 
 ## Supported Models
 
 KARMA depends on PyTorch and HuggingFace Transformers.
 
-### Built-in models
-
-* **qwen** - for Qwen3 series models with thinking capabilities
-* **medgemma** - for google/medgemma-4b-it from Google
+Check supported models through
+```bash
+$ karma list models
+```
 
 ### Adding Custom Models
 

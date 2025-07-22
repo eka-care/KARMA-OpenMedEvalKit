@@ -143,13 +143,6 @@ class ModelMeta(BaseModel):
             raise ValueError(f"Invalid loader class path: {v}")
         return v
 
-    @validator("model_type")
-    def validate_model_type(cls, v):
-        """Ensure model_type is valid."""
-        if v not in ModelType:
-            raise ValueError(f"Invalid model_type: {v}")
-        return v
-
     def get_loader_class(self):
         """
         Import and return the actual loader class.

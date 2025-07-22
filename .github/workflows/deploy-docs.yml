@@ -28,10 +28,10 @@ jobs:
           version: "latest"
 
       - name: Set up Python
-        run: uv python install 3.12
+        run: uv python install 3.10
 
       - name: Install dependencies
-        run: uv sync --group docs
+        run: uv sync
 
       - name: Generate registry documentation
         run: uv run python scripts/generate_registry_docs.py

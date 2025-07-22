@@ -101,7 +101,7 @@ from karma.registries.processor_registry import processor_registry
     help="Path to model configuration file (JSON/YAML) with model-specific parameters",
 )
 @click.option(
-    "--model-kwargs",
+    "--model-args",
     help='Model parameter overrides as JSON string (e.g., \'{"temperature": 0.7, "top_p": 0.9}\')',
 )
 @click.option(
@@ -112,6 +112,11 @@ from karma.registries.processor_registry import processor_registry
     "--verbose",
     default=False,
     help="Pass this argument to have a verbose output",
+)
+@click.option(
+    "--refresh-cache",
+    is_flag=True,
+    help="Skip cache lookup and force regeneration of all results",
 )
 @click.pass_context
 def eval_cmd(
@@ -131,9 +136,10 @@ def eval_cmd(
     interactive,
     dry_run,
     model_config,
-    model_kwargs,
+    model_args,
     max_samples,
     verbose,
+    refresh_cache,
 ):
     """
     Evaluate a model on healthcare datasets.
@@ -194,22 +200,23 @@ def eval_cmd(
             raise click.Abort()
 
         # Handle model configuration and parameter overrides
+        # This either loads the file or else provided args from CLI.
         model_overrides = _prepare_model_overrides(
-            model, model_path, model_config, model_kwargs, console
+            model, model_path, model_config, model_args, console
         )
 
         # Extract final model path (could come from meta config)
         final_model_path = model_overrides.get("model_name_or_path", model_path)
 
-        # Validate final model path if provided
-        if final_model_path and not validate_model_path(final_model_path):
-            console.print(
-                ClickFormatter.warning(
-                    f"Model path '{final_model_path}' may not be valid"
-                )
-            )
-            if not click.confirm("Continue anyway?"):
-                raise click.Abort()
+        # # Validate final model path if provided
+        # if final_model_path and not validate_model_path(final_model_path):
+        #     console.print(
+        #         ClickFormatter.warning(
+        #             f"Model path '{final_model_path}' may not be valid"
+        #         )
+        #     )
+        #     if not click.confirm("Continue anyway?"):
+        #         raise click.Abort()
 
         # Parse datasets list
         dataset_names = parse_datasets_list(datasets) if datasets else None
@@ -270,6 +277,7 @@ def eval_cmd(
             batch_size,
             cache,
             output,
+            refresh_cache,
         )
 
         # Dry run mode
@@ -307,6 +315,7 @@ def eval_cmd(
             max_samples=max_samples,
             verbose=verbose,
             dry_run=dry_run,
+            refresh_cache=refresh_cache,
         )
 
         # Display results
@@ -596,6 +605,7 @@ def _show_evaluation_plan(
     batch_size: int,
     use_cache: bool,
     output: str,
+    refresh_cache: bool,
 ) -> None:
     """
     Display the evaluation plan to the user.
@@ -612,6 +622,7 @@ def _show_evaluation_plan(
         batch_size: Batch size
         use_cache: Whether to use caching
         output: Output file path
+        refresh_cache: Whether to refresh cache
     """
     console.print("\n[bold cyan]Evaluation Plan[/bold cyan]")
     console.print("─" * 50)
@@ -628,7 +639,10 @@ def _show_evaluation_plan(
         )
 
     console.print(f"[cyan]Batch Size:[/cyan] {batch_size}")
-    console.print(f"[cyan]Cache:[/cyan] {'Enabled' if use_cache else 'Disabled'}")
+    cache_status = "Enabled" if use_cache else "Disabled"
+    if use_cache and refresh_cache:
+        cache_status += " (Refresh mode)"
+    console.print(f"[cyan]Cache:[/cyan] {cache_status}")
     console.print(f"[cyan]Output File:[/cyan] {output}")
 
     # Show dataset arguments if any
@@ -752,8 +766,9 @@ def _prepare_model_overrides(
             cli_overrides = json.loads(model_kwargs)
             final_config.update(cli_overrides)
             console.print(
-                f"[dim]Applied {len(cli_overrides)} parameter overrides from CLI[/dim]"
+                f"[dim]Applied {len(cli_overrides)} model parameter overrides from CLI[/dim]"
             )
+            console.print(f"[dim]Loaded overrides {cli_overrides}[/dim]")
         except json.JSONDecodeError as e:
             console.print(ClickFormatter.warning(f"Invalid JSON in model-kwargs: {e}"))
 

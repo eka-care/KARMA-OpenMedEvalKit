@@ -26,6 +26,9 @@ COMMIT_HASH = "5f4495c91d500742a58d1be2ab07d77f73c0acf8"
 class IndicVoicesRDataset(BaseMultimodalDataset):
     def __init__(
         self,
+        dataset_name: str = DATASET_NAME,
+        split: str = SPLIT,
+        commit_hash: str = COMMIT_HASH,
         language: str = "hindi",
         processors=None,
         **kwargs,
@@ -35,8 +38,9 @@ class IndicVoicesRDataset(BaseMultimodalDataset):
 
         """
         super().__init__(
-            dataset_name=DATASET_NAME,
-            split=SPLIT,
+            dataset_name=dataset_name,
+            split=split,
+            commit_hash=commit_hash,
             config=language,
             processors=processors,
             **kwargs,
@@ -50,9 +54,8 @@ class IndicVoicesRDataset(BaseMultimodalDataset):
     def format_item(self, sample: Dict[str, Any]) -> DataLoaderIterable:
         audio_info = sample.get("audio", {})
         audio_data = audio_info.get("bytes")
-
+        
         return DataLoaderIterable(
             audio=audio_data,
             expected_output=sample.get("text", ""),
-            other_args={"language": sample.get("lang", "unknown")},
         )

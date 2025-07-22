@@ -146,10 +146,10 @@ class AWSBedrock(BaseModel):
     def _make_single_call(self, api_input: Dict[str, Any]) -> str:
         """
         Make a single API call to AWS Bedrock.
-        
+
         Args:
             api_input: Processed API input dictionary
-            
+
         Returns:
             Generated text string or error message
         """
@@ -176,11 +176,11 @@ class AWSBedrock(BaseModel):
             raise RuntimeError("Model is not loaded.")
 
         processed_inputs = self.preprocess(inputs, **kwargs)
-        
+
         # Handle empty inputs
         if not processed_inputs:
             return []
-        
+
         # Use ThreadPoolExecutor for parallel API calls
         with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
             # Submit all API calls and track their order
@@ -188,10 +188,10 @@ class AWSBedrock(BaseModel):
                 executor.submit(self._make_single_call, api_input): i
                 for i, api_input in enumerate(processed_inputs)
             }
-            
+
             # Initialize results list with correct size
             outputs = [None] * len(processed_inputs)
-            
+
             # Collect results as they complete
             for future in as_completed(future_to_index):
                 index = future_to_index[future]
@@ -245,9 +245,9 @@ claude_Sonnet4_bedrock = ModelMeta(
     loader_class="karma.models.aws_bedrock.AWSBedrock",
     loader_kwargs={
         "model_name_or_path": "us.anthropic.claude-sonnet-4-20250514-v1:0",
-        "max_tokens": 1024,
-        "temperature": 0.7,
-        "top_p": 1.0,
+        "max_tokens": 8192,
+        "temperature": 0.0,
+        "top_p": 0.9,
     },
     revision=None,
     reference="https://docs.aws.amazon.com/bedrock/latest/userguide/model-parameters-anthropic-claude-3-haiku.html",

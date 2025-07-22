@@ -42,6 +42,7 @@ class MedQADataset(BaseMultimodalDataset):
         dataset_name=DATASET_NAME,
         split=SPLIT,
         confinement_instructions: str = CONFINEMENT_INSTRUCTIONS,
+        commit_hash: str = COMMIT_HASH,
         **kwargs,
     ):
         """
@@ -54,6 +55,9 @@ class MedQADataset(BaseMultimodalDataset):
             dataset_name=dataset_name,
             split=split,
             confinement_instructions=confinement_instructions,
+            dataset_name=dataset_name,
+            split=split,
+            commit_hash=commit_hash,
             **kwargs,
         )
 

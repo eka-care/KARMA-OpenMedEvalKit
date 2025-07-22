@@ -43,6 +43,48 @@ class OpenAIASR(BaseModel):
         """Initialize the OpenAI client."""
         self.client = OpenAI(api_key=self.api_key)
         self.is_loaded = True
+
+    def detect_audio_format(self, audio_bytes: bytes) -> str:
+        """
+        Detect audio format from bytes using magic numbers (file signatures).
+        
+        Args:
+            audio_bytes: Raw audio bytes
+            
+        Returns:
+            str: Detected file extension (e.g., 'mp3', 'wav', 'flac', etc.)
+        """
+        if not audio_bytes or len(audio_bytes) < 12:
+            return "mp3"  # Default fallback
+        
+        # Check for various audio format signatures
+        if audio_bytes.startswith(b'RIFF') and b'WAVE' in audio_bytes[8:12]:
+            return "wav"
+        elif audio_bytes.startswith(b'ID3') or audio_bytes.startswith(b'\xff\xfb'):
+            return "mp3"
+        elif audio_bytes.startswith(b'\xff\xf1') or audio_bytes.startswith(b'\xff\xf9'):
+            return "aac"
+        elif audio_bytes.startswith(b'fLaC'):
+            return "flac"
+        elif audio_bytes.startswith(b'OggS'):
+            return "ogg"
+        elif audio_bytes[4:8] == b'ftyp':
+            # M4A/MP4 container format
+            return "m4a"
+        elif audio_bytes.startswith(b'FORM') and b'AIFF' in audio_bytes[8:12]:
+            return "aiff"
+        elif audio_bytes.startswith(b'.snd'):
+            return "au"
+        elif audio_bytes.startswith(b'wvpk'):
+            return "wv"  # WavPack
+        else:
+            # Try to detect MP3 by looking for frame sync
+            for i in range(min(1024, len(audio_bytes) - 1)):
+                if audio_bytes[i] == 0xff and (audio_bytes[i + 1] & 0xe0) == 0xe0:
+                    return "mp3"
+            
+            # Default fallback
+            return "wav"
     
     def preprocess(self, inputs: List[DataLoaderIterable], **kwargs):
         """
@@ -89,9 +131,12 @@ class OpenAIASR(BaseModel):
             str: Transcribed text
         """
         try:
+            # Detect the audio format from bytes
+            detected_format = self.detect_audio_format(audio_bytes)
+            
             # Create an in-memory file-like object from bytes
             audio_file = io.BytesIO(audio_bytes)
-            audio_file.name = "audio.wav"  # OpenAI API needs a filename for format detection
+            audio_file.name = f"audio.{detected_format}"  # Use detected format
             
             # Create transcription using OpenAI Whisper
             transcription = self.client.audio.transcriptions.create(

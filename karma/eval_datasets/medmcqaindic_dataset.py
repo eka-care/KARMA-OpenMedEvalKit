@@ -39,6 +39,9 @@ class MedMCQAIndicDataset(MedMCQADataset):
         dataset_name: str = DATASET_NAME,
         split: str = SPLIT,
         subset: str = "as",
+        dataset_name: str = DATASET_NAME,
+        split: str = SPLIT,
+        commit_hash: str = COMMIT_HASH,
         confinement_instructions: str = CONFINEMENT_INSTRUCTIONS,
         **kwargs,
     ):
@@ -55,6 +58,8 @@ class MedMCQAIndicDataset(MedMCQADataset):
             dataset_name=dataset_name,
             split=split,
             config=self.subset,
+            commit_hash=commit_hash,
+            config=subset,
             confinement_instructions=confinement_instructions,
             **kwargs,
         )

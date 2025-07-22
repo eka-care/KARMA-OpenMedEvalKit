@@ -41,6 +41,9 @@ class PubMedMCQADataset(MedQADataset):
         self,
         dataset_name=DATASET_NAME,
         split=SPLIT,
+        dataset_name: str = DATASET_NAME,
+        split: str = SPLIT,
+        commit_hash: str = COMMIT_HASH,
         confinement_instructions: str = CONFINEMENT_INSTRUCTIONS,
         **kwargs,
     ):
@@ -54,6 +57,7 @@ class PubMedMCQADataset(MedQADataset):
         super().__init__(
             dataset_name=dataset_name,
             split=split,
+            commit_hash=commit_hash,
             confinement_instructions=confinement_instructions,
             **kwargs,
         )

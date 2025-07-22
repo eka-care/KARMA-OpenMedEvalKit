@@ -32,8 +32,11 @@ SPLIT = "test"
 class MMLUProfessionalMedicineDataset(MedQADataset):
     """MMLU Professional Medicine dataset inheriting from MedQA."""
 
-    def __init__(self, confinement_instructions: str = CONFINEMENT_INSTRUCTIONS, **kwargs):
+    def __init__(self, dataset_name: str = "openlifescienceai/mmlu_professional_medicine", split: str = SPLIT, commit_hash: str = "0f2cda02673de66f90c7e1728e46d90590958700", confinement_instructions: str = CONFINEMENT_INSTRUCTIONS, **kwargs):
         super().__init__(
+            dataset_name=dataset_name,
+            split=split,
+            commit_hash=commit_hash,
             confinement_instructions=confinement_instructions,
             **kwargs,
         )
@@ -51,8 +54,11 @@ class MMLUProfessionalMedicineDataset(MedQADataset):
 class MMLUAnatomyDataset(MedQADataset):
     """MMLU Anatomy dataset inheriting from MedQA."""
 
-    def __init__(self, confinement_instructions: str = CONFINEMENT_INSTRUCTIONS, **kwargs):
+    def __init__(self, dataset_name: str = "openlifescienceai/mmlu_anatomy", split: str = SPLIT, commit_hash: str = "a7a792bd0855aead8b6bf922fa22260eff160d6e", confinement_instructions: str = CONFINEMENT_INSTRUCTIONS, **kwargs):
         super().__init__(
+            dataset_name=dataset_name,
+            split=split,
+            commit_hash=commit_hash,
             confinement_instructions=confinement_instructions,
             **kwargs,
         )
@@ -69,8 +75,11 @@ class MMLUAnatomyDataset(MedQADataset):
 class MMLUCollegeBiologyDataset(MedQADataset):
     """MMLU College Biology dataset inheriting from MedQA."""
 
-    def __init__(self, confinement_instructions: str = CONFINEMENT_INSTRUCTIONS, **kwargs):
+    def __init__(self, dataset_name: str = "openlifescienceai/mmlu_college_biology", split: str = SPLIT, commit_hash: str = "94b1278bb84c3005f90eef76d5846916f0d07f3a", confinement_instructions: str = CONFINEMENT_INSTRUCTIONS, **kwargs):
         super().__init__(
+            dataset_name=dataset_name,
+            split=split,
+            commit_hash=commit_hash,
             confinement_instructions=confinement_instructions,
             **kwargs,
         )
@@ -87,8 +96,11 @@ class MMLUCollegeBiologyDataset(MedQADataset):
 class MMLUClinicalKnowledgeDataset(MedQADataset):
     """MMLU Clinical Knowledge dataset inheriting from MedQA."""
 
-    def __init__(self, confinement_instructions: str = CONFINEMENT_INSTRUCTIONS, **kwargs):
+    def __init__(self, dataset_name: str = "openlifescienceai/mmlu_clinical_knowledge", split: str = SPLIT, commit_hash: str = "e15116763fac9a86c1383c9d48428381b3335b22", confinement_instructions: str = CONFINEMENT_INSTRUCTIONS, **kwargs):
         super().__init__(
+            dataset_name=dataset_name,
+            split=split,
+            commit_hash=commit_hash,
             confinement_instructions=confinement_instructions,
             **kwargs,
         )
@@ -105,8 +117,11 @@ class MMLUClinicalKnowledgeDataset(MedQADataset):
 class MMLUCollegeMedicineDataset(MedQADataset):
     """MMLU College Medicine dataset inheriting from MedQA."""
 
-    def __init__(self, confinement_instructions: str = CONFINEMENT_INSTRUCTIONS, **kwargs):
+    def __init__(self, dataset_name: str = "openlifescienceai/mmlu_college_medicine", split: str = SPLIT, commit_hash: str = "62ba72a3cc369ffec1def2a042f81ddc6837be12", confinement_instructions: str = CONFINEMENT_INSTRUCTIONS, **kwargs):
         super().__init__(
+            dataset_name=dataset_name,
+            split=split,
+            commit_hash=commit_hash,
             confinement_instructions=confinement_instructions,
             **kwargs,
         )

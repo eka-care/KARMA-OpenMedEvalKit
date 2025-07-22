@@ -6,44 +6,17 @@ This guide provides detailed installation instructions for KARMA on different pl
 
 ## Installation Methods
 
-### Method 1: Using uv (Recommended)
-
-[uv](https://docs.astral.sh/uv/) is the fastest Python package manager and is our recommended installation method.
+### Method 1: Using PyPI
 
 ```bash
-# Install uv if you haven't already
-curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# Clone the repository
-git clone https://github.com/eka-care/KARMA-OpenMedEvalKit.git
-cd KARMA-OpenMedEvalKit
-
-# Install KARMA
-uv sync
+# Install from PyPI
+pip install karma-medeval
 
 # Verify installation
 karma --version
 ```
 
-### Method 2: Using pip
-
-```bash
-# Clone the repository
-git clone https://github.com/eka-care/KARMA-OpenMedEvalKit.git
-cd KARMA-OpenMedEvalKit
-
-# Create a virtual environment (recommended)
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install in editable mode
-pip install -e .
-
-# Verify installation
-karma --version
-```
-
-### Method 3: Development Installation
+### Method 2: Development Installation
 
 For contributors and developers:
 
@@ -56,7 +29,7 @@ cd KARMA-OpenMedEvalKit
 uv install --group dev
 
 # Install with all optional dependencies
-uv install --group dev --group docs --group audio
+uv install --group dev --group audio
 ```
 
 ## Optional Dependencies
@@ -66,10 +39,10 @@ uv install --group dev --group docs --group audio
 For audio-related datasets and ASR metrics:
 
 ```bash
-# With uv
-uv install --group audio
+# From PyPI
+pip install karma-medeval[audio]
 
-# With pip
+# From source
 pip install -e ".[audio]"
 ```
 
@@ -78,22 +51,13 @@ This includes:
 - `num2words` - Number to word conversion
 - `torchaudio` - Audio processing
 
-### Documentation Dependencies
-
-For building documentation locally:
-
+### Install with all dependencies
 ```bash
-# With uv
-uv install --group docs
+# From PyPI
+pip install karma-medeval[all]
 
-# With pip
-pip install "karma[docs]"
-```
-
-### Install with all dependencies in developer mode
-```bash
-With uv
-uv sync --all-extras
+# From source
+pip install -e ".[all]"
 ```
 
 ## Environment Configuration
@@ -123,7 +87,7 @@ OPENAI_API_KEY=your_openai_key
 #### HuggingFace Token
 To access gated models or datasets, set this environment variable with your Huggingface token.
 
-You can see the guide to create tokens [here](https://huggingface.co/docs/hub/en/security-tokens) 
+You can see the guide to create tokens [here](https://huggingface.co/docs/hub/en/security-tokens)
 ```bash
 # Login to HuggingFace
 huggingface-cli login
