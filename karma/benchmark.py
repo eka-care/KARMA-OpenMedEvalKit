@@ -125,13 +125,15 @@ class Benchmark:
         """
         results = []
         samples_to_generate = []
-        
+
         # Skip cache lookup if refresh_cache is True
         if self.refresh_cache:
             if self.verbose_mode:
-                self.logger.info(f"Cache refresh enabled - skipping cache lookup for {len(samples)} samples")
+                self.logger.info(
+                    f"Cache refresh enabled - skipping cache lookup for {len(samples)} samples"
+                )
             return [], samples
-        
+
         # Step 1: Check cache for existing results
         cache_results = self.cache_manager.batch_fetch_rows(samples)
         cache_hits = 0
@@ -268,7 +270,6 @@ class Benchmark:
         samples = []
         entities = []
         for it in ground_truth_and_prediction:
-            
             predictions.append(it["prediction"])
             references.append(it["expected_output"])
             entities.append(it["entities"])
@@ -278,7 +279,7 @@ class Benchmark:
         predictions = self.dataset.postprocess(predictions)
         references = self.dataset.postprocess(references)
         # Get language from derived dataset class if it exists
-        language = getattr(self.dataset, 'language', 'english')
+        language = getattr(self.dataset, "language", "english")
         for metric in metrics:
             score = metric.evaluate(
                 predictions=predictions,
@@ -299,7 +300,7 @@ class Benchmark:
         metrics: List[BaseMetric],
         batch_size: int = 1,
         dry_run: bool = False,
-        refresh_cache: Optional[bool] = False
+        refresh_cache: Optional[bool] = False,
     ) -> Dict[str, Any]:
         """
         Generic evaluate function that works with any dataset.
@@ -318,7 +319,7 @@ class Benchmark:
         if refresh_cache:
             original_refresh_cache = self.refresh_cache
             self.refresh_cache = refresh_cache
-        
+
         if dry_run:
             self.logger.info(
                 f"🔍 Starting DRY RUN with {self.dataset.__class__.__name__}"
@@ -381,7 +382,10 @@ class Benchmark:
             for result, sample in zip(batch_results, samples, strict=False):
                 # Use dataset's extract_answer method (which uses template)
                 expected = sample.expected_output
-                entities = sample.other_args.get('entities')
+                if sample.other_args:
+                    entities = sample.other_args.get("entities")
+                else:
+                    entities = None
 
                 # Create final prediction result
                 prediction_result = {
@@ -458,7 +462,7 @@ class Benchmark:
         # Restore original refresh_cache setting if it was overridden
         if refresh_cache:
             self.refresh_cache = original_refresh_cache
-        
+
         return {
             "overall_score": overall_scores,
             "predictions": all_prediction_results,

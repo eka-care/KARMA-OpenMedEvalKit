@@ -87,7 +87,7 @@ class ModelRegistry:
 
         if name in self.model_metas:
             m = self._get_model_from_meta(name, **override_kwargs)
-            m.load_model(**override_kwargs)
+            m.load_model()
             return m
 
         available = list(self.model_metas.keys())

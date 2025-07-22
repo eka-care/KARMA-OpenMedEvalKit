@@ -1,7 +1,7 @@
 ---
 title: KARMA-OpenMedEvalKit
 description: Knowledge Assessment and Reasoning for Medical Applications - A comprehensive evaluation framework for medical AI models.
-tableOfContents: true
+tableOfContents: false
 hero:
   tagline: Comprehensive LLM evaluation framework for medical AI models and datasets.
   image:
@@ -17,6 +17,18 @@ hero:
 ---
 
 import { Card, CardGrid } from '@astrojs/starlight/components';
+
+<style jsx>{`
+.hero h1 {
+  white-space: nowrap !important;
+  overflow: visible !important;
+}
+.hero .hero-html {
+  display: flex !important;
+  align-items: center !important;
+  gap: 1rem !important;
+}
+`}</style>
 
 ## Why KARMA?
 
@@ -61,23 +73,31 @@ karma eval --model "Qwen/Qwen3-0.6B" --datasets openlifescienceai/pubmedqa --max
 ## Example Output
 
 ```bash
-$ karma eval --model "Qwen/Qwen3-0.6B" --datasets openlifescienceai/pubmedqa --max-samples 5
+$ karma eval --model "Qwen/Qwen3-0.6B" --datasets openlifescienceai/pubmedqa --max-samples 3
 
-╭────────────────────────────────────────────────────────────────────╮
-│ KARMA: Knowledge Assessment and Reasoning for Medical Applications │
-╰────────────────────────────────────────────────────────────────────╯
-
-Evaluation Results:
-──────────────────────────────────────────────────
-Dataset: openlifescienceai/pubmedqa
-Model: Qwen/Qwen3-0.6B
-Samples: 5/5
-
-Metrics:
-  accuracy: 0.80
-  exact_match: 0.60
-
-Results saved to: results.json
+{
+  "openlifescienceai/pubmedqa": {
+    "metrics": {
+      "exact_match": {
+        "score": 0.3333333333333333,
+        "evaluation_time": 0.9702351093292236,
+        "num_samples": 3
+      }
+    },
+    "task_type": "mcqa",
+    "status": "completed",
+    "dataset_args": {},
+    "evaluation_time": 7.378399848937988
+  },
+  "_summary": {
+    "model": "Qwen/Qwen3-0.6B",
+    "model_path": "Qwen/Qwen3-0.6B",
+    "total_datasets": 1,
+    "successful_datasets": 1,
+    "total_evaluation_time": 7.380354166030884,
+    "timestamp": "2025-07-22 18:43:07"
+  }
+}
 ```
 
 ## Key Features
