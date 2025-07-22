@@ -66,7 +66,7 @@ class OpenAILLM(BaseModel):
         self.client: OpenAI = None
         self.load_model()
 
-    def load_model(self):
+    def load_model(self, **kwargs) -> None:
         """Initialize the OpenAI client."""
         try:
             self.client = OpenAI(api_key=self.api_key)
@@ -112,22 +112,23 @@ class OpenAILLM(BaseModel):
                     )
             if item.images:
                 for image in item.images:
-                    
                     # Convert image bytes to base64 for OpenAI API
-                    image_b64 = base64.b64encode(image).decode('utf-8')
-                    
+                    image_b64 = base64.b64encode(image).decode("utf-8")
+
                     # Add image content in OpenAI's multimodal format
-                    messages.append({
-                        "role": "user", 
-                        "content": [
-                            {
-                                "type": "image_url",
-                                "image_url": {
-                                    "url": f"data:image/jpeg;base64,{image_b64}"
+                    messages.append(
+                        {
+                            "role": "user",
+                            "content": [
+                                {
+                                    "type": "image_url",
+                                    "image_url": {
+                                        "url": f"data:image/jpeg;base64,{image_b64}"
+                                    },
                                 }
-                            }
-                        ]
-                    })
+                            ],
+                        }
+                    )
 
             # Ensure we have at least one message
             if not messages:
@@ -151,10 +152,10 @@ class OpenAILLM(BaseModel):
     def _make_single_call(self, api_input: Dict[str, Any]) -> str:
         """
         Make a single API call to OpenAI.
-        
+
         Args:
             api_input: Processed API input dictionary
-            
+
         Returns:
             Generated text string or error message
         """
@@ -181,11 +182,11 @@ class OpenAILLM(BaseModel):
             raise RuntimeError("Model is not loaded.")
 
         processed_inputs = self.preprocess(inputs, **kwargs)
-        
+
         # Handle empty inputs
         if not processed_inputs:
             return []
-        
+
         # Use ThreadPoolExecutor for parallel API calls
         with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
             # Submit all API calls and track their order
@@ -193,10 +194,10 @@ class OpenAILLM(BaseModel):
                 executor.submit(self._make_single_call, api_input): i
                 for i, api_input in enumerate(processed_inputs)
             }
-            
+
             # Initialize results list with correct size
             outputs = [None] * len(processed_inputs)
-            
+
             # Collect results as they complete
             for future in as_completed(future_to_index):
                 index = future_to_index[future]
