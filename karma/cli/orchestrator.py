@@ -119,6 +119,8 @@ class MultiDatasetOrchestrator:
             self.model_name, **self.model_kwargs.get("model_kwargs")
         )
         model_meta = model_registry.get_model_meta(self.model_name)
+        model_meta.loader_kwargs = self.model_kwargs.get("model_kwargs")
+
         # try:
         #     model = model_class(self.model_path, **self.model_kwargs)
         #     self.console.print("[green]✓ Model initialized successfully[/green]")
