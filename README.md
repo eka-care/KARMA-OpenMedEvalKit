@@ -19,16 +19,15 @@
 
 ---
 
-KARMA is a comprehensive, high-performance evaluation framework for building medical AI benchmarks with Python 3.12+ based on standard PyTorch models.
+KARMA provides a unified package for evaluating medical AI systems, supporting text, image, and audio-based models. The framework includes support for 12 medical datasets and offers standardized evaluation metrics commonly used in healthcare AI research.
 
 The key features are:
 
 * **Fast**: Very high performance evaluation, capable of processing thousands of medical examples efficiently
 * **Easy**: Designed to be easy to use and learn. Less time reading docs, more time evaluating models  
 * **Comprehensive**: Support for 12+ medical datasets across multiple modalities (text, images, VQA)
-* **Model Agnostic**: Works with any model - Qwen, MedGemma, or your custom architecture
+* **Model Agnostic**: Works with any model - Qwen, MedGemma, API providers (OpenAI, AWS Bedrock) or your custom architecture
 * **Smart Caching**: Intelligent result caching with DuckDB/DynamoDB backends for faster re-evaluations
-* **Production Ready**: Built-in CLI, progress tracking, and formatted outputs for production workflows
 * **Standards-based**: Extensible architecture with registry-based auto-discovery of models and datasets
 
 ```bash
