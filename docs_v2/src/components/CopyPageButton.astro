@@ -60,10 +60,10 @@
 
     copyButton.addEventListener('click', async () => {
       try {
-        // Get the main article content
-        const article = document.querySelector('article');
+        // Get the main content
+        const article = document.querySelector('main');
         if (!article) {
-          console.warn('No article element found to copy');
+          console.warn('No main element found to copy');
           return;
         }
 

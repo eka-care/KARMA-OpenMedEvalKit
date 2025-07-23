@@ -1,0 +1,8 @@
+/* Import Inter font */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+/* Override Starlight's font variables */
+:root {
+  --sl-font: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --sl-font-system: 'Inter', ui-sans-serif, system-ui, sans-serif;
+}

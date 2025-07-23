@@ -9,6 +9,9 @@ export default defineConfig({
   site: "https://karma.eka.care/",
   integrations: [
     starlight({
+      customCss: [
+        './src/styles/global.css',
+      ],
       title: "KARMA",
       components: {
         PageTitle: './src/components/overrides/PageTitle.astro',
@@ -39,6 +42,7 @@ export default defineConfig({
             { label: "Overview", slug: "index" },
             { label: "Installation Guide", slug: "user-guide/installation" },
             { label: "CLI Basics", slug: "user-guide/cli-basics" },
+            { label: "CLI Interactive Mode", slug: "user-guide/interactive-mode" },
             {
               label: "Running evaluations",
               slug: "user-guide/running-evaluations",
