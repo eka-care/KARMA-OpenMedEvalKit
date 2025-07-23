@@ -135,12 +135,22 @@ class OpenAILLM(BaseModel):
                 logger.warning("No input or conversation data found for item, skipping")
                 continue
 
-            processed_inputs.append(
-                {
-                    "messages": messages,
-                    "model": self.model_id,
-                }
-            )
+            message_dict = {
+                "messages": messages,
+                "model": self.model_id,
+            }
+            if self.model_id != "o3":
+                # o3 does not accept these keys
+                message_dict.update(
+                    {
+                        "max_tokens": self.max_tokens,
+                        "temperature": self.temperature,
+                        "top_p": self.top_p,
+                        "frequency_penalty": self.frequency_penalty,
+                        "presence_penalty": self.presence_penalty,
+                    }
+                )
+            processed_inputs.append(message_dict)
 
         return processed_inputs
 
