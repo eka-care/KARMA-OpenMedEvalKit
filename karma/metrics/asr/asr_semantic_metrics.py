@@ -66,6 +66,50 @@ class ASRSemanticMetrics(BaseMetric):
         return aligner
 
     @staticmethod
+    def _process_utterance(args):
+        """Helper function for multiprocessing - moved outside to make it picklable."""
+        idx, ref, hyp, language, cer_threshold = args
+        utt_id = f"utterance_{idx}"
+        
+        try:
+            # Create aligner in the worker process to avoid pickling issues
+            aligner = ASRSemanticMetrics.get_aligner(language, cer_threshold)
+            alignments = aligner.align_words_dp(ref, hyp)
+            
+            # Calculate statistics
+            stats = aligner.calculate_error_rates(alignments)
+            
+            # Calculate character-level statistics for weighted CER
+            ref_chars = 0
+            edit_distance = 0
+            for alignment in alignments:
+                if alignment.ref_words and alignment.hyp_words:
+                    ref_text = ' '.join(alignment.ref_words)
+                    chars = len(ref_text.replace(' ', ''))
+                    ref_chars += chars
+                    edit_distance += alignment.character_error_rate * chars
+            
+            return {
+                'success': True,
+                'utt_id': utt_id,
+                'total_ref_words': stats['total_ref_words'],
+                'word_correct': stats['word_correct'],
+                'word_substitutions': stats['word_substitutions'],
+                'word_deletions': stats['word_deletions'],
+                'word_insertions': stats['word_insertions'],
+                'ref_chars': ref_chars,
+                'edit_distance': edit_distance
+            }
+            
+        except Exception as e:
+            logger.error(f"Error processing utterance {utt_id}: {e}")
+            return {
+                'success': False,
+                'utt_id': utt_id,
+                'error': str(e)
+            }
+
+    @staticmethod
     def process_for_wer(aligner: BaseCERAligner, predictions: List[str], references: List[str]) -> EvalResult:
         """Process reference and hypothesis files with utterance ID alignment."""
         if len(predictions) != len(references):
@@ -87,47 +131,41 @@ class ASRSemanticMetrics(BaseMetric):
         total_edit_distance = 0
         processed_count = 0
             
-        # Process each utterance pair
-        for idx, (ref, hyp) in enumerate(zip(references, predictions)):  # FIXED: was zip(references, references)
-            utt_id = f"utterance_{idx}"  # FIXED: Added utt_id definition
-            
-            try:
-                alignments = aligner.align_words_dp(ref, hyp)
-                
-                # Print results
-                # aligner.print_alignment_visual(alignments) #to be used for debugging
-                
-                # Calculate statistics
-                stats = aligner.calculate_error_rates(alignments)
-                
-                # Accumulate dataset-wide statistics
-                total_ref_words += stats['total_ref_words']
-                total_correct += stats['word_correct']
-                total_substitutions += stats['word_substitutions']
-                total_deletions += stats['word_deletions']
-                total_insertions += stats['word_insertions']
-                
-                # Accumulate character-level statistics for weighted CER
-                for alignment in alignments:
-                    if alignment.ref_words and alignment.hyp_words:
-                        ref_text = ' '.join(alignment.ref_words)
-                        ref_chars = len(ref_text.replace(' ', ''))
-                        total_ref_chars += ref_chars
-                        total_edit_distance += alignment.character_error_rate * ref_chars
-                
+        # Prepare arguments for multiprocessing
+        from multiprocessing import Pool, cpu_count
+        import os
+        
+        # Use 75% of available cores, but at least 1
+        num_processes = max(1, int(cpu_count() * 0.75))
+        
+        # Get aligner parameters to pass to workers (avoid passing aligner object)
+        language = aligner.__class__.__name__.replace('CERAligner', '').lower()
+        if language == 'english':
+            language = 'en'
+        elif language == 'hindi':
+            language = 'hi'
+        cer_threshold = aligner.cer_threshold
+        
+        # Create argument tuples for each utterance (without aligner object)
+        args_list = [(idx, ref, hyp, language, cer_threshold) for idx, (ref, hyp) in enumerate(zip(references, predictions))]
+        
+        # Process utterances in parallel
+        with Pool(processes=num_processes) as pool:
+            results = pool.map(ASRSemanticMetrics._process_utterance, args_list)
+        
+        # Accumulate results from all processes
+        for result in results:
+            if result['success']:
+                total_ref_words += result['total_ref_words']
+                total_correct += result['word_correct']
+                total_substitutions += result['word_substitutions']
+                total_deletions += result['word_deletions']
+                total_insertions += result['word_insertions']
+                total_ref_chars += result['ref_chars']
+                total_edit_distance += result['edit_distance']
                 processed_count += 1
-                
-                # Optional: Add file-specific stats to output (using utterance ID instead of index)
-                # file_stats_lines.append(
-                #     f"{utt_id}\t{stats['total_ref_words']}\t{stats['word_correct']}\t"
-                #     f"{stats['word_substitutions']}\t{stats['word_deletions']}\t{stats['word_insertions']}\t"
-                #     f"{stats['wer']:.4f}\t{stats['weighted_word_cer']:.4f}"
-                # )
-                
-            except Exception as e:
-                logger.error(f"Error processing utterance {utt_id}: {e}")
-                logger.info("Skipping this utterance...")
-                continue
+            else:
+                logger.info(f"Skipping utterance {result['utt_id']} due to error...")
                 
         # Calculate dataset-wide statistics
         dataset_wer = round((total_substitutions + total_deletions + total_insertions) / max(total_ref_words, 1), 3)
