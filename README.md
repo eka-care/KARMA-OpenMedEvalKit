@@ -75,6 +75,9 @@ uv sync
 
 # Or install with pip
 pip install -e .
+
+# source the environment
+source .venv/bin/activate
 ```
 
 ## Example
