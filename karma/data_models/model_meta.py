@@ -33,6 +33,9 @@ class ModelMeta(BaseModel):
 
     # Core identification
     name: str = Field(..., description="HuggingFace-style model identifier")
+    model_path: Optional[str] = Field(
+        default=None, description="Path to the local model"
+    )
     revision: Optional[str] = Field(
         default=None, description="Git commit hash or version tag"
     )
