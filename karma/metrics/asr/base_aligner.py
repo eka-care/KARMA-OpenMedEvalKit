@@ -376,7 +376,10 @@ class BaseCERAligner(ABC):
             for offset_pair in offsets:
                 start, end = offset_pair
                 extracted_text = text[start:end]
-                keywords.append(extracted_text)
+                # Split multi-word entities into individual words
+                words = extracted_text.split()
+                keywords.extend(words)
+                #keywords.append(extracted_text) #Entire term as a single word
         
         return keywords
 
