@@ -39,6 +39,8 @@ class PubMedMCQADataset(MedQADataset):
 
     def __init__(
         self,
+        dataset_name=DATASET_NAME,
+        split=SPLIT,
         dataset_name: str = DATASET_NAME,
         split: str = SPLIT,
         commit_hash: str = COMMIT_HASH,
@@ -51,6 +53,7 @@ class PubMedMCQADataset(MedQADataset):
         Args:
             **kwargs: Additional arguments passed to base class
         """
+        self.dataset = None
         super().__init__(
             dataset_name=dataset_name,
             split=split,

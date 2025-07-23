@@ -38,6 +38,10 @@ class MedMCQADataset(BaseMultimodalDataset):
     """
 
     def __init__(
+            self,
+            dataset_name: str = DATASET_NAME,
+            split: str = SPLIT,
+            **kwargs,
         self,
         dataset_name: str = DATASET_NAME,
         split: str = SPLIT,
@@ -50,6 +54,8 @@ class MedMCQADataset(BaseMultimodalDataset):
         Args:
             **kwargs: Additional arguments passed to base class
         """
+        # Confinement instructions
+        self.confinement_instructions = CONFINEMENT_INSTRUCTIONS
         super().__init__(dataset_name=dataset_name, split=split, commit_hash=commit_hash, **kwargs)
 
     def format_item(self, sample: Dict[str, Any], **kwargs):
@@ -69,12 +75,6 @@ class MedMCQADataset(BaseMultimodalDataset):
         choice_labels = ["A", "B", "C", "D"]
         correct_answer = choice_labels[cop]
         prompt = self.confinement_instructions.replace("<QUESTION>", input_text)
-
-        # processed_sample = {
-        #     "input": prompt,
-        #     "expected_output": correct_answer,  # Change it to Label
-        # }
-
         processed_sample = DataLoaderIterable(
             input=prompt, expected_output=correct_answer, **kwargs
         )
