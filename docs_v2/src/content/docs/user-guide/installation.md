@@ -26,10 +26,10 @@ git clone https://github.com/eka-care/KARMA-OpenMedEvalKit.git
 cd KARMA-OpenMedEvalKit
 
 # Install with development dependencies
-uv install --group dev
+uv sync --group dev
 
 # Install with all optional dependencies
-uv install --group dev --group audio
+uv sync --group dev --group audio
 ```
 
 ## Optional Dependencies
