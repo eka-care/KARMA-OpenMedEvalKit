@@ -218,7 +218,6 @@ class EkaMedicalHistorySummary(RubricBaseDataset):
         if updated_medical_history:
             if updated_medical_history != {}:
                 updated_medical_history = yaml.dump(updated_medical_history)
-                print(f"----> Found medical history  {updated_medical_history}")
             pt_message += f"""This is the medical history of the patient {updated_medical_history}\n"""
         message = f"""The keys in the visit have a replacement as follows: {self.key_replacement_dict}, use it to understand each datapoint\n"""
         message += """Generate summary of the user.\n"""
