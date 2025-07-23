@@ -9,6 +9,9 @@ export default defineConfig({
   site: "https://karma.eka.care/",
   integrations: [
     starlight({
+      customCss: [
+        './src/styles/global.css',
+      ],
       title: "KARMA",
       components: {
         PageTitle: './src/components/overrides/PageTitle.astro',
