@@ -383,8 +383,7 @@ class BaseCERAligner(ABC):
         
         return keywords
 
-    def align_keywords(self, reference_keywords: List[str], hypothesis_text: str, 
-                    cer_aligner=None) -> List:
+    def align_keywords(self, reference_keywords: List[str], hypothesis_text: str) -> List:
         """
         Create alignments between reference keywords and hypothesis text.
         Returns WordAlignment objects compatible with your existing BaseCERAligner.
@@ -452,17 +451,7 @@ class BaseCERAligner(ABC):
                     window_text = " ".join(window_words)
                     
                     # Calculate CER
-                    if cer_aligner:
-                        cer = cer_aligner.calculate_character_error_rate(ref_keyword, window_text)
-                    else:
-                        # Fallback to simple edit distance
-                        ref_chars = ref_keyword.replace(' ', '')
-                        hyp_chars = window_text.replace(' ', '')
-                        if ref_chars:
-                            edit_dist = editdistance.eval(ref_chars, hyp_chars)
-                            cer = edit_dist / len(ref_chars)
-                        else:
-                            cer = 1.0 if hyp_chars else 0.0
+                    cer = self.calculate_character_error_rate(ref_keyword, window_text)
                     
                     if cer < best_score:
                         best_score = cer

@@ -76,6 +76,9 @@ class ASRSemanticMetrics(BaseMetric):
             aligner = ASRSemanticMetrics.get_aligner(language, cer_threshold)
             alignments = aligner.align_words_dp(ref, hyp)
             
+            # Print results
+            #aligner.print_alignment_visual(alignments) #to be used for debugging
+
             # Calculate statistics
             stats = aligner.calculate_error_rates(alignments)
             
@@ -184,14 +187,14 @@ class ASRSemanticMetrics(BaseMetric):
         )
     
     @staticmethod
-    def process_keywords_for_wer(aligner: BaseCERAligner, predictions: List[str], references: List[str], entities: List[str]) -> Tuple[int, float]:
+    def process_keywords_for_wer(aligner: BaseCERAligner, predictions: List[str], references: List[str], entities: List[str]) -> float:
         """Process keywords for WER calculation."""
         if len(predictions) != len(references):
             raise ValueError(f"Mismatch in ref/hyp count: {len(references)} refs vs {len(predictions)} predictions")
         
         if len(references) == 0:
             logger.info("No data to process!")
-            return (0, 0.0)
+            return 0.0
 
         # Initialize accumulators
         total_ref_words = 0
@@ -254,7 +257,7 @@ class ASRSemanticMetrics(BaseMetric):
         dataset_wer = round((total_substitutions + total_deletions + total_insertions) / max(total_ref_words, 1), 3)  
         #dataset_weighted_cer = round(total_edit_distance / total_ref_chars if total_ref_chars > 0 else 0.0, 2)
         
-        return (int(total_ref_words), dataset_wer)
+        return dataset_wer
 
     def evaluate(self, predictions: List[str], references: List[str], **kwargs) -> EvalResult:
         """
@@ -295,10 +298,11 @@ class ASRSemanticMetrics(BaseMetric):
             logger.info(f"Processing {len(references)} utterances...")
             logger.info("Using default aligner to obtain semWER")
             results = self.process_for_wer(aligner, predictions, references) 
+            total_ref_words = results.total_ref_words
             entity_wer = None
             if entities:
                 logger.info("Entities found, using keyword aligner")
-                total_ref_words, entity_wer = self.process_keywords_for_wer(aligner, predictions, references, entities) 
+                entity_wer = self.process_keywords_for_wer(aligner, predictions, references, entities) 
             
             return EvalResult(
                 semantic_wer=results.semantic_wer,
