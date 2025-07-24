@@ -116,12 +116,14 @@ class MultiDatasetOrchestrator:
             f"\n[cyan]Initializing model: {self.model_name} with {self.model_kwargs.get('model_kwargs')}[/cyan]"
         )
         model_meta = model_registry.get_model_meta(self.model_name)
-        model_meta.loader_kwargs = self.model_kwargs.get("model_kwargs")
-        model_meta.model_path = self.model_path
+        # if model_meta.model_path:
+        #     model_meta.model_path = self.model_path
+        # model_meta.model_path = self.model_path
 
         model = model_registry.get_model(
             self.model_name, **self.model_kwargs.get("model_kwargs")
         )
+        model_meta.loader_kwargs = self.model_kwargs.get("model_kwargs")
 
         # try:
         #     model = model_class(self.model_path, **self.model_kwargs)
@@ -403,6 +405,7 @@ class MultiDatasetOrchestrator:
                     "score": score,
                     "evaluation_time": result["summary"]["evaluation_time"],
                     "num_samples": len(result["predictions"]),
+                    "samples": result["predictions"]
                 }
 
                 if progress:

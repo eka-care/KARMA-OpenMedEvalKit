@@ -6,7 +6,7 @@ from datasets import Audio
 
 DATASET_NAME = "ekacare/eka-medical-asr-evaluation-dataset"
 SPLIT = "test"
-COMMIT_HASH = "5e20540ebd29868c8245e652412f27e40ca7acad"
+COMMIT_HASH = "6a8a8552ef2bad2eea8849d987320d022900d2d0"
 
 @register_dataset(
     DATASET_NAME,
@@ -16,7 +16,8 @@ COMMIT_HASH = "5e20540ebd29868c8245e652412f27e40ca7acad"
     task_type="transcription",
     required_args=["language"],
     default_args={"language": "hi"},
-    processors=["multilingual_text_processor"],
+    # processors=["general_text_processor"],
+    # processors=["multilingual_text_processor"],
 )
 class EkaMedicalAsrDataset(BaseMultimodalDataset):
     def __init__(

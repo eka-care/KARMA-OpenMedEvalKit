@@ -58,12 +58,12 @@ class WhisperTransformersASR(BaseModel):
     def load_model(self) -> None:
         """Load the Whisper model pipeline."""
         try:
-            self.pipe = pipeline(
-                "automatic-speech-recognition",
-                model=self.model_name_or_path,
-                device=self.pipeline_device,
-                torch_dtype=torch.float16 if torch.cuda.is_available() else torch.float32,
-            )
+            # self.pipe = pipeline(
+            #     "automatic-speech-recognition",
+            #     model=self.model_name_or_path,
+            #     device=self.pipeline_device,
+            #     torch_dtype=torch.float16 if torch.cuda.is_available() else torch.float32,
+            # )
             self.is_loaded = True
             logger.info(f"Loaded Whisper model: {self.model_name_or_path}")
         except Exception as e:

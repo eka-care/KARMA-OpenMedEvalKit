@@ -392,9 +392,9 @@ class Benchmark:
                     "prediction": result["prediction"],
                     "expected_output": expected,
                     "entities": entities,
-                    "sample": sample,
-                    "from_cache": result.get("from_cache", False),
-                    "success": result.get("success", True),
+                    # "sample": sample,
+                    # "from_cache": result.get("from_cache", False),
+                    # "success": result.get("success", True),
                 }
                 all_prediction_results.append(prediction_result)
 
@@ -462,7 +462,8 @@ class Benchmark:
         # Restore original refresh_cache setting if it was overridden
         if refresh_cache:
             self.refresh_cache = original_refresh_cache
-
+        # for result in all_prediction_results:
+        #     result["sample"] = result["sample"].model_dump()
         return {
             "overall_score": overall_scores,
             "predictions": all_prediction_results,

@@ -53,7 +53,12 @@ class MultilingualTextProcessor(BaseProcessor):
 
     def process(self, lines: List[str]) -> List[str]:
         rules = self._load_rules()
-        for i, text in enumerate(lines):
+        # Use ThreadPoolExecutor for parallel processing
+        from concurrent.futures import ThreadPoolExecutor
+        import multiprocessing
+        
+        def process_single_text(args):
+            i, text = args
             if text and text.strip():  # Check for non-empty and non-whitespace text
                 try:
                     # Only attempt language detection if text is long enough and has content
@@ -73,7 +78,26 @@ class MultilingualTextProcessor(BaseProcessor):
                 text = unicodedata.normalize("NFC", text)
                 text = self.normalizer.normalize(text)
                 text = self._apply_line(text, rules)
-            lines[i] = text
+            return i, text
+        
+        # Determine optimal number of workers
+        max_workers = min(len(lines), multiprocessing.cpu_count())
+        
+        # Process texts in parallel if we have multiple lines
+        if len(lines) > 1 and max_workers > 1:
+            with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                # Create list of (index, text) tuples for parallel processing
+                indexed_lines = list(enumerate(lines))
+                # Process all texts in parallel
+                results = list(executor.map(process_single_text, indexed_lines))
+                # Update lines with processed results in original order
+                for i, processed_text in results:
+                    lines[i] = processed_text
+        else:
+            # Fallback to sequential processing for single items or when threading isn't beneficial
+            for i, text in enumerate(lines):
+                _, processed_text = process_single_text((i, text))
+                lines[i] = processed_text
 
         return lines
 

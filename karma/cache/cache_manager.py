@@ -53,12 +53,16 @@ class CacheManager:
         Returns:
             Tuple of (input_hash, cache_key)
         """
+        new_model_input = model_input.copy()
+        if 'entities' in new_model_input['other_args'].keys():
+            new_model_input['other_args'].pop('entities')
         # Generate input hash
-        input_hash = self.generate_hash(model_input)
-
+        input_hash = self.generate_hash(new_model_input)
+        model_config = self.model_config.model_dump(exclude_none=True)
+        model_config['loader_kwargs'].pop('model_name_or_path')
         # Generate cache key with model config
         cache_key_data = {
-            **self.model_config.model_dump(exclude_none=True),
+            **model_config,
             "input_hash": input_hash,
         }
         cache_key = self.generate_hash(cache_key_data)

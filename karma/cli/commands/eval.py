@@ -321,9 +321,11 @@ def eval_cmd(
         # Display results
         console.print("\n" + "=" * 60)
         orchestrator.print_summary(format_type=output_format)
-
+        import uuid
+        output_path = f"results/{'_'.join(dataset_names).replace('/', '_')}_{model}_{str(uuid.uuid4())}_{output}"
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
         # Save results
-        orchestrator.save_results(output, save_format)
+        orchestrator.save_results(output_path, save_format)
 
         # Show completion message
         console.print(
