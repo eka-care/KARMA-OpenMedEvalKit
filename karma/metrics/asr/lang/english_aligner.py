@@ -86,7 +86,11 @@ class EnglishCERAligner(BaseCERAligner):
         for unit, words in self.unit_words.items():
             for word in words:
                 self.word_to_unit[word.lower()] = unit
-    
+
+    def normalize_hyphenated_words(self, text: str) -> str:
+        """Remove hyphens from hyphenated words."""
+        return re.sub(r'\b([a-zA-Z]+)-([a-zA-Z]+)\b', r'\1\2', text)
+
     def normalize_text_semantically(self, text: str) -> str:
         """Normalize text for semantic comparison - English version."""
         text = text.lower().strip()

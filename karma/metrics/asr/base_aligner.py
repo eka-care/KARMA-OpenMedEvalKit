@@ -145,10 +145,6 @@ class BaseCERAligner(ABC):
         final_cer = min(cer_direct, cer_semantic, cer_substring)
         return final_cer
     
-    def normalize_hyphenated_words(self, text: str) -> str:
-        """Remove hyphens from hyphenated words."""
-        return re.sub(r'\b([a-zA-Z]+)-([a-zA-Z]+)\b', r'\1\2', text)
-    
     def get_all_possible_expansions(self, token: str) -> List[str]:
         """Get all possible semantic expansions for a token - can be overridden by subclasses."""
         # Default implementation just returns the single expansion
@@ -383,8 +379,7 @@ class BaseCERAligner(ABC):
         
         return keywords
 
-    def align_keywords(self, reference_keywords: List[str], hypothesis_text: str, 
-                    cer_aligner=None) -> List:
+    def align_keywords(self, reference_keywords: List[str], hypothesis_text: str) -> List:
         """
         Create alignments between reference keywords and hypothesis text.
         Returns WordAlignment objects compatible with your existing BaseCERAligner.
@@ -452,18 +447,8 @@ class BaseCERAligner(ABC):
                     window_text = " ".join(window_words)
                     
                     # Calculate CER
-                    if cer_aligner:
-                        cer = cer_aligner.calculate_character_error_rate(ref_keyword, window_text)
-                    else:
-                        # Fallback to simple edit distance
-                        ref_chars = ref_keyword.replace(' ', '')
-                        hyp_chars = window_text.replace(' ', '')
-                        if ref_chars:
-                            edit_dist = editdistance.eval(ref_chars, hyp_chars)
-                            cer = edit_dist / len(ref_chars)
-                        else:
-                            cer = 1.0 if hyp_chars else 0.0
-                    
+                    cer = self.calculate_character_error_rate(ref_keyword, window_text)
+
                     if cer < best_score:
                         best_score = cer
                         best_position = list(range(i, i + len(ref_tokens)))
