@@ -1,6 +1,6 @@
 [project]
 name = "karma-medeval"
-version = "0.1.5"
+version = "0.1.6"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -40,7 +40,7 @@ build-backend = "setuptools.build_meta"
 [project.scripts]
 karma = "karma.cli.main:main"
 
-[dependency-groups]
+[project.optional-dependencies]
 dev = [
     "pytest>=8.4.1",
     "ruff>=0.12.0",
