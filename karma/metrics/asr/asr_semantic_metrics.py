@@ -206,8 +206,8 @@ class ASRSemanticMetrics(BaseMetric):
             semantic_wer=round(metrics.wer,3), 
             semantic_cer=round(metrics.cer,3), 
             num_sentences=metrics.processed_count,
-            total_ref_words=metrics.total_ref_words
-            # full_alignments=metrics.alignments
+            total_ref_words=metrics.total_ref_words,
+            full_alignments=metrics.alignments
         )
     
     @staticmethod
@@ -383,6 +383,7 @@ class ASRSemanticMetrics(BaseMetric):
                     full_alignments = results.full_alignments or []
                     keyword_wer = self.compute_kw_wer_from_sem_alignment(full_alignments, all_keywords)
                     results.entity_wer = keyword_wer
+                    results.full_alignments = None
             return results            
         except Exception as e:
             logger.error(f"Error: {e}")
