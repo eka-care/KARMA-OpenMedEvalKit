@@ -1,9 +1,9 @@
 ---
 title: KARMA-OpenMedEvalKit
-description: Knowledge Assessment and Reasoning for Medical Applications - A comprehensive evaluation framework for medical AI models.
+description: Knowledge Assessment and Reasoning for Medical Applications - An evaluation framework for medical AI models.
 tableOfContents: false
 hero:
-  tagline: Knowledge Assessment and Reasoning for Medical Applications - A comprehensive evaluation framework for medical AI models.
+  tagline: Knowledge Assessment and Reasoning for Medical Applications - An evaluation framework for medical AI models.
   image:
     file: ../../assets/houston.webp
   actions:
@@ -17,6 +17,7 @@ hero:
 ---
 
 import { Card, CardGrid } from '@astrojs/starlight/components';
+import { LinkCard } from '@astrojs/starlight/components';
 
 <style jsx>{`
 .hero h1 {
@@ -105,7 +106,7 @@ $ karma eval --model "Qwen/Qwen3-0.6B" --datasets openlifescienceai/pubmedqa --m
 - **Registry-Based Architecture**: Auto-discovery of models, datasets, and metrics
 - **Smart Caching**: DuckDB and DynamoDB backends for faster re-evaluations
 - **Extensible Design**: Easy integration of custom models, datasets, and metrics
-- **Rich CLI**: Beautiful progress bars, formatted outputs, and comprehensive help
+- **Rich CLI**: Beautiful progress bars, formatted outputs, and help
 - **Standards-Based**: Built on PyTorch and HuggingFace Transformers
 
 ## Getting Started
@@ -133,6 +134,22 @@ $ karma eval --model "Qwen/Qwen3-0.6B" --datasets openlifescienceai/pubmedqa --m
 	</Card>
 </CardGrid>
 
+## Release resources
+<LinkCard
+  title="KARMA relase blog"
+  href="http://info.eka.care/services/introducing-karma-openmedevalkit-an-open-source-framework-for-medical-ai-evaluation"
+  description="Read about KARMA"
+/>
+<LinkCard
+  title="4 novel healthcare datasets"
+  href=" http://info.eka.care/services/advancing-healthcare-ai-evaluation-in-india-ekacare-releases-four-evaluation-datasets"
+  description="Read about the datasets released along with KARMA"
+/>
 
+<LinkCard
+  title="Beyond WER - SemWER"
+  href="http://info.eka.care/services/beyond-traditional-wer-the-critical-need-for-semantic-wer-in-asr-for-indian-healthcare"
+  description="Read about the two new metrics introduced in KARMA for ASR"
+/>
 
 Ready to evaluate your medical AI models? [Get started with installation →](/user-guide/installation/)
