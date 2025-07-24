@@ -1,0 +1,130 @@
+---
+title: Installation Guide
+---
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+
+This guide provides detailed installation instructions for KARMA on different platforms and environments.
+
+## Installation Methods
+KARMA can be installed through pip and also uv
+
+<Tabs syncKey="development-method">
+  <TabItem label="pip">
+      ```bash
+      pip install karma-medeval
+      ```
+  </TabItem>
+  <TabItem label="uv">
+      ```bash
+      uv add karma-medeval
+      ```
+  </TabItem>
+</Tabs>
+
+# Verify installation
+```bash
+karma --version
+```
+
+## Optional Dependencies
+
+### Audio Support
+
+For audio-related datasets and ASR metrics:
+
+<Tabs syncKey="development-method">
+  <TabItem label="pip">
+      ```bash
+      pip install "karma-medeval[audio]"
+      ```
+  </TabItem>
+  <TabItem label="uv">
+      ```bash
+      uv sync --group audio
+      ```
+  </TabItem>
+</Tabs>
+
+This includes:
+- `jiwer` - Word Error Rate calculations
+- `num2words` - Number to word conversion
+- `torchaudio` - Audio processing
+
+
+### Install with all dependencies
+
+<Tabs syncKey="development-method">
+  <TabItem label="pip">
+      Install the development dependencies through pip
+      ```bash
+      pip install -e ".[all]"
+      ```
+  </TabItem>
+  <TabItem label="uv">
+      ```bash
+      uv sync --group all
+      ```
+  </TabItem>
+</Tabs>
+
+## Development installation
+
+For contributors and developers:
+
+```bash
+# Clone the repository
+git clone https://github.com/eka-care/KARMA-OpenMedEvalKit.git
+cd KARMA-OpenMedEvalKit
+```
+Then run either of these commands for developer installation
+
+<Tabs syncKey="development-method">
+  <TabItem label="pip">
+      Install the development dependencies through pip
+      ```bash
+      pip install -e .
+      ```
+  </TabItem>
+  <TabItem label="uv">
+      ```bash
+      uv sync
+      ```
+  </TabItem>
+</Tabs>
+
+
+## Environment Configuration
+
+Create a `.env` file in your project root:
+
+```bash
+# Required: HuggingFace token for model downloads
+HUGGINGFACE_TOKEN=your_token_here
+
+# Cache configuration
+KARMA_CACHE_TYPE=duckdb
+KARMA_CACHE_PATH=./cache.db
+
+# Logging
+LOG_LEVEL=INFO
+
+# Optional: OpenAI API key (for certain metrics)
+OPENAI_API_KEY=your_openai_key
+
+# Optional: DynamoDB configuration (for production)
+# KARMA_CACHE_TYPE=dynamodb
+# AWS_REGION=us-east-1
+# DYNAMODB_TABLE_NAME=karma-cache
+```
+
+#### HuggingFace Token
+To access gated models or datasets, set this environment variable with your Huggingface token.
+
+You can see the guide to create tokens [here](https://huggingface.co/docs/hub/en/security-tokens)
+```bash
+# Login to HuggingFace
+huggingface-cli login
+
+# Or set environment variable
+export HUGGINGFACE_TOKEN=your_token_here
+```
