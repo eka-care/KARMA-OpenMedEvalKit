@@ -121,6 +121,28 @@ class AWSBedrock(BaseModel):
             if hasattr(item, "system_prompt") and item.system_prompt:
                 system_prompt = item.system_prompt
 
+            if item.images:
+                for image in item.images:
+                    # Convert image bytes to base64 for OpenAI API
+                    # image_b64 = base64.b64encode(image).decode("utf-8")
+
+                    # Add image content in OpenAI's multimodal format
+                    messages.append(
+                        {
+                            "role": "user",
+                            "content": [
+                                {
+                                    "image": {
+                                        "format": 'jpeg',
+                                        "source": {
+                                            "bytes": image
+                                        }
+                                    },
+                                }
+                            ],
+                        }
+                    )
+
             # Ensure we have at least one message
             if not messages:
                 logger.warning("No input or conversation data found for item, skipping")
