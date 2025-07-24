@@ -4,6 +4,7 @@ CER-based word alignment across languages.
 ASR Metrics class for evaluating speech recognition performance.
 """
 
+import ast
 import logging
 from collections import Counter
 from typing import Dict, Optional, List, Tuple
@@ -17,6 +18,9 @@ from karma.registries.metrics_registry import register_metric
 from karma.metrics.asr.base_aligner import BaseCERAligner
 from karma.metrics.asr.lang.english_aligner import EnglishCERAligner
 from karma.metrics.asr.lang.hindi_aligner import HindiCERAligner
+
+from karma.metrics.asr.base_aligner import WordAlignment, AlignmentType
+
 logger = logging.getLogger(__name__)
 
 @dataclass
@@ -27,6 +31,7 @@ class EvalResult:
     num_sentences: int = 0
     total_ref_words: int = 0
     additional_info: Optional[Dict] = None
+    full_alignments: Optional[List[WordAlignment]] = None
 
 @dataclass
 class AlignmentResult:
@@ -41,6 +46,15 @@ class AlignmentResult:
     ref_chars: int = 0
     edit_distance: float = 0.0
     error: Optional[str] = None
+    alignments: Optional[List[WordAlignment]] = None
+
+@dataclass
+class AggregatedMetrics:
+    wer: float
+    cer: float
+    processed_count: int
+    total_ref_words: int
+    alignments: List[WordAlignment]
 
 @dataclass
 class DatasetMetrics:
@@ -90,18 +104,6 @@ class ASRSemanticMetrics(BaseMetric):
             raise ValueError(f"Unsupported language: {language}. Available: {available}")
         
         aligner = aligners[language.lower()](cer_threshold)
-            # Add keyword WER method to the instance
-        def calculate_keyword_wer(reference_text: str, reference_annotations: str, hypothesis_text: str):
-            """Calculate keyword-specific WER using existing error rate calculation."""
-            alignments = aligner.process_keywords_for_wer(
-                reference_text, reference_annotations, hypothesis_text, aligner
-            )
-            results = aligner.calculate_error_rates(alignments)
-            aligner.print_alignment_visual(alignments) #enable for debugging
-            return results
-        
-        # Bind the method to the aligner instance
-        aligner.calculate_keyword_wer = calculate_keyword_wer
         
         return aligner
 
@@ -148,74 +150,12 @@ class ASRSemanticMetrics(BaseMetric):
                 word_deletions=stats['word_deletions'],
                 word_insertions=stats['word_insertions'],
                 ref_chars=ref_chars,
-                edit_distance=edit_distance
+                edit_distance=edit_distance,
+                alignments=alignments
             )
             
         except Exception as e:
             logger.error(f"Error processing utterance {utt_id}: {e}")
-            return AlignmentResult(
-                success=False,
-                utt_id=utt_id,
-                error=str(e)
-            )
-
-    @staticmethod
-    def _process_utterance_keyword(args: Tuple) -> AlignmentResult:
-        """
-        Process a single utterance for keyword WER calculation.
-        
-        Args:
-            args: Tuple of (idx, reference, hypothesis, annotations, language, cer_threshold)
-            
-        Returns:
-            AlignmentResult with alignment statistics
-        """
-        idx, ref, hyp, annotations, language, cer_threshold = args
-        utt_id = f"utterance_{idx}"
-
-        try:
-            aligner = ASRSemanticMetrics.get_aligner(language, cer_threshold)
-            try:
-                annotation_list = eval(annotations)  # Use ast.literal_eval for safety in production
-            except:
-                raise ValueError("Could not parse annotations")
-                # Extract keywords
-            reference_keywords = aligner.extract_keywords_from_text(ref, annotation_list)
-
-            alignments = aligner.align_keywords(reference_keywords, hyp)
-            # Print results
-            aligner.print_alignment_visual(alignments) #to be used for debugging
-            # Calculate statistics
-            stats = aligner.calculate_error_rates(alignments)
-            # Accumulate character-level statistics for weighted CER
-            total_ref_chars = 0
-            ref_chars = 0
-            total_edit_distance = 0
-            for alignment in alignments:
-                if alignment.ref_words and alignment.hyp_words:
-                    ref_text = ' '.join(alignment.ref_words)
-                    ref_chars = len(ref_text.replace(' ', ''))
-                    total_ref_chars += ref_chars
-                    total_edit_distance += alignment.character_error_rate * ref_chars
-                
-            return AlignmentResult(
-                success=True,
-                utt_id=utt_id,
-                total_ref_words=stats['total_ref_words'],
-                word_correct=stats['word_correct'],
-                word_substitutions=stats['word_substitutions'],
-                word_deletions=stats['word_deletions'],
-                word_insertions=stats['word_insertions'],
-                ref_chars=ref_chars,
-                edit_distance=total_edit_distance
-            )                
-                # Optional: Add file-specific stats to output (using utterance ID instead of index)
-                # file_stats_lines.append(
-                #     f"{utt_id}\t{stats['total_ref_words']}\t{stats['word_correct']}\t"
-                #     f"{stats['word_substitutions']}\t{stats['word_deletions']}\t{stats['word_insertions']}\t"
-                #     f"{stats['wer']:.4f}\t{stats['weighted_word_cer']:.4f}"
-                # )
-        except Exception as e:
             return AlignmentResult(
                 success=False,
                 utt_id=utt_id,
@@ -267,56 +207,19 @@ class ASRSemanticMetrics(BaseMetric):
             semantic_cer=round(metrics.cer,3), 
             num_sentences=metrics.processed_count,
             total_ref_words=metrics.total_ref_words,
+            full_alignments=metrics.alignments
         )
     
     @staticmethod
-    def process_keywords_for_wer(aligner: BaseCERAligner, predictions: List[str], 
-                                references: List[str], entities: List[str]) -> float:
-        """
-        Process reference, hypothesis and entity annotations for keyword WER calculation.
-        
-        Args:
-            aligner: Language-specific aligner instance
-            predictions: List of hypothesis texts
-            references: List of reference texts
-            entities: List of entity annotations
-            
-        Returns:
-            Keyword WER as a float
-        """
-        logger.info(f"Processing {len(references)} utterances for keyword WER...")
-        
-        if not references:
-            logger.warning("No data to process!")
-            return 0.0
-        
-        # Prepare for multiprocessing
-        args_list, num_processes = ASRSemanticMetrics._prepare_multiprocessing(
-            aligner, predictions, references, entities
-        )
-        
-        # Process utterances in parallel
-        with Pool(processes=num_processes) as pool:
-            results = pool.map(ASRSemanticMetrics._process_utterance_keyword, args_list)
-        
-        # Aggregate results
-        metrics = ASRSemanticMetrics._aggregate_results(results)
-        
-        logger.info(f"Processed {metrics.processed_count}/{len(references)} utterances successfully")
-        logger.info(f"Total keywords: {metrics.total_ref_words}, Keyword WER: {metrics.wer:.3f}")
-        
-        return round(metrics.wer, 3)
-
-    @staticmethod
-    def _aggregate_results(results: List[AlignmentResult]) -> DatasetMetrics:
+    def _aggregate_results(results: List[AlignmentResult]) -> AggregatedMetrics:
         """
         Aggregate individual utterance results into dataset metrics.
-        
+
         Args:
             results: List of AlignmentResult objects
-            
+
         Returns:
-            DatasetMetrics with aggregated statistics
+            AggregatedMetrics with aggregated statistics
         """
         metrics = DatasetMetrics(
             total_ref_words=0,
@@ -328,7 +231,8 @@ class ASRSemanticMetrics(BaseMetric):
             total_edit_distance=0.0,
             processed_count=0
         )
-        
+
+        total_alignments = []
         for result in results:
             if result.success:
                 metrics.total_ref_words += result.total_ref_words
@@ -339,10 +243,18 @@ class ASRSemanticMetrics(BaseMetric):
                 metrics.total_ref_chars += result.ref_chars
                 metrics.total_edit_distance += result.edit_distance
                 metrics.processed_count += 1
+                if result.alignments is not None:
+                    total_alignments.extend(result.alignments)
             else:
                 logger.warning(f"Skipping {result.utt_id} due to error: {result.error}")
-        
-        return metrics
+
+        return AggregatedMetrics(
+            wer=metrics.wer,
+            cer=metrics.cer,
+            processed_count=metrics.processed_count,
+            total_ref_words=metrics.total_ref_words,
+            alignments=total_alignments
+        )
     
     @staticmethod
     def _prepare_multiprocessing(aligner: BaseCERAligner, predictions: List[str], 
@@ -367,29 +279,54 @@ class ASRSemanticMetrics(BaseMetric):
             raise ValueError(f"Mismatch: {len(references)} references vs {len(entities)} entities")
         
         # Get aligner parameters
-        language = aligner.__class__.__name__.replace('CERAligner', '').lower()
-        if language == 'english':
-            language = 'en'
-        elif language == 'hindi':
-            language = 'hi'
+        language_map = {
+            'EnglishCERAligner': 'en',
+            'HindiCERAligner': 'hi',
+        }
+        language = language_map.get(aligner.__class__.__name__)
         cer_threshold = aligner.cer_threshold
         
         # Determine number of processes
         num_processes = max(1, int(cpu_count() * 0.75))
         
         # Create argument tuples
-        if entities:
-            args_list = [
-                (idx, ref, hyp, ent, language, cer_threshold) 
-                for idx, (ref, hyp, ent) in enumerate(zip(references, predictions, entities))
-            ]
-        else:
-            args_list = [
-                (idx, ref, hyp, language, cer_threshold) 
-                for idx, (ref, hyp) in enumerate(zip(references, predictions))
-            ]
+
+        args_list = [
+            (idx, ref, hyp, language, cer_threshold) 
+            for idx, (ref, hyp) in enumerate(zip(references, predictions))
+        ]
         
         return args_list, num_processes
+    @staticmethod
+    def compute_kw_wer_from_sem_alignment(full_alignments: List[WordAlignment], keyword_set: set) -> float:
+        """
+        Compute keyword WER from full semWER alignments.
+        """
+        total_keywords = 0
+        correct = 0
+        substitutions = 0
+        deletions = 0
+
+        for alignment in full_alignments:
+            if not alignment.ref_words:
+                continue
+
+            ref_text = ' '.join(alignment.ref_words).lower()
+            if ref_text in keyword_set:
+                total_keywords += 1
+
+                if alignment.alignment_type == AlignmentType.MATCH:
+                    correct += 1
+                elif alignment.alignment_type == AlignmentType.SUBSTITUTION:
+                    substitutions += 1
+                elif alignment.alignment_type == AlignmentType.DELETION:
+                    deletions += 1
+
+        if total_keywords == 0:
+            return 0.0  # or float('nan'), depending on your preference
+
+        return round((substitutions + deletions) / total_keywords, 3)
+
 
     def evaluate(self, predictions: List[str], references: List[str], **kwargs) -> EvalResult:
         """
@@ -412,9 +349,6 @@ class ASRSemanticMetrics(BaseMetric):
         # Ensure language is a string
         if not isinstance(language, str):
             raise ValueError(f"Language parameter must be a string, got {type(language)}")
-        # Validate inputs
-        if not predictions or not references:
-            raise ValueError("Both predictions and references must be non-empty lists")
             
         try:
             logger.info(f"Creating {language} aligner...")
@@ -430,13 +364,26 @@ class ASRSemanticMetrics(BaseMetric):
             logger.info(f"Processing {len(references)} utterances...")
             logger.info("Using default aligner to obtain semWER")
             results = self.process_for_wer(aligner, predictions, references) 
-            
+
             if entities:
-                logger.info("Entities found, using keyword aligner")
-                entity_wer = self.process_keywords_for_wer(aligner, predictions, references, entities) 
-                results.entity_wer = entity_wer
-            return results
-            
+                logger.info("Extracting keywords from annotations for post-alignment keyword WER...")
+                all_keywords = set()
+                for ref_text, annotations in zip(references, entities):
+                    try:
+                        annotation_list = ast.literal_eval(annotations)
+                    except:
+                        continue  # skip malformed
+
+                    extracted = aligner.extract_keywords_from_text(ref_text, annotation_list)
+                    all_keywords.update([k.lower() for k in extracted if k.strip()])
+
+                # If any keywords exist, compute kwWER from full alignment
+                if all_keywords:
+                    logger.info(f"Computing keyword WER for {len(all_keywords)} unique keywords")
+                    full_alignments = results.full_alignments or []
+                    keyword_wer = self.compute_kw_wer_from_sem_alignment(full_alignments, all_keywords)
+                    results.entity_wer = keyword_wer
+            return results            
         except Exception as e:
             logger.error(f"Error: {e}")
             raise  # Re-raise instead of sys.exit for better error handling
