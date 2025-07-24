@@ -281,7 +281,7 @@ GPT35_Turbo_LLM = ModelMeta(
         "presence_penalty": 0.0,
     },
     revision=None,
-    reference="https://platform.openai.com/docs/models/gpt-3-5-turbo",
+    reference="https://platform.openai.com/docs/models/gpt-3.5-turbo",
     model_type=ModelType.TEXT_GENERATION,
     modalities=[ModalityType.TEXT],
     n_parameters=None,

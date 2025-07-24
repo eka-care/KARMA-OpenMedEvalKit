@@ -9,3 +9,8 @@ class BaseMetric(ABC):
     @abstractmethod
     def evaluate(self, predictions, references, rubrics, **kwargs):
         pass
+
+    @abstractmethod
+    def save_sample_wise_evaluation(self, predictions, references, rubrics, **kwargs):
+        """This method is optional to implement"""
+        pass

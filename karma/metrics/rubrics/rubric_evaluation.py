@@ -110,10 +110,18 @@ Return just the JSON array, no need for markdown beginning. Do not include any o
 )
 class RubricMetric(BaseMetric):
     """
-    LLM driven rubric evaluation metric.
+    LLM driven rubric evaluatio n metric.
     """
 
-    def __init__(self, metric_name, provider_to_use, model_id, batch_size=1, max_workers=4, **kwargs):
+    def __init__(
+        self,
+        metric_name,
+        provider_to_use,
+        model_id,
+        batch_size=1,
+        max_workers=4,
+        **kwargs,
+    ):
         super().__init__(metric_name=metric_name, **kwargs)
         self.provider = provider_to_use
         if isinstance(batch_size, str):
@@ -147,22 +155,29 @@ class RubricMetric(BaseMetric):
         logger.info(
             f"Evaluating {len(predictions)} conversations with {self.provider} model - {self.model}"
         )
-        
+
         # Handle empty predictions
         if not predictions:
             return {"rubric_evaluation": self._aggregate_results([])}
-        
+
         # Use ThreadPoolExecutor for parallel conversation processing
         with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
             # Submit all conversation processing tasks and track their order
             future_to_index = {
-                executor.submit(self._process_single_conversation, prediction, sample, sample_rubrics): i
-                for i, (prediction, sample, sample_rubrics) in enumerate(zip(predictions, samples, rubrics))
+                executor.submit(
+                    self._process_single_conversation,
+                    prediction,
+                    sample,
+                    sample_rubrics,
+                ): i
+                for i, (prediction, sample, sample_rubrics) in enumerate(
+                    zip(predictions, samples, rubrics)
+                )
             }
-            
+
             # Initialize results list with correct size
             question_results = [None] * len(predictions)
-            
+
             # Collect results as they complete
             for future in as_completed(future_to_index):
                 index = future_to_index[future]
@@ -304,12 +319,12 @@ class RubricMetric(BaseMetric):
     def _process_single_conversation(self, prediction, sample, sample_rubrics):
         """
         Process a single conversation and its rubrics.
-        
+
         Args:
             prediction: The prediction text for this conversation
             sample: The sample containing conversation data
             sample_rubrics: List of rubric criteria for this sample
-            
+
         Returns:
             Dict containing rubric evaluations and question score
         """
