@@ -1,9 +1,12 @@
+import logging
+
 import duckdb
 import threading
 from typing import Any, Dict
 from pathlib import Path
 from contextlib import contextmanager
 
+logger = logging.getLogger(__name__)
 
 class DuckDBIO:
     """
@@ -37,7 +40,7 @@ class DuckDBIO:
             # Test connection
             with self._get_connection() as conn:
                 conn.execute("SELECT 1").fetchone()
-            print(f"✅ Connected to DuckDB at {self.db_path}")
+            logger.info(f"✅ Connected to DuckDB at {self.db_path}")
         except Exception as e:
             raise ConnectionError(f"❌ Failed to connect to DuckDB: {e}")
     
@@ -74,7 +77,7 @@ class DuckDBIO:
                 else:
                     return conn.execute(sql)
         except Exception as e:
-            print(f"Error executing SQL: {e}")
+            logger.info(f"Error executing SQL: {e}")
             raise
     
     def fetchone(self, sql: str, params: list = []) -> Any:
@@ -96,7 +99,7 @@ class DuckDBIO:
                     result = conn.execute(sql).fetchone()
                 return result
         except Exception as e:
-            print(f"Error fetching one result: {e}")
+            logger.info(f"Error fetching one result: {e}")
             return None
     
     def fetchall(self, sql: str, params: list = []) -> list:
@@ -118,7 +121,7 @@ class DuckDBIO:
                     results = conn.execute(sql).fetchall()
                 return results
         except Exception as e:
-            print(f"Error fetching all results: {e}")
+            logger.info(f"Error fetching all results: {e}")
             return []
     
     def executemany(self, sql: str, params_list: list) -> bool:
@@ -137,7 +140,7 @@ class DuckDBIO:
                 conn.executemany(sql, params_list)
                 return True
         except Exception as e:
-            print(f"Error executing many: {e}")
+            logger.info(f"Error executing many: {e}")
             return False
     
     def get_database_stats(self) -> Dict[str, Any]:
@@ -158,7 +161,7 @@ class DuckDBIO:
                 'database_size_mb': round(db_size_mb, 2)
             }
         except Exception as e:
-            print(f"Error getting database stats: {e}")
+            logger.info(f"Error getting database stats: {e}")
             return {
                 'backend': 'duckdb',
                 'database_file': str(self.db_path),

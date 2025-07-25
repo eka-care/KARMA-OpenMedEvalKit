@@ -1,7 +1,5 @@
 ---
-title: Interactive Mode
-description: Step-by-step guide for using Interactive Mode in KARMA for LLM and ASR model evaluation.
-sidebar_label: Interactive Mode
+title: karma interactive
 ---
 
 KARMA's **Interactive Mode** provides a terminal-based experience for benchmarking language and speech models. 

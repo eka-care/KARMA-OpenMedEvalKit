@@ -1,7 +1,10 @@
+import logging
 from typing import Any, Dict, Optional, List
 
 from karma.io.duckdb_io import DuckDBIO
 
+
+logger = logging.getLogger(__name__)
 
 class DuckDBCacheIO:
     """
@@ -21,7 +24,7 @@ class DuckDBCacheIO:
         """Initialize simple cache IO."""
         # Initialize DuckDB (persistent storage) with hardcoded path
         self.db_io = DuckDBIO(db_path=db_path)
-        print("✅ DuckDB persistent storage connected")
+        logger.info("✅ DuckDB persistent storage connected")
         # Initialize schema for benchmark caching
         self._init_schema()
 
@@ -179,15 +182,15 @@ class DuckDBCacheIO:
             )
             return True
         except Exception as e:
-            print(f"Error saving run metadata: {e}")
+            logger.info(f"Error saving run metadata: {e}")
             return False
 
     def close_connections(self):
         """Close all connections and cleanup."""
-        print("🔄 Shutting down simple cache...")
+        logger.info("🔄 Shutting down simple cache...")
 
         # Close connections
         if self.db_io:
             self.db_io.close_connections()
 
-        print("✅ Simple cache shutdown complete")
+        logger.info("✅ Simple cache shutdown complete")
