@@ -53,22 +53,6 @@ ElevenLabsASRModel = ModelMeta(
     revision=None,
     reference=None,
     model_type=ModelType.AUDIO_RECOGNITION,
-    modalities=[ModalityType.AUDIO],
-    n_parameters=None,
-    memory_usage_mb=None,
-    max_tokens=None,
-    embed_dim=None,
-    framework=["eleven_labs"],
-    audio_sample_rate=16000,
-    supported_audio_formats=["wav", "mp3", "m4a", "ogg", "flac"],
-    vision_encoder_dim=None,
-    max_image_size=None,
-    inference_speed_ms=None,
-    release_date=None,
-    version=None,
-    license=None,
-    open_weights=False,
-    public_training_code=None,
-    public_training_data=None,
+    modalities=[ModalityType.AUDIO]
 )
 register_model_meta(ElevenLabsASRModel)

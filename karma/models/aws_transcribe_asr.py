@@ -1,7 +1,7 @@
 import os
 import time
 import uuid
-from typing import Dict, Any, Optional, List
+from typing import List
 import boto3
 import requests
 from karma.models.base_model_abs import BaseModel
@@ -143,22 +143,8 @@ AWSTranscribeASRModel = ModelMeta(
     reference="https://docs.aws.amazon.com/transcribe/",
     model_type=ModelType.AUDIO_RECOGNITION,
     modalities=[ModalityType.AUDIO],
-    n_parameters=None,
-    memory_usage_mb=None,
-    max_tokens=None,
-    embed_dim=None,
-    framework=["boto3", "aws"],
-    audio_sample_rate=16000,
-    supported_audio_formats=["mp3", "mp4", "wav", "flac"],
-    vision_encoder_dim=None,
-    max_image_size=None,
-    inference_speed_ms=None,
     release_date="2017-11-29",
     version="1.0",
-    license=None,
-    open_weights=False,
-    public_training_code=None,
-    public_training_data=None,
 )
 
 # Register the model

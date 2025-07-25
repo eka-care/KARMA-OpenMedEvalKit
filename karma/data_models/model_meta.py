@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, validator
-from typing import List, Dict, Any, Optional, Union, Literal
+from typing import List, Dict, Any, Optional
 from enum import Enum
 import importlib
 
@@ -64,62 +64,12 @@ class ModelMeta(BaseModel):
         description="Supported input/output modalities",
     )
 
-    # Technical specifications
-    n_parameters: Optional[int] = Field(
-        default=None, description="Number of model parameters"
-    )
-    memory_usage_mb: Optional[float] = Field(
-        default=None, description="Estimated memory usage in MB"
-    )
-    max_tokens: Optional[int] = Field(
-        default=None, description="Maximum token length supported"
-    )
-    embed_dim: Optional[int] = Field(
-        default=None, description="Embedding dimension for embedding models"
-    )
-    framework: List[str] = Field(
-        default_factory=lambda: ["PyTorch", "Transformers"],
-        description="Underlying frameworks used",
-    )
 
-    # Multi-modal specific metadata
-    audio_sample_rate: Optional[int] = Field(
-        default=None, description="Required audio sample rate in Hz"
-    )
-    supported_audio_formats: Optional[List[str]] = Field(
-        default_factory=list, description="Supported audio file formats"
-    )
-    vision_encoder_dim: Optional[int] = Field(
-        default=None, description="Vision encoder dimension"
-    )
-    max_image_size: Optional[int] = Field(
-        default=None, description="Maximum supported image size"
-    )
-
-    # Licensing and availability
-    license: Optional[str] = Field(default=None, description="License type or URL")
-    open_weights: Optional[bool] = Field(
-        default=None, description="Whether model weights are publicly available"
-    )
-    public_training_code: Optional[str] = Field(
-        default=None, description="URL to training code if available"
-    )
-    public_training_data: Optional[Union[str, bool]] = Field(
-        default=None, description="Training data availability info"
-    )
 
     # Language and domain support
     languages: Optional[List[str]] = Field(
         default_factory=lambda: ["eng-Latn"],
         description="Supported languages in ISO format",
-    )
-
-    # Performance metadata
-    benchmark_scores: Dict[str, float] = Field(
-        default_factory=dict, description="Benchmark performance scores"
-    )
-    inference_speed_ms: Optional[float] = Field(
-        default=None, description="Average inference time in ms"
     )
 
     # Release information
@@ -197,12 +147,11 @@ class ModelMeta(BaseModel):
             "name": self.name,
             "type": self.model_type,
             "modalities": [m for m in self.modalities],
-            "parameters": self.n_parameters,
             "languages": self.languages,
-            "framework": self.framework,
             "version": self.version or self.revision,
         }
 
     class Config:
         use_enum_values = True
         validate_assignment = True
+        extra = "allow"

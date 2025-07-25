@@ -240,8 +240,6 @@ GPT4o_LLM = ModelMeta(
     reference="https://platform.openai.com/docs/models/gpt-4o",
     model_type=ModelType.TEXT_GENERATION,
     modalities=[ModalityType.TEXT],
-    max_tokens=4096,
-    framework=["openai"],
     release_date="2024-05-13",
     version="1.0",
 )
@@ -262,15 +260,8 @@ GPT4o_Mini_LLM = ModelMeta(
     reference="https://platform.openai.com/docs/models/gpt-4o-mini",
     model_type=ModelType.TEXT_GENERATION,
     modalities=[ModalityType.TEXT],
-    n_parameters=None,
-    memory_usage_mb=None,
-    max_tokens=16384,
-    embed_dim=None,
-    framework=["openai"],
     release_date="2024-07-18",
     version="1.0",
-    license=None,
-    open_weights=False,
 )
 
 GPT35_Turbo_LLM = ModelMeta(
@@ -289,15 +280,8 @@ GPT35_Turbo_LLM = ModelMeta(
     reference="https://platform.openai.com/docs/models/gpt-3-5-turbo",
     model_type=ModelType.TEXT_GENERATION,
     modalities=[ModalityType.TEXT],
-    n_parameters=None,
-    memory_usage_mb=None,
-    max_tokens=4096,
-    embed_dim=None,
-    framework=["openai"],
     release_date="2023-03-01",
     version="1.0",
-    license=None,
-    open_weights=False,
 )
 
 
@@ -317,15 +301,8 @@ GPT41_LLM = ModelMeta(
     reference="https://platform.openai.com/docs/models/gpt-3-5-turbo",
     model_type=ModelType.TEXT_GENERATION,
     modalities=[ModalityType.TEXT],
-    n_parameters=None,
-    memory_usage_mb=None,
-    max_tokens=4096,
-    embed_dim=None,
-    framework=["openai"],
     release_date="2025-04-14",
     version="1.0",
-    license=None,
-    open_weights=False,
 )
 
 GPTo3_LLM = ModelMeta(
@@ -343,8 +320,7 @@ GPTo3_LLM = ModelMeta(
     reference="https://platform.openai.com/docs/models/o3",
     model_type=ModelType.TEXT_GENERATION,
     modalities=[ModalityType.TEXT],
-    max_tokens=4096,
-    framework=["openai"],
+
     release_date="2025-04-16",
     version="1.0",
 )
