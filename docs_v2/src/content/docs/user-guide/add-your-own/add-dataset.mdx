@@ -5,11 +5,16 @@ import { Steps } from '@astrojs/starlight/components';
 
 You can create custom datasets by inheriting from `BaseMultimodalDataset` and implementing the `format_item` method to return a properly formatted `DataLoaderIterable`:
 
-```
+```python
 from karma.eval_datasets.base_dataset import BaseMultimodalDataset
 from karma.registries.dataset_registry import register_dataset
 from karma.data_models.dataloader_iterable import DataLoaderIterable
 
+```
+Here we will use the `register_dataset` decorator to register and make the dataset discoverable to the CLI.
+This decorator also has information about the metric to use and any arguments that can be configured.
+
+```python
 @register_dataset(
     "my_medical_dataset",
     metrics=["exact_match", "accuracy"],
@@ -39,6 +44,9 @@ class MyMedicalDataset(BaseMultimodalDataset):
         )
 ```
 
+In the class, we implement the `format_item` method to specify how the output will be like through the `DataLoaderIterable`
+See (`DataLoaderIterable`)[user-guide/datasets/data-loader-iterable] for more information.
+
 ## Multi-Modal Dataset Example
 
 For datasets that combine multiple modalities:
@@ -62,7 +70,7 @@ def format_item(self, item):
 
 For datasets with multi-turn conversations:
 
-```
+```python
 from karma.data_models.dataloader_iterable import Conversation, ConversationTurn
 
 def format_item(self, item):

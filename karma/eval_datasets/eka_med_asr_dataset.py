@@ -6,7 +6,7 @@ from datasets import Audio
 
 DATASET_NAME = "ekacare/eka-medical-asr-evaluation-dataset"
 SPLIT = "test"
-COMMIT_HASH = "5e20540ebd29868c8245e652412f27e40ca7acad"
+COMMIT_HASH = "991bc807cab1f323f0283c836c634796bbf1ed3e"
 
 @register_dataset(
     DATASET_NAME,

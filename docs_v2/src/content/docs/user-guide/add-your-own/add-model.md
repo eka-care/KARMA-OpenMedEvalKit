@@ -2,75 +2,183 @@
 title: Add model
 ---
 
-This guide provides a comprehensive walkthrough for adding new models to the KARMA evaluation framework. KARMA supports diverse model types including local HuggingFace models, API-based services, and multi-modal models across text, audio, image, and video domains.
+This guide provides a walkthrough for adding new models to the KARMA evaluation framework. KARMA supports diverse model types including local HuggingFace models, API-based services, and multi-modal models across text, audio, image, and video domains.
 
 ## Architecture Overview
 
 ### Base Model System
 
-All models in KARMA inherit from the `BaseModel` abstract class, which provides a unified interface for model loading, inference, and data processing.
+All models in KARMA inherit from the `BaseModel` abstract class, which provides a unified interface for model loading, inference, and data processing. This ensures consistency across all model implementations and makes it easy to swap between different models during evaluation.
+
+#### Required Method Implementation
+
+Every custom model must implement these four core methods:
 
 ```python
 from karma.models.base_model_abs import BaseModel
 from karma.data_models.dataloader_iterable import DataLoaderIterable
+```
 
+**1. Basic Class Structure**
+```python
 class MyModel(BaseModel):
     def load_model(self):
-        """Initialize model and tokenizer/processor"""
+        """Initialize model and tokenizer/processor
+        
+        This method is called once when the model is first used.
+        Load your model weights, tokenizer, and any required components here.
+        Set self.is_loaded = True when complete.
+        """
         pass
-    
+```
+
+**2. Main Inference Method**
+```python
     def run(self, inputs: List[DataLoaderIterable]) -> List[str]:
-        """Main inference method"""
+        """Main inference method that processes a batch of inputs
+        
+        This is the primary method called during evaluation.
+        It should handle the complete inference pipeline:
+        1. Check if model is loaded (call load_model if needed)
+        2. Preprocess inputs
+        3. Run model inference
+        4. Postprocess outputs
+        5. Return list of string predictions
+        """
         pass
-    
+```
+
+**3. Input Preprocessing**
+```python
     def preprocess(self, inputs: List[DataLoaderIterable]) -> Any:
-        """Convert raw inputs to model-ready format"""
+        """Convert raw inputs to model-ready format
+        
+        Transform the DataLoaderIterable objects into the format
+        your model expects (e.g., tokenized tensors, processed images).
+        Handle batching, padding, and any required data transformations.
+        """
         pass
-    
+```
+
+**4. Output Postprocessing**
+```python
     def postprocess(self, outputs: Any) -> List[str]:
-        """Process model outputs to final format"""
+        """Process model outputs to final format
+        
+        Convert raw model outputs (logits, tokens, etc.) into
+        clean string responses that can be evaluated.
+        Apply any filtering, decoding, or formatting needed.
+        """
         pass
 ```
 
 ### ModelMeta System
 
-The `ModelMeta` class provides comprehensive metadata management for model registration:
+The `ModelMeta` class provides comprehensive metadata management for model registration. This system allows KARMA to understand your model's capabilities, requirements, and how to instantiate it properly.
 
+#### Understanding ModelMeta Components
+
+**Import Required Classes**
 ```python
 from karma.data_models.model_meta import ModelMeta, ModelType, ModalityType
+```
 
+**Basic ModelMeta Structure**
+```python
 model_meta = ModelMeta(
+    # Model identification - use format "organization/model-name"
     name="my-model/my-model-name",
+    
+    # Human-readable description for documentation
     description="Description of my model",
+    
+    # Python import path to your model class
     loader_class="karma.models.my_model.MyModel",
-    loader_kwargs={
-        "temperature": 0.7,
-        "max_tokens": 2048,
-    },
-    model_type=ModelType.TEXT_GENERATION,
-    modalities=[ModalityType.TEXT],
-    framework=["PyTorch", "Transformers"],
 )
+```
+
+**Configuration Parameters**
+```python
+    # Parameters passed to your model's __init__ method
+    loader_kwargs={
+        "temperature": 0.7,     # Generation temperature
+        "max_tokens": 2048,     # Maximum output length
+        # Add any custom parameters your model needs
+    },
+```
+
+**Model Classification**
+```python
+    # What type of task this model performs
+    model_type=ModelType.TEXT_GENERATION,  # or AUDIO_RECOGNITION, MULTIMODAL, etc.
+    
+    # What input types the model can handle
+    modalities=[ModalityType.TEXT],  # TEXT, IMAGE, AUDIO, VIDEO
+    
+    # What frameworks/libraries the model uses
+    framework=["PyTorch", "Transformers"],
 ```
 
 ### Data Flow
 
-Models process data through the `DataLoaderIterable` structure.
-This object is passed from the benchmark class to the model through the huggingface `load_dataset` method.
+Models process data through the `DataLoaderIterable` structure. This standardized format ensures that all models receive data in a consistent way, regardless of the underlying dataset format.
+
+#### Understanding DataLoaderIterable
+
+The system automatically converts dataset entries into this structure before passing them to your model:
 
 ```python
 from karma.data_models.dataloader_iterable import DataLoaderIterable
+```
 
-# Input data structure
+**Core Data Fields**
+```python
 data = DataLoaderIterable(
+    # Primary text input (questions, prompts, etc.)
     input="Your text input here",
-    images=None,  # PIL Images or bytes
-    audio=None,   # Audio data
-    conversation=None,  # Multi-turn conversations
+    
+    # System-level instructions for the model
     system_prompt="System instructions",
+    
+    # Ground truth answer (used for evaluation, not model input)
     expected_output="Ground truth for evaluation",
-    other_args={"custom_key": "custom_value"}
 )
+```
+
+**Multi-Modal Data Fields**
+```python
+    # Image data as PIL Images or raw bytes
+    images=None,  # List of PIL.Image or bytes objects
+    
+    # Audio data in various formats
+    audio=None,   # Audio file path, bytes, or numpy array
+    
+    # Video data (for video-capable models)
+    video=None,   # Video file path or processed frames
+```
+
+**Conversation Support**
+```python
+    # Multi-turn conversation history
+    conversation=None,  # List of {"role": "user/assistant", "content": "..."}}
+```
+
+**Custom Extensions**
+```python
+    # Additional dataset-specific information
+    other_args={"custom_key": "custom_value"}  # Any extra metadata
+```
+
+#### How Your Model Receives Data
+
+Your model's `run()` method receives a list of these objects:
+```python
+def run(self, inputs: List[DataLoaderIterable]) -> List[str]:
+    for item in inputs:
+        text_input = item.input           # Main question/prompt
+        system_msg = item.system_prompt   # System instructions
+        images = item.images              # Any associated images
+        # Process each item...
 ```
 
 ## Model Implementation Steps
@@ -421,7 +529,7 @@ MultiModalMeta = ModelMeta(
 )
 ```
 
-### 4. Logging
+### Logging
 ```python
 import logging
 

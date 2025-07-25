@@ -1,5 +1,5 @@
 import logging
-from typing import Tuple, List, Optional, Union, Dict, Any
+from typing import Tuple, List, Optional, Dict
 import torch
 
 from karma.data_models.dataloader_iterable import DataLoaderIterable
@@ -187,11 +187,6 @@ QwenModel3_06B = ModelMeta(
     reference=None,
     model_type=ModelType.TEXT_GENERATION,
     modalities=[ModalityType.TEXT],
-    n_parameters=None,
-    memory_usage_mb=None,
-    max_tokens=None,
-    embed_dim=None,
-    framework=["PyTorch", "Transformers"],
 )
 QwenModel_1_7B = ModelMeta(
     name="Qwen/Qwen3-1.7B",
@@ -208,11 +203,6 @@ QwenModel_1_7B = ModelMeta(
     reference=None,
     model_type=ModelType.TEXT_GENERATION,
     modalities=[ModalityType.TEXT],
-    n_parameters=None,
-    memory_usage_mb=None,
-    max_tokens=None,
-    embed_dim=None,
-    framework=["PyTorch", "Transformers"],
 )
 register_model_meta(QwenModel3_06B)
 register_model_meta(QwenModel_1_7B)

@@ -1,6 +1,5 @@
 import logging
-import os
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Any
 from io import BytesIO
 import torch
 import librosa
@@ -260,8 +259,6 @@ AUDIOX_SOUTH_V1 = ModelMeta(
     model_type=ModelType.AUDIO_RECOGNITION,
     modalities=[ModalityType.AUDIO],
     description="Jiva AI AudioX South V1 ASR model for multilingual speech recognition",
-    audio_sample_rate=16000,
-    supported_audio_formats=["wav", "flac", "mp3", "m4a", "ogg"],
     loader_class="karma.models.whisper.WhisperTransformersASR",
     loader_kwargs={
         "task": "transcribe",
@@ -273,13 +270,9 @@ AUDIOX_SOUTH_V1 = ModelMeta(
         "language": None,
     },
     languages=["ta", "te", "kn", "ml"],
-    license="MIT",
-    open_weights=True,
     reference="https://huggingface.co/jiviai/audioX-south-v1",
     release_date="2022-09-21",
-    version="1.0",
-    framework=["transformers", "torch"],
-    n_parameters=74000000,  # ~74M parameters
+    version="1.0",# ~74M parameters
 )
 
 register_model_meta(WHISPER_LARGE_V3)
