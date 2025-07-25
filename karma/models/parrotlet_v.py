@@ -111,12 +111,7 @@ ParrotletVLiteModel = ModelMeta(
     revision=None,
     reference=None,
     model_type=ModelType.TEXT_GENERATION,
-    modalities=[ModalityType.TEXT, ModalityType.IMAGE],
-    n_parameters=None,
-    memory_usage_mb=None,
-    max_tokens=None,
-    embed_dim=None,
-    framework=["PyTorch", "Transformers"],
+    modalities=[ModalityType.TEXT, ModalityType.IMAGE]
 )
 
 register_model_meta(ParrotletVLiteModel)
