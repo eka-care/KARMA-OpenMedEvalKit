@@ -6,31 +6,6 @@ title: Supported Resources
 
 The following resources are currently supported by KARMA:
 
-## Models
-
-Currently supported models (14 total):
-
-| Model Name |
-|------------|
-| Qwen/Qwen3-0.6B |
-| Qwen/Qwen3-1.7B |
-| ai4bharat/indic-conformer-600m-multilingual |
-| aws-transcribe |
-| eleven_labs |
-| gemini-2.0-flash |
-| gemini-2.5-flash |
-| google/medgemma-4b-it |
-| gpt-3.5-turbo |
-| gpt-4o |
-| gpt-4o-mini |
-| gpt-4o-transcribe |
-| us.anthropic.claude-3-5-sonnet-20241022-v2:0 |
-| us.anthropic.claude-sonnet-4-20250514-v1:0 |
-
-Recreate this through
-```
-karma list models
-```
 ## Datasets
 
 Currently supported datasets (19 total):
@@ -61,6 +36,34 @@ Recreate this through
 ```
 karma list datasets
 ```
+
+
+## Models
+
+Currently supported models (14 total):
+
+| Model Name |
+|------------|
+| Qwen/Qwen3-0.6B |
+| Qwen/Qwen3-1.7B |
+| ai4bharat/indic-conformer-600m-multilingual |
+| aws-transcribe |
+| eleven_labs |
+| gemini-2.0-flash |
+| gemini-2.5-flash |
+| google/medgemma-4b-it |
+| gpt-3.5-turbo |
+| gpt-4o |
+| gpt-4o-mini |
+| gpt-4o-transcribe |
+| us.anthropic.claude-3-5-sonnet-20241022-v2:0 |
+| us.anthropic.claude-sonnet-4-20250514-v1:0 |
+
+Recreate this through
+```
+karma list models
+```
+
 ## Metrics
 
 Currently supported metrics (10 total):

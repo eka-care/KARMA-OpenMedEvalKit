@@ -42,15 +42,13 @@ export default defineConfig({
             { label: "Overview", slug: "index" },
             { label: "Installation Guide", slug: "user-guide/installation" },
             { label: "CLI Basics", slug: "user-guide/cli-basics" },
-            { label: "CLI Interactive Mode", slug: "user-guide/interactive-mode" },
             {
               label: "Running evaluations",
               slug: "user-guide/running-evaluations",
             },
           ],
         },
-        { label: "Supported Resources", slug: "supported-resources" },
-        { label: "Architecture", slug: "architecture" },
+        { label: "Supported Datasets and Models", slug: "supported-resources" },
         { label: "Building with LLMs", slug: "building-with-llms" },
         {
           label: "User Guide",
@@ -88,6 +86,10 @@ export default defineConfig({
                   label: "Datasets Overview",
                   slug: "user-guide/datasets/datasets_overview",
                 },
+                  {
+                  label: "Data Loader Iterable",
+                  slug: "user-guide/datasets/data-loader-iterable",
+                },
               ],
             },
             {
@@ -95,21 +97,19 @@ export default defineConfig({
               // auto-generate
               autogenerate: { directory: 'user-guide/add-your-own' },
             },
-          ],
-        },
-        { label: "Caching", slug: "caching" },
-        {
-          label: "Commands",
-          items: [{ label: "Eval Command", slug: "eval-command" }],
-        },
-        {
-          label: "Benchmarks",
-          items: [
-            {
-              label: "Benchmark Overview",
-              slug: "benchmark/benchmark_overview",
+               {
+              label: "Commands",
+              // auto-generate
+              autogenerate: { directory: 'commands' },
             },
           ],
+        },
+
+        { label: "Architecture", slug: "architecture" },
+        { label: "Caching", slug: "caching" },
+        {
+              label: "Sanity Benchmark",
+              slug: "benchmark/benchmark_overview",
         },
       ],
     }),
