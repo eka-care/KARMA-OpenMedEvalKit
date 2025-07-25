@@ -136,7 +136,7 @@ class MultiDatasetOrchestrator:
             self.console.print(f"\n[cyan]Initializing cache manager[/cyan]")
             try:
                 # Use a generic dataset name for the shared cache manager
-                cache_manager = CacheManager("multi_dataset", model_meta)
+                cache_manager = CacheManager(str(dataset_names), model_meta)
                 self.console.print(
                     "[green]✓ Cache manager initialized successfully[/green]"
                 )

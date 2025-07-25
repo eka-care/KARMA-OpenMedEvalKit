@@ -8,6 +8,16 @@ This guide provides detailed installation instructions for KARMA on different pl
 ## Installation Methods
 KARMA can be installed through pip and also uv
 
+<details>
+    <summary>Installing UV</summary>
+    Run this command
+    ```bash
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+    ```
+    Or see UV docs here - https://docs.astral.sh/uv/getting-started/installation/
+</details>
+
+
 <Tabs syncKey="development-method">
   <TabItem label="pip">
       ```bash
@@ -15,6 +25,11 @@ KARMA can be installed through pip and also uv
       ```
   </TabItem>
   <TabItem label="uv">
+      ```bash
+      uv pip install karma-medeval
+      ```
+
+      Or add to your uv project through
       ```bash
       uv add karma-medeval
       ```
@@ -40,7 +55,7 @@ For audio-related datasets and ASR metrics:
   </TabItem>
   <TabItem label="uv">
       ```bash
-      uv sync --group audio
+      uv pip install "karma-medeval[audio]"
       ```
   </TabItem>
 </Tabs>
@@ -57,25 +72,27 @@ This includes:
   <TabItem label="pip">
       Install the development dependencies through pip
       ```bash
-      pip install -e ".[all]"
+      pip install "karma-medeval[all]"
       ```
   </TabItem>
   <TabItem label="uv">
       ```bash
-      uv sync --group all
+      uv pip install "karma-medeval[all]"
       ```
   </TabItem>
 </Tabs>
 
 ## Development installation
 
-For contributors and developers:
+### Clone the repository
 
 ```bash
 # Clone the repository
 git clone https://github.com/eka-care/KARMA-OpenMedEvalKit.git
 cd KARMA-OpenMedEvalKit
 ```
+
+### Install developer version
 Then run either of these commands for developer installation
 
 <Tabs syncKey="development-method">
@@ -88,6 +105,22 @@ Then run either of these commands for developer installation
   <TabItem label="uv">
       ```bash
       uv sync
+      ```
+  </TabItem>
+</Tabs>
+
+### Install with all dependencies
+
+<Tabs syncKey="development-method">
+  <TabItem label="pip">
+      Install the development dependencies through pip
+      ```bash
+      pip install -e ".[all]"
+      ```
+  </TabItem>
+  <TabItem label="uv">
+      ```bash
+      uv sync --all-extras
       ```
   </TabItem>
 </Tabs>

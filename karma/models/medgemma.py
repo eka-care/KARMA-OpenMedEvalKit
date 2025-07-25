@@ -195,11 +195,6 @@ MedGemmaModel = ModelMeta(
     reference=None,
     model_type=ModelType.TEXT_GENERATION,
     modalities=[ModalityType.TEXT, ModalityType.IMAGE],
-    n_parameters=None,
-    memory_usage_mb=None,
-    max_tokens=None,
-    embed_dim=None,
-    framework=["PyTorch", "Transformers"],
 )
 
 register_model_meta(MedGemmaModel)

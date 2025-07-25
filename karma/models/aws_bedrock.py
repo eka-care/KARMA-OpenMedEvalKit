@@ -275,15 +275,8 @@ claude_sonnet_35_bedrock = ModelMeta(
     reference="https://docs.aws.amazon.com/bedrock/latest/userguide/model-parameters-anthropic-claude-3-5-sonnet.html",
     model_type=ModelType.TEXT_GENERATION,
     modalities=[ModalityType.TEXT],
-    n_parameters=None,
-    memory_usage_mb=None,  # API-based, no local memory usage
-    max_tokens=8192,
-    embed_dim=None,
-    framework=["bedrock"],
     release_date="2024-06-20",
     version="1.0",
-    license=None,
-    open_weights=False,
 )
 
 
@@ -301,15 +294,8 @@ claude_Sonnet4_bedrock = ModelMeta(
     reference="https://docs.aws.amazon.com/bedrock/latest/userguide/model-parameters-anthropic-claude-3-haiku.html",
     model_type=ModelType.TEXT_GENERATION,
     modalities=[ModalityType.TEXT],
-    n_parameters=None,
-    memory_usage_mb=None,
-    max_tokens=4096,
-    embed_dim=None,
-    framework=["bedrock"],
     release_date="2024-03-07",
     version="1.0",
-    license=None,
-    open_weights=False,
 )
 
 # Register the models

@@ -139,16 +139,7 @@ title: Supported Resources
 
 The following resources are currently supported by KARMA:
 
-## Models
 
-Currently supported models ({len(models_data)} total):
-
-{models_table}
-
-Recreate this through
-```
-karma list models
-```
 ## Datasets
 
 Currently supported datasets ({len(datasets_data)} total):
@@ -159,6 +150,18 @@ Recreate this through
 ```
 karma list datasets
 ```
+
+## Models
+
+Currently supported models ({len(models_data)} total):
+
+{models_table}
+
+Recreate this through
+```
+karma list models
+```
+
 ## Metrics
 
 Currently supported metrics ({len(metrics_data)} total):
