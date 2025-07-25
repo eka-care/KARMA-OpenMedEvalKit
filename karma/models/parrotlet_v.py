@@ -74,6 +74,25 @@ class ParrotletVLiteLLM(MedGemmaLLM):
         self.processor = self.model.processor
 
 
+    def run(self, inputs: List[DataLoaderIterable], **kwargs) -> List[str]:
+        model_inputs = self.preprocess(inputs)
+        results = self.model.model.generate(
+            **model_inputs,
+            max_new_tokens=self.max_tokens,
+            temperature=self.temperature,
+            top_p=self.top_p,
+            top_k=self.top_k,
+        )
+
+        # Extract only the newly generated tokens
+        input_length = model_inputs["input_ids"].shape[1]
+        outputs = [
+            self.processor.decode(results[i][input_length:], skip_special_tokens=True)
+            for i in range(len(results))
+        ]
+        return self.postprocess(outputs)
+
+
 ParrotletVLiteModel = ModelMeta(
     name="ekacare/parrotlet-v-lite-4b",
     description="Parrotlet-v-lite-4b model",
