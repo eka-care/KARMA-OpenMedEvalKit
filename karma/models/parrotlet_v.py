@@ -71,9 +71,7 @@ class ParrotletVLiteLLM(MedGemmaLLM):
             torch_dtype=torch.bfloat16,
             trust_remote_code=True,
         )
-        self.processor = AutoProcessor.from_pretrained(
-            self.model_name_or_path, trust_remote_code=True
-        )
+        self.processor = self.model.processor
 
 
 ParrotletVLiteModel = ModelMeta(
