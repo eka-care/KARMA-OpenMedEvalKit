@@ -186,19 +186,20 @@ MedGemmaModel = ModelMeta(
         else "mps"
         if torch.mps.is_available()
         else "cpu",
-        "max_tokens": 1024,  # Sufficient for translation outputs
-        "temperature": 0.01,  # Lower temperature for more consistent translations
-        "top_p": 0.9,  # Nucleus sampling
+        "max_tokens": 1024,
+        "temperature": 0.01,
+        "top_p": 0.9, 
         "top_k": 50,
     },
     revision=None,
     reference=None,
     model_type=ModelType.TEXT_GENERATION,
-    modalities=[ModalityType.TEXT],
+    modalities=[ModalityType.TEXT, ModalityType.IMAGE],
     n_parameters=None,
     memory_usage_mb=None,
     max_tokens=None,
     embed_dim=None,
     framework=["PyTorch", "Transformers"],
 )
+
 register_model_meta(MedGemmaModel)

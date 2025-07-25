@@ -24,7 +24,7 @@ SPLIT = "test"  # Adjust as needed based on actual dataset splits
     DATASET_NAME,
     split=SPLIT,
     metrics=["json_rubric_evaluation"],
-    task_type="multimodal_rubric_evaluation",
+    task_type="image_to_json",
     optional_args=["system_prompt"],
 )
 class MedicalRecordsParsingDataset(BaseMultimodalDataset):
