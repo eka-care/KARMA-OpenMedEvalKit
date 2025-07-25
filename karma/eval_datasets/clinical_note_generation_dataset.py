@@ -23,7 +23,7 @@ SPLIT = "test"  # Adjust as needed based on actual dataset splits
     DATASET_NAME,
     split=SPLIT,
     metrics=["json_rubric_evaluation"],
-    task_type="text_to_json_rubric_evaluation",
+    task_type="text_to_json",
 )
 class ClinicalNoteGenerationDataset(BaseMultimodalDataset):
     """
