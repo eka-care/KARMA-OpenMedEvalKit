@@ -126,7 +126,7 @@ class ASRSemanticMetrics(BaseMetric):
             aligner = ASRSemanticMetrics.get_aligner(language, cer_threshold)
             alignments = aligner.align_words_dp(ref, hyp)
 
-            aligner.print_alignment_visual(alignments) #to be used for debugging
+            # aligner.print_alignment_visual(alignments) #to be used for debugging
 
             # Calculate statistics
             stats = aligner.calculate_error_rates(alignments)
@@ -383,6 +383,7 @@ class ASRSemanticMetrics(BaseMetric):
                     full_alignments = results.full_alignments or []
                     keyword_wer = self.compute_kw_wer_from_sem_alignment(full_alignments, all_keywords)
                     results.entity_wer = keyword_wer
+            results.full_alignments = []
             return results            
         except Exception as e:
             logger.error(f"Error: {e}")
