@@ -249,9 +249,6 @@ DocAssistChatDefault = ModelMeta(
     },
     model_type=ModelType.TEXT_GENERATION,
     modalities=[ModalityType.TEXT],
-    framework=["API", "SSE"],
-    n_parameters=None,  # Unknown for API models
-    memory_usage_mb=None,  # Not applicable for API models
 )
 
 # Register the model

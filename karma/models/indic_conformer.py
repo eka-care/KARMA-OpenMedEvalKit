@@ -148,8 +148,6 @@ INDIC_CONFORMER_MULTILINGUAL_META = ModelMeta(
     model_type=ModelType.AUDIO_RECOGNITION,
     modalities=[ModalityType.AUDIO],
     description="Multilingual Conformer ASR model for Indian languages",
-    audio_sample_rate=16000,
-    supported_audio_formats=["wav", "flac", "mp3"],
     loader_class="karma.models.indic_conformer.IndicConformerASR",
     loader_kwargs={
         "language": "hi",  # Hindi by default
@@ -162,8 +160,6 @@ INDIC_CONFORMER_MULTILINGUAL_META = ModelMeta(
         "decoding_method": "ctc",
     },
     languages=["hin-Deva", "ben-Beng", "tam-Taml", "tel-Telu", "mar-Deva"],
-    license="MIT",
-    open_weights=True,
     reference="https://huggingface.co/ai4bharat/indic-conformer-600m-multilingual",
     release_date="2023-06-15",
     version="1.0",

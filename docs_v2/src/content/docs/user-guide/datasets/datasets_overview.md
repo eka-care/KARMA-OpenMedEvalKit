@@ -6,7 +6,7 @@ This guide covers working with datasets in KARMA, from using built-in datasets t
 
 ## Built-in Datasets
 
-KARMA supports 12+ medical datasets across multiple modalities:
+KARMA supports 14+ medical datasets across multiple modalities:
 
 ```bash
 # List available datasets
