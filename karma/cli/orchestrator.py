@@ -133,7 +133,7 @@ class MultiDatasetOrchestrator:
         # Initialize cache manager once for all datasets
         cache_manager = None
         if use_cache:
-            self.console.print(f"\n[cyan]Initializing cache manager[/cyan]")
+            self.console.print("\n[cyan]Initializing cache manager[/cyan]")
             try:
                 # Use a generic dataset name for the shared cache manager
                 cache_manager = CacheManager(str(dataset_names), model_meta)
@@ -378,6 +378,8 @@ class MultiDatasetOrchestrator:
             for metric_name in metrics:
                 # Get metric class from registry
                 metric_kwargs = metric_args.get(metric_name, {}) if metric_args else {}
+                if metric_kwargs == {}:
+                    logger.info(f"No metric kwargs provided for {metric_name}, using default values only")
                 metric_instance = metric_registry.get_metric_class(
                     metric_name, **metric_kwargs
                 )
