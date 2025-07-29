@@ -16,7 +16,6 @@ COMMIT_HASH = "991bc807cab1f323f0283c836c634796bbf1ed3e"
     task_type="transcription",
     required_args=["language"],
     default_args={"language": "hi"},
-    processors=["multilingual_text_processor"],
 )
 class EkaMedicalAsrDataset(BaseMultimodalDataset):
     def __init__(
