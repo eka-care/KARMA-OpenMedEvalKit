@@ -69,15 +69,9 @@ def main():
     )
 
     # Configure metrics
-    metric_configs = [
-        {
-            "metric": WERMetric(metric_name="wer"),
-            "processors": []
-        },
-        {
-            "metric": CERMetric(metric_name="cer"),
-            "processors": []
-        }
+    metrics = [
+             WERMetric(metric_name="wer")
+             CERMetric(metric_name="cer"),
     ]
 
     # Set up caching
@@ -95,7 +89,7 @@ def main():
 
     print("Running evaluation...")
     results = benchmark.evaluate(
-        metric_configs=metric_configs,
+        metrics=metrics,
         batch_size=1
     )
 
@@ -127,7 +121,7 @@ When you run this code, here's what happens:
 ```python
 # Process multiple samples at once for better performance
 results = benchmark.evaluate(
-    metric_configs=metric_configs,
+    metrics=metrics,
     batch_size=8,
     max_samples=100
 )
@@ -146,7 +140,7 @@ class CustomAccuracyMetric(BaseMetric):
         correct = sum(1 for p, r in zip(predictions, references) if p.strip() == r.strip())
         return correct / len(predictions)
 
-metric_configs = [{"metric": CustomAccuracyMetric(), "processors": []}]
+metrics = [CustomAccuracyMetric()]
 ```
 
 ### Multiple Languages
@@ -158,7 +152,7 @@ results_by_language = {}
 for language in languages:
     dataset = IndicVoicesRDataset(language=language, postprocessors=[processor])
     benchmark = Benchmark(model=model, dataset=dataset, cache_manager=cache_manager)
-    results_by_language[language] = benchmark.evaluate(metric_configs=metric_configs)
+    results_by_language[language] = benchmark.evaluate(metrics = metrics)
 ```
 
 ### Multiple Datasets
@@ -171,7 +165,7 @@ dataset_2 = IndicVoicesDataset(language=language, postprocessors=[processor])
 dataset_results = []
 for i in [dataset_1, dataset_2]:
     benchmark = Benchmark(model=model, dataset=dataset, cache_manager=cache_manager)
-    dataset_results[i.name] = benchmark.evaluate(metric_configs=metric_configs)
+    dataset_results[i.name] = benchmark.evaluate(metrics=metrics)
 ```
 
 
@@ -187,7 +181,7 @@ with Progress() as progress:
         cache_manager=cache_manager,
         progress=progress
     )
-    results = benchmark.evaluate(metric_configs=metric_configs, batch_size=1)
+    results = benchmark.evaluate(metrics=metrics, batch_size=1)
 ```
 
 This API gives you complete control over your evaluation pipeline while maintaining KARMA's performance optimizations and robustness.
