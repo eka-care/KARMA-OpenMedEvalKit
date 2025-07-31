@@ -52,6 +52,8 @@ class MedQADataset(BaseMultimodalDataset):
             **kwargs: Additional arguments passed to base class
         """
         super().__init__(
+            dataset_name=dataset_name,
+            split=split,
             confinement_instructions=confinement_instructions,
             dataset_name=dataset_name,
             split=split,

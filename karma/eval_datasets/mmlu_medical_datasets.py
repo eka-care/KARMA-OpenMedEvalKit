@@ -40,6 +40,7 @@ class MMLUProfessionalMedicineDataset(MedQADataset):
             confinement_instructions=confinement_instructions,
             **kwargs,
         )
+        self.dataset_name = "openlifescienceai/mmlu_professional_medicine"
 
 
 @register_dataset(
