@@ -38,10 +38,6 @@ class MedMCQADataset(BaseMultimodalDataset):
     """
 
     def __init__(
-            self,
-            dataset_name: str = DATASET_NAME,
-            split: str = SPLIT,
-            **kwargs,
         self,
         dataset_name: str = DATASET_NAME,
         split: str = SPLIT,

@@ -41,8 +41,6 @@ class PubMedMCQADataset(MedQADataset):
         self,
         dataset_name=DATASET_NAME,
         split=SPLIT,
-        dataset_name: str = DATASET_NAME,
-        split: str = SPLIT,
         commit_hash: str = COMMIT_HASH,
         confinement_instructions: str = CONFINEMENT_INSTRUCTIONS,
         **kwargs,

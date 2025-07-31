@@ -1,14 +1,17 @@
+
+    
 ---
 title: Supported Resources
 ---
 
-> **Note**: This page is auto-generated during the CI/CD pipeline. Last updated: 2025-07-16 19:01:25 UTC
+> **Note**: This page is auto-generated during the CI/CD pipeline. Last updated: 2025-07-31 16:03:41 UTC
 
 The following resources are currently supported by KARMA:
 
+
 ## Datasets
 
-Currently supported datasets (19 total):
+Currently supported datasets (22 total):
 
 | Dataset | Task Type | Metrics | Required Args | Processors | Split |
 |---------|-----------|---------|---------------|------------|-------|
@@ -18,11 +21,14 @@ Currently supported datasets (19 total):
 | ai4bharat/IndicVoices | transcription | wer, cer, asr_semantic_metric | language | multilingual_text_processor | valid |
 | ai4bharat/indicvoices_r | transcription | asr_semantic_metric | language | multilingual_text_processor | test |
 | ekacare/MedMCQA-Indic | mcqa | exact_match | subset | — | test |
-| ekacare/clinical_note_generation_dataset | text_to_json_rubric_evaluation | json_rubric_evaluation | — | — | test |
+| ekacare/clinical_note_generation_dataset | text_to_json | json_rubric_evaluation | — | — | test |
+| ekacare/eka-medical-asr-evaluation-dataset | transcription | wer, cer, asr_semantic_metric | language | — | test |
 | ekacare/ekacare_medical_history_summarisation | rubric_evaluation | rubric_evaluation | — | — | test |
-| ekacare/medical_records_parsing_validation_set | multimodal_rubric_evaluation | json_rubric_evaluation | — | — | test |
+| ekacare/medical_records_parsing_validation_set | image_to_json | json_rubric_evaluation | — | — | test |
+| ekacare/vistaar_small_asr_eval | transcription | wer, cer | language | general_text_processor | test |
 | flaviagiammarino/vqa-rad | vqa | exact_match, tokenised_f1 | — | — | test |
 | mdwiratathya/SLAKE-vqa-english | vqa | exact_match, tokenised_f1 | — | — | test |
+| nfi_mcqa | mcqa | exact_match | — | — | test |
 | openlifescienceai/medmcqa | mcqa | exact_match | — | — | validation |
 | openlifescienceai/medqa | mcqa | exact_match | — | — | test |
 | openlifescienceai/mmlu_anatomy | mcqa | exact_match | — | — | test |
@@ -37,10 +43,9 @@ Recreate this through
 karma list datasets
 ```
 
-
 ## Models
 
-Currently supported models (14 total):
+Currently supported models (23 total):
 
 | Model Name |
 |------------|
@@ -48,14 +53,23 @@ Currently supported models (14 total):
 | Qwen/Qwen3-1.7B |
 | ai4bharat/indic-conformer-600m-multilingual |
 | aws-transcribe |
-| eleven_labs |
+| docassistchat/default |
+| ekacare/parrotlet-a-en-5b |
+| ekacare/parrotlet-v-lite-4b |
 | gemini-2.0-flash |
 | gemini-2.5-flash |
 | google/medgemma-4b-it |
 | gpt-3.5-turbo |
+| gpt-4.1 |
 | gpt-4o |
 | gpt-4o-mini |
 | gpt-4o-transcribe |
+| jiviai/audioX-north-v1 |
+| jiviai/audioX-south-v1 |
+| o3 |
+| openai/whisper-large-v3 |
+| scribe_v1 |
+| us.anthropic.claude-3-5-sonnet-20240620-v1:0 |
 | us.anthropic.claude-3-5-sonnet-20241022-v2:0 |
 | us.anthropic.claude-sonnet-4-20250514-v1:0 |
 
@@ -112,8 +126,8 @@ karma info dataset "openlifescienceai/pubmedqa"
 
 To add new models, datasets, or metrics to KARMA:
 
-- See [Adding Models](/user-guide/add-your-own/add-model)
-- See [Adding Datasets](/user-guide/add-your-own/add-dataset.mdx)
-- See [Metrics Overview](/user-guide/metrics/metrics_overview)
+- See [Adding Models](/user-guide/add-your-own/add-model.md)
+- See [Adding Datasets](/user-guide/add-your-own/add-dataset.md)
+- See [Metrics Overview](/user-guide/metrics/metrics_overview.md)
 
-For more detailed information about the registry system, see the [Registry Documentation](/user-guide/registry/registries).
+For more detailed information about the registry system, see the [Registry Documentation](/user-guide/registry/registries.md).

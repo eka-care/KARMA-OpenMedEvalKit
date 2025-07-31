@@ -55,8 +55,6 @@ class MedQADataset(BaseMultimodalDataset):
             dataset_name=dataset_name,
             split=split,
             confinement_instructions=confinement_instructions,
-            dataset_name=dataset_name,
-            split=split,
             commit_hash=commit_hash,
             **kwargs,
         )
