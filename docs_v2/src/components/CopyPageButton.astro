@@ -50,6 +50,15 @@
         <line x1="10" y1="14" x2="21" y2="3"></line>
       </svg>
     </button>
+    <button class="dropdown-item" data-ai="chatgpt">
+      <img class="item-icon openai-logo" src="/openai-logo.svg" alt="ChatGPT" width="16" height="16" />
+      <span>Open in ChatGPT</span>
+      <svg class="external-icon" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+        <polyline points="15,3 21,3 21,9"></polyline>
+        <line x1="10" y1="14" x2="21" y2="3"></line>
+      </svg>
+    </button>
   </div>
 </div>
 
@@ -201,6 +210,10 @@
     filter: brightness(0) saturate(100%) invert(50%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(50%) contrast(100%);
   }
 
+  .openai-logo {
+    filter: brightness(0) saturate(100%) invert(50%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(50%) contrast(100%);
+  }
+
   .external-icon {
     width: 12px;
     height: 12px;
@@ -305,34 +318,44 @@
 
   async function handleAIAction(aiType) {
     try {
-      const content = await getPageContent();
       const currentUrl = window.location.href;
-      const pageTitle = document.title;
       
-      // Prepare content for AI
-      const aiPrompt = `Here's the content from the documentation page "${pageTitle}" (${currentUrl}):\n\n${content}`;
-      
-      // Store in clipboard for easy pasting
-      await navigator.clipboard.writeText(aiPrompt);
-      
-      // Open AI service (placeholder URLs - these would need to be configured)
       let aiUrl;
+      let shouldCopyContent = true;
+      
       switch (aiType) {
         case 'claude':
-          aiUrl = 'https://claude.ai';
+          // For Claude, use the new URL format with the page URL as parameter
+          const prompt = `Read from ${currentUrl} so I can ask questions about it`;
+          aiUrl = `https://claude.ai/new?q=${encodeURIComponent(prompt)}`;
+          shouldCopyContent = false;
           break;
         case 'chatgpt':
-          aiUrl = 'https://chat.openai.com';
+          const chatgptPrompt = `Read from ${currentUrl} so I can ask questions about it`;
+          aiUrl = `https://chat.openai.com/?q=${encodeURIComponent(chatgptPrompt)}`;
+          shouldCopyContent = false;
           break;
         case 'copilot':
           aiUrl = 'https://copilot.microsoft.com';
           break;
         default:
-          aiUrl = 'https://claude.ai';
+          const defaultPrompt = `Read from ${currentUrl}`;
+          aiUrl = `https://claude.ai/new?q=${encodeURIComponent(defaultPrompt)}`;
+          shouldCopyContent = false;
+      }
+      
+      // For non-Claude services, copy content to clipboard
+      if (shouldCopyContent) {
+        const content = await getPageContent();
+        const pageTitle = document.title;
+        const aiPrompt = `Here's the content from the documentation page "${pageTitle}" (${currentUrl}):\n\n${content}`;
+        await navigator.clipboard.writeText(aiPrompt);
+        showFeedback(`Content copied! Opening ${aiType}...`);
+      } else {
+        showFeedback(`Opening ${aiType}...`);
       }
       
       window.open(aiUrl, '_blank');
-      showFeedback(`Content copied! Opening ${aiType}...`);
       
     } catch (error) {
       console.error('Failed to handle AI action:', error);
