@@ -1,7 +1,9 @@
 ---
 title: Add metric
 ---
-You can create custom evaluation metrics by inheriting from `BaseMetric`:
+You can create custom evaluation metrics by inheriting from `BaseMetric`
+
+All you need to do is implement th `evaluate` method in the inherited class. 
 
 ```python
 from karma.metrics.base_metric_abs import BaseMetric
