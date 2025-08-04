@@ -9,7 +9,7 @@ import json
 import re
 from typing import Dict, Any, List, Optional
 from pathlib import Path
-from dataclasses import dataclass, fields, is_dataclass
+from dataclasses import fields, is_dataclass
 
 import click
 from rich.console import Console
@@ -17,7 +17,6 @@ from rich.prompt import Prompt
 
 from karma.registries.dataset_registry import dataset_registry
 from karma.registries.processor_registry import processor_registry
-from karma.registries.metrics_registry import metric_registry
 from karma.registries.model_registry import model_registry
 from karma.data_models.model_meta import ModalityType
 
@@ -450,14 +449,14 @@ def prompt_for_missing_processor_args(
 
     # Prompt for required arguments
     if missing_args:
-        console.print(f"[red]Required arguments:[/red]")
+        console.print("[red]Required arguments:[/red]")
         for arg_name in missing_args:
             value = Prompt.ask(f"Enter value for [cyan]{arg_name}[/cyan]")
             args[arg_name] = value
 
     # Prompt for optional arguments
     if optional_args:
-        console.print(f"[blue]Optional arguments (press Enter to use default):[/blue]")
+        console.print("[blue]Optional arguments (press Enter to use default):[/blue]")
         for arg_name in optional_args:
             default_value = default_args.get(arg_name, "")
             default_display = f" (default: {default_value})" if default_value else ""
@@ -607,6 +606,7 @@ def get_compatible_datasets_for_model(model_name: str) -> List[str]:
                         "asr",
                         "audio_classification",
                         "speech_translation",
+                        "transcription"
                     ]:
                         is_compatible = True
 
@@ -660,14 +660,14 @@ def prompt_for_missing_metric_args(
 
     # Prompt for required arguments
     if missing_args:
-        console.print(f"[red]Required arguments:[/red]")
+        console.print("[red]Required arguments:[/red]")
         for arg_name in missing_args:
             value = Prompt.ask(f"Enter value for [cyan]{arg_name}[/cyan]")
             args[arg_name] = value
 
     # Prompt for optional arguments
     if optional_args:
-        console.print(f"[blue]Optional arguments (press Enter to use default):[/blue]")
+        console.print("[blue]Optional arguments (press Enter to use default):[/blue]")
         for arg_name in optional_args:
             default_value = default_args.get(arg_name, "")
             default_display = f" (default: {default_value})" if default_value else ""
