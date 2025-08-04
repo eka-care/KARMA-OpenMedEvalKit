@@ -98,9 +98,3 @@ karma eval \
 ```bash
 --metrics-args "accuracy:threshold=0.8"
 ```
-
-## Next Steps
-
-- **Run your first evaluation**: See [Running Evaluations](running-evaluations)
-- **Learn about models**: Check out the [Models Guide](../models/overview)
-- **Explore datasets**: Read the [Datasets Guide](datasets/datasets_overview)

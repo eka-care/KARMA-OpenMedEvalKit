@@ -166,9 +166,3 @@ karma list datasets
 # Correct
 --model-args '{"temperature": 0.7}'
 ```
-
-## See Also
-
-- [Running Evaluations Guide](../user-guide/running-evaluations.md)
-- [Model Configuration](../user-guide/models/model-configuration.md)
-- [CLI Basics](../user-guide/cli-basics.md)
