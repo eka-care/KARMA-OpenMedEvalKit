@@ -43,7 +43,7 @@ karma = "karma.cli.main:main"
 
 [tool.setuptools.package-data]
 karma = [
-    "karma/processors/glm/*",
+    "processors/glm/*",
 ]
 
 
