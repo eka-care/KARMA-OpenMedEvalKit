@@ -173,6 +173,23 @@ GeminiASR_2_5_Flash = ModelMeta(
     version="2.5",
 )
 
+GeminiASR_2_5_Flash_lite = ModelMeta(
+    name="gemini-2.5-flash-lite",
+    description="Google Gemini 2.5 Flash Lite ASR model",
+    loader_class="karma.models.gemini_asr.GeminiASR",
+    loader_kwargs={
+        "model_id": "gemini-2.5-flash-lite",
+        "thinking_budget": None,
+    },
+    revision=None,
+    reference="https://ai.google.dev/gemini-api/docs",
+    model_type=ModelType.AUDIO_RECOGNITION,
+    modalities=[ModalityType.AUDIO],
+    release_date="2024-05-14",
+    version="2.5",
+)
+
 # Register the models
 register_model_meta(GeminiASR_2_0_Flash)
-register_model_meta(GeminiASR_2_5_Flash) 
+register_model_meta(GeminiASR_2_5_Flash)
+register_model_meta(GeminiASR_2_5_Flash_lite)

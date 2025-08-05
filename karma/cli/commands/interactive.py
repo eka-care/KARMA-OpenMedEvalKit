@@ -800,13 +800,13 @@ def execute_evaluation(session: InteractiveSession) -> bool:
     """Execute the evaluation with the current configuration."""
     try:
         console.print("\n[bold cyan]Executing Evaluation[/bold cyan]")
-
+        console.print(f"Session model args {session.model_args}")
         # Create orchestrator with model information
         orchestrator = MultiDatasetOrchestrator(
             model_name=session.selected_model,
             model_path=session.selected_model,  # Using model name as path (registry will handle it)
             console=console,
-            **session.model_args,
+            **{"model_kwargs": session.model_args},
         )
 
         # Prepare processor arguments in the format expected by orchestrator

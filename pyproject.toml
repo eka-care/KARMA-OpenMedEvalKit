@@ -40,6 +40,13 @@ build-backend = "setuptools.build_meta"
 [project.scripts]
 karma = "karma.cli.main:main"
 
+
+[tool.setuptools.package-data]
+karma = [
+    "karma/processors/glm/*",
+]
+
+
 [project.optional-dependencies]
 dev = [
     "pytest>=8.4.1",
