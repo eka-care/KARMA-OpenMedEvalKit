@@ -32,7 +32,7 @@ class ASRMetrics(BaseMetric):
         total_words = 0
         total_word_dist = 0
 
-        for ref, hyp in zip(references, references):
+        for ref, hyp in zip(references, predictions):
             total_chars += len(ref)
             cer_score = cer(ref, hyp)
             if isinstance(cer_score, dict):
