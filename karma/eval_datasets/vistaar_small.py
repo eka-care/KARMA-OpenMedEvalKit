@@ -11,13 +11,13 @@ COMMIT_HASH = "8b7b3e8d11d2da441c6c708c2d9a4a7958b57881"
 
 @register_dataset(
     DATASET_NAME,
-    metrics=["wer", "cer", "asr_semantic_metric"],
+    metrics=["wer", "cer"],
     commit_hash=COMMIT_HASH,
     split=SPLIT,
     task_type="transcription",
     required_args=["language"],
     default_args={"language": "hi"},
-    processors=["multilingual_text_processor"],
+    processors=["general_text_processor"],
 )
 class VistaarSmallDataset(BaseMultimodalDataset):
     def __init__(
