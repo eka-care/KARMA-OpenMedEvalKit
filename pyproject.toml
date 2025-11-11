@@ -27,6 +27,10 @@ dependencies = [
     "requests>=2.32.4",
     "simple-term-menu>=1.6.6",
     "ipython>=8.37.0",
+    "pytrec-eval-terrier>=0.5.7",
+    "sentence-transformers>=5.0.0",
+    "faiss-cpu>=1.11.0.post1",
+    "hf_transfer==0.1.9"
 ]
 
 [project.urls]
