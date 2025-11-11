@@ -4,6 +4,7 @@ from collections import Counter
 import re
 import ast
 import pytrec_eval
+from typing import Dict, Any
 from karma.metrics.base_metric_abs import BaseMetric
 from karma.registries.metrics_registry import register_metric
 

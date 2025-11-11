@@ -156,7 +156,7 @@ class HFEmbeddingBaseModel(BaseModel):
         return outputs
 
 
-model_path = "/workspace/parrotlet-e/models/Eka-IndicBertv2-1024-2e-5-3-MSLoss-NC2-Pairs-e00546b2b3e7f23e3167bc08c7b31c001cd25d24"
+model_path = "ekacare/parrotlet-e"
 model = ModelMeta(
     name=model_path,
     loader_class="karma.models.hf_embedding_model.HFEmbeddingBaseModel",
