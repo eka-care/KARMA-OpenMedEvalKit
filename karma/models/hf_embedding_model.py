@@ -156,17 +156,23 @@ class HFEmbeddingBaseModel(BaseModel):
         return outputs
 
 
-model_path = "ekacare/parrotlet-e"
-model = ModelMeta(
-    name=model_path,
-    loader_class="karma.models.hf_embedding_model.HFEmbeddingBaseModel",
-    loader_kwargs={
-        "model_name_or_path": model_path,
-        "max_length": 60,
-        "k_values": [1, 3, 5, 10],
-        "quantization": None,
-    },
-    model_type=ModelType.EMBEDDING,
-    modalities=[ModalityType.TEXT]
-)
-register_model_meta(model)
+model_paths = [
+    "ekacare/parrotlet-e",
+    "ekacare/SapBERT-finetuned",
+    "ekacare/EmbeddingGemma-finetuned",
+    "ekacare/IndicBertV2-finetuned",
+]
+for model_path in model_paths:
+    model = ModelMeta(
+        name=model_path,
+        loader_class="karma.models.hf_embedding_model.HFEmbeddingBaseModel",
+        loader_kwargs={
+            "model_name_or_path": model_path,
+            "max_length": 60,
+            "k_values": [1, 3, 5],
+            "quantization": None,
+        },
+        model_type=ModelType.EMBEDDING,
+        modalities=[ModalityType.TEXT]
+    )
+    register_model_meta(model)
