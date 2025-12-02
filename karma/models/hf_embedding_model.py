@@ -14,7 +14,7 @@ from karma.utils.retrieval.pooling import cls_pooling, mean_pooling, eos_pooling
 from karma.utils.retrieval.index import faiss_index
 from transformers import AutoTokenizer, AutoModel
 
-hf_token = os.getenv("HF_TOKEN")
+from karma.utils.auth import get_hf_token
 class HFEmbeddingBaseModel(BaseModel):
     def __init__(
         self,
@@ -73,7 +73,7 @@ class HFEmbeddingBaseModel(BaseModel):
         self.pooling_func = pooling_functions[pooling]
 
         self.dataset_name = dataset_name
-        self.corpus = load_dataset(self.dataset_name, "corpus", token=os.getenv("HF_TOKEN"))["test"]
+        self.corpus = load_dataset(self.dataset_name, "corpus", token=get_hf_token())["test"]
         self.logger.info(f"Corpus length: {len(self.corpus)}")
 
         self.faiss_wrapper = faiss_index.FAISSIndex(score_function=self.score_function, logger=self.logger)
