@@ -3,6 +3,7 @@ import os
 import numpy as np
 from torch.utils.data import DataLoader
 from typing import Dict, Any, Generator, Tuple
+from karma.utils.auth import get_hf_token
 from datasets import load_dataset
 from collections import defaultdict
 from karma.data_models.dataloader_iterable import DataLoaderIterable
@@ -35,7 +36,7 @@ class EkaRetrievalDataset(BaseMultimodalDataset):
         self.dataset_name = dataset_name
         self.split = split
         self.language = language
-        self.hf_token = os.getenv("HF_TOKEN")
+        self.hf_token = get_hf_token()
         self.logger = logging.getLogger(__name__)
 
         # Initialize dataset components
