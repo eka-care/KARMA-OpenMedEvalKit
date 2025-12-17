@@ -1,0 +1,26 @@
+{
+  "mm": ["मिलीमीटर", "मिलिमीटर", "millimeter", "millimeters"],
+  "mm3": ["घन मिलीमीटर", "मिलीमीटर घन", "cubic millimeter", "cubic millimeters"],
+  "cm": ["सेंटीमीटर", "सेन्टीमीटर", "centimeter", "centimeters"],
+  "m": ["मीटर", "meter", "meters"],
+  "km": ["किलोमीटर", "किलोमिटर", "kilometer", "kilometers"],
+  "g": ["ग्राम", "gram", "grams"],
+  "kg": ["किलोग्राम", "किलोग्राम", "kilogram", "kilograms"],
+  "mg": ["मिलीग्राम", "मिलिग्राम", "milligram", "milligrams"],
+  "ml": ["मिलीलीटर", "मिलिलीटर", "milliliter", "milliliters"],
+  "l": ["लीटर", "लिटर", "liter", "liters"],
+  "sec": ["सेकंड", "सेकण्ड", "second", "seconds"],
+  "min": ["मिनट", "minute", "minutes"],
+  "hr": ["घंटा", "घण्टा", "hour", "hours"],
+  "db": ["डेसिबल", "decibel", "decibels"],
+  "hz": ["हर्ट्ज़", "हर्ट्ज", "hertz"],
+  "mv": ["मिलीवोल्ट", "मिलिवोल्ट", "millivolt", "millivolts"],
+  "cc": ["सीसी", "घन सेंटीमीटर", "cubic centimeter"],
+  "ppm": ["पीपीएम", "प्रति मिलियन भाग", "parts per million"],
+  "rpm": ["आरपीएम", "प्रति मिनट चक्कर", "revolutions per minute"],
+  "iu": ["अंतर्राष्ट्रीय इकाई", "international unit", "international units"],
+  "conc": ["सांद्रता", "एकाग्रता", "concentration"],
+  "ok": ["ठीक है", "okay"],
+  "°c": ["डिग्री सेल्सियस", "degree celsius"]
+}
+

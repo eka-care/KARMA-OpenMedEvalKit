@@ -1,0 +1,27 @@
+{
+  "mm": ["millimeter", "millimeters", "millimetre", "millimetres"],
+  "mm3": ["millimeter cube", "millimeters cube", "millimetre cube", "millimetres cube", 
+          "cubic millimeter", "cubic millimeters"],
+  "cm": ["centimeter", "centimeters", "centimetre", "centimetres"],
+  "m": ["meter", "meters", "metre", "metres"],
+  "km": ["kilometer", "kilometers", "kilometre", "kilometres"],
+  "g": ["gram", "grams", "gramme", "grammes"],
+  "kg": ["kilogram", "kilograms", "kilogramme", "kilogrammes"],
+  "mg": ["milligram", "milligrams"],
+  "ml": ["milliliter", "milliliters", "millilitre", "millilitres"],
+  "l": ["liter", "liters", "litre", "litres"],
+  "sec": ["second", "seconds"],
+  "min": ["minute", "minutes"],
+  "hr": ["hour", "hours"],
+  "db": ["decibel", "decibels"],
+  "hz": ["hertz"],
+  "mv": ["millivolt", "millivolts"],
+  "cc": ["cubic centimeter", "cubic centimeters"],
+  "ppm": ["parts per million"],
+  "rpm": ["revolutions per minute"],
+  "iu": ["international unit", "international units"],
+  "conc": ["concentration"],
+  "ok": ["okay"],
+  "°c": ["degree celsius"]
+}
+
