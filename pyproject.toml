@@ -72,7 +72,11 @@ audio = [
     "num2words>=0.5.14",
 ]
 
+tools = [
+    "fastmcp>=3.0.2",
+]
+
 # This enables pip install karma[all]
 all = [
-    "karma-medeval[dev,audio]",
+    "karma-medeval[dev,audio,tools]",
 ]
