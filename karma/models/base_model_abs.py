@@ -107,6 +107,26 @@ class BaseModel(ABC):
         """
         pass
 
+    def run_with_metadata(
+        self,
+        inputs: Union[torch.Tensor, Dict[str, torch.Tensor], List[str], Any],
+        **kwargs,
+    ) -> List[Dict[str, str]]:
+        """
+        Run inference while returning normalized metadata for benchmark-style callers.
+
+        By default, this wraps ``run()`` and exposes a plain text prediction plus an
+        empty tool trace so existing model implementations remain compatible.
+        """
+        outputs = self.run(inputs, **kwargs)
+        return [
+            {
+                "text": str(output).strip() if output is not None else "",
+                "tool_trace": "",
+            }
+            for output in outputs
+        ]
+
     def get_model_info(self) -> Dict[str, Any]:
         """
         Get information about the loaded model.

@@ -249,6 +249,7 @@ class CacheManager:
                 "dataset_row_metadata": data["sample"].get("other_args", {}),
                 "dataset_row_hash": input_hashes[i],
                 "model_output": data.get("prediction", ""),
+                "tool_trace": data.get("tool_trace", ""),
                 "ground_truth_output": data.get("expected_output", ""),
                 "config_hash": self.config_hash,
                 "success": data.get("success", True),

@@ -31,7 +31,7 @@ class OpenAILLM(BaseModel):
         top_p: float = 1.0,
         frequency_penalty: float = 0.0,
         presence_penalty: float = 0.0,
-        max_workers: int = 20,
+        max_workers: int = 4,
         tools: Optional[List[str]] = None,
         force_tool_call: Optional[str] = None,
         **kwargs,
@@ -197,6 +197,10 @@ class OpenAILLM(BaseModel):
                 "messages": messages,
                 "model": self.model_id,
             }
+            if item.tool_policy:
+                message_dict["tool_policy"] = item.tool_policy.model_dump(
+                    exclude_none=True
+                )
             _no_sampling_params = {"o3"} | {
                 m for m in [self.model_id] if m.startswith("gpt-5")
             }
@@ -220,62 +224,103 @@ class OpenAILLM(BaseModel):
 
         return processed_inputs
 
-    def _make_single_call(self, api_input: Dict[str, Any]) -> str:
+    def _append_tool_instruction(
+        self, messages: List[Dict[str, Any]], tool_policy: Dict[str, Any]
+    ) -> List[Dict[str, Any]]:
+        """Append dataset-provided tool guidance without hardcoding task semantics."""
+        tool_instruction = tool_policy.get("tool_instruction")
+        if not tool_instruction:
+            return messages
+
+        updated_messages = list(messages)
+        for idx, message in enumerate(updated_messages):
+            if message.get("role") in ("system", "developer"):
+                content = message.get("content", "")
+                if isinstance(content, str):
+                    updated_messages[idx] = {
+                        **message,
+                        "content": f"{content}\n\n{tool_instruction}".strip(),
+                    }
+                    return updated_messages
+
+        return [{"role": "developer", "content": tool_instruction}] + updated_messages
+
+    def _resolve_tool_choice(
+        self, tool_policy: Dict[str, Any], *, is_first_turn: bool
+    ) -> Any:
+        """Resolve provider-specific tool choice for the current turn."""
+        effective_force_tool = self.force_tool_call or tool_policy.get(
+            "force_tool_call_name"
+        )
+        if effective_force_tool and is_first_turn:
+            return {
+                "type": "function",
+                "function": {"name": effective_force_tool},
+            }
+
+        choice_key = (
+            "first_turn_tool_choice" if is_first_turn else "later_turn_tool_choice"
+        )
+        choice = tool_policy.get(choice_key, "auto")
+        return "required" if choice == "required" else "auto"
+
+    def _make_single_call(self, api_input: Dict[str, Any]) -> Dict[str, str]:
         """
         Make a single API call to OpenAI, with autonomous tool loop if MCP tools are configured.
 
-        Args:
-            api_input: Processed API input dictionary
-
         Returns:
-            Generated text string or error message
+            Dictionary with ``text`` and ``tool_trace`` keys.
         """
         if self._openai_tools:
             try:
                 return asyncio.run(self._tool_loop(api_input))
             except Exception as e:
                 logger.error(f"Tool loop failed for OpenAI: {str(e)}")
-                return f"Error: {str(e)}"
+                return {"text": f"Error: {str(e)}", "tool_trace": ""}
 
         try:
-            response = self.client.chat.completions.create(**api_input)
+            api_kwargs = {k: v for k, v in api_input.items() if k != "tool_policy"}
+            response = self.client.chat.completions.create(**api_kwargs)
             generated_text = response.choices[0].message.content
-            return generated_text
+            return {"text": generated_text or "", "tool_trace": ""}
         except Exception as e:
             logger.error(f"Failed to generate text with OpenAI: {str(e)}")
-            return f"Error: {str(e)}"
+            return {"text": f"Error: {str(e)}", "tool_trace": ""}
 
-    async def _tool_loop(self, api_input: Dict[str, Any]) -> str:
+    async def _tool_loop(self, api_input: Dict[str, Any]) -> Dict[str, str]:
         """Autonomous agentic loop: call LLM, execute tool calls via MCP, repeat until final text.
 
-        When ``self.tool_trace`` is enabled the return value includes the full
-        conversation trace (tool calls + results + final text) so that downstream
-        rubric evaluators can score retrieval behaviour.  Format mirrors
-        DocAssistProtocolBot::
+        Returns a dict containing ``text`` and ``tool_trace``. The trace contains the
+        full conversation trace (intermediate assistant text, tool calls, and tool
+        results) when ``self.tool_trace`` is enabled, and is an empty string otherwise.
 
+        Trace format::
+
+            [Assistant]: <intermediate text before tool calls>
             [Tool Call: <name>] <args_json>
-            [Tool Result: <call_id>] <content>
+            [Tool Result: <call_id>] <result_content>
             <final assistant text>
-
-        When disabled (default), only the final assistant text is returned.
         """
-        messages = list(api_input["messages"])
-        call_kwargs = {k: v for k, v in api_input.items() if k != "messages"}
+        tool_policy = api_input.get("tool_policy", {})
+        messages = self._append_tool_instruction(list(api_input["messages"]), tool_policy)
+
+        call_kwargs = {
+            k: v for k, v in api_input.items() if k not in {"messages", "tool_policy"}
+        }
         call_kwargs["tools"] = self._openai_tools
-        if self.force_tool_call:
-            call_kwargs["tool_choice"] = {
-                "type": "function",
-                "function": {"name": self.force_tool_call},
-            }
-        else:
-            call_kwargs["tool_choice"] = "auto"
 
         consecutive_failures: Dict[str, int] = {}
         MAX_CONSECUTIVE_FAILURES = 3
         trace_parts: list[str] = []
+        first_turn = True
 
         async with MCPClientPool(self._tool_server_map) as pool:
             while True:
+                call_kwargs["tool_choice"] = self._resolve_tool_choice(
+                    tool_policy, is_first_turn=first_turn
+                )
+                first_turn = False
+
                 try:
                     response = self.client.chat.completions.create(
                         messages=messages, **call_kwargs
@@ -289,11 +334,19 @@ class OpenAILLM(BaseModel):
 
                 if choice.finish_reason == "stop" or not assistant_message.tool_calls:
                     final_text = (assistant_message.content or "").strip()
-                    if not self.tool_trace:
-                        return final_text
-                    if final_text:
+                    if self.tool_trace and final_text:
                         trace_parts.append(final_text)
-                    return "\n".join(trace_parts) if trace_parts else "No response"
+                    trace = "\n".join(trace_parts) if trace_parts else ""
+                    return {
+                        "text": final_text if final_text else "No response",
+                        "tool_trace": trace,
+                    }
+
+                # Capture intermediate assistant text before tool calls
+                if self.tool_trace and assistant_message.content:
+                    intermediate = assistant_message.content.strip()
+                    if intermediate:
+                        trace_parts.append(f"[Assistant]: {intermediate}")
 
                 messages.append(assistant_message.model_dump(exclude_unset=True))
 
@@ -347,6 +400,7 @@ class OpenAILLM(BaseModel):
 
                         # Check if there are any image blocks
                         has_images = any(b["type"] == "image" for b in result_blocks)
+                        result_text_parts = []
 
                         if has_images:
                             # Build multi-part content for OpenAI
@@ -356,6 +410,7 @@ class OpenAILLM(BaseModel):
                                     openai_content.append(
                                         {"type": "text", "text": block["text"]}
                                     )
+                                    result_text_parts.append(block["text"])
                                 elif block["type"] == "image":
                                     mime = block.get("mime_type", "image/jpeg")
                                     openai_content.append(
@@ -366,6 +421,7 @@ class OpenAILLM(BaseModel):
                                             },
                                         }
                                     )
+                                    result_text_parts.append("[image]")
                             messages.append(
                                 {
                                     "role": "tool",
@@ -378,6 +434,7 @@ class OpenAILLM(BaseModel):
                             result_str = "\n".join(
                                 b["text"] for b in result_blocks if b["type"] == "text"
                             )
+                            result_text_parts.append(result_str)
                             messages.append(
                                 {
                                     "role": "tool",
@@ -388,7 +445,7 @@ class OpenAILLM(BaseModel):
 
                         if self.tool_trace:
                             trace_parts.append(
-                                f"[Tool Result: {tool_call_id}] <tool_result consumed by LLM>"
+                                f"[Tool Result: {tool_call_id}] {' '.join(result_text_parts)}"
                             )
                     except Exception as e:
                         error_msg = f"Tool execution error: {str(e)}"
@@ -431,40 +488,51 @@ class OpenAILLM(BaseModel):
         if not self.is_loaded:
             raise RuntimeError("Model is not loaded.")
 
+        outputs = self.run_with_metadata(inputs, **kwargs)
+        return self.postprocess([output["text"] for output in outputs], **kwargs)
+
+    def run_with_metadata(
+        self, inputs: List[DataLoaderIterable], **kwargs
+    ) -> List[Dict[str, str]]:
+        """Run text generation while preserving tool traces for benchmark callers."""
+        if not self.is_loaded:
+            raise RuntimeError("Model is not loaded.")
+
         processed_inputs = self.preprocess(inputs, **kwargs)
 
-        # Handle empty inputs
         if not processed_inputs:
             return []
 
-        # Use ThreadPoolExecutor for parallel API calls
         with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
-            # Submit all API calls and track their order
             future_to_index = {
                 executor.submit(self._make_single_call, api_input): i
                 for i, api_input in enumerate(processed_inputs)
             }
-
-            # Initialize results list with correct size
-            outputs = [None] * len(processed_inputs)
-
-            # Collect results as they complete
+            outputs: List[Optional[Dict[str, str]]] = [None] * len(processed_inputs)
             for future in as_completed(future_to_index):
                 index = future_to_index[future]
-                result = future.result()
-                outputs[index] = result
+                outputs[index] = future.result()
 
-        return self.postprocess(outputs, **kwargs)
+        return self._postprocess_with_metadata(outputs)
 
-    def postprocess(self, outputs: List[str], **kwargs) -> List[str]:
+    def _postprocess_with_metadata(
+        self, outputs: List[Optional[Dict[str, str]]]
+    ) -> List[Dict[str, str]]:
+        """Normalize trace-aware outputs for internal callers."""
+        result = []
+        for output in outputs:
+            output = output or {"text": "", "tool_trace": ""}
+            result.append(
+                {
+                    "text": output.get("text", "").strip(),
+                    "tool_trace": output.get("tool_trace", "") or "",
+                }
+            )
+        return result
+
+    def postprocess(self, outputs, **kwargs):
         """
         Postprocess model outputs.
-
-        Args:
-            outputs: List of generated text strings
-
-        Returns:
-            List of processed outputs
         """
         return [output.strip() if output else "" for output in outputs]
 

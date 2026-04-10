@@ -143,8 +143,8 @@ class Benchmark:
                 cache_hits += 1
                 result = {
                     "prediction": cache_result.get("model_output", ""),
+                    "tool_trace": cache_result.get("tool_trace", "") or "",
                     "sample": sample,
-                    # "thinking_content": cache_result.get("model_output_reasoning", ""),
                     "from_cache": True,
                     "expected_output": sample.expected_output,
                 }
@@ -180,7 +180,7 @@ class Benchmark:
             self.logger.debug("Generating batch responses from model")
             # start_time = time.time()
 
-            batch_responses = self.model.run(inputs=samples)
+            batch_responses = self.model.run_with_metadata(inputs=samples)
             # generation_time = time.time() - start_time
             # self.logger.info(
             #     f"Model generation completed in {generation_time:.2f} seconds"
@@ -197,13 +197,14 @@ class Benchmark:
                 zip(batch_responses, samples, strict=False)
             ):
                 expected = sample.expected_output
-                response = batch_response
 
-                response = str(response)
+                response = str(batch_response.get("text", ""))
+                tool_trace = batch_response.get("tool_trace", "") or ""
                 prediction, success = self.dataset.extract_prediction(response)
 
                 result = {
                     "prediction": prediction,
+                    "tool_trace": tool_trace,
                     "from_cache": False,
                     "sample": sample.model_dump(),
                     "expected_output": expected,
