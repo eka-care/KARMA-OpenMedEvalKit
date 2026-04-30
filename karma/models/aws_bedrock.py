@@ -186,11 +186,14 @@ class AWSBedrock(BaseModel):
                 logger.warning("No input or conversation data found for item, skipping")
                 continue
 
-            inference_config: Dict[str, Any] = {
-                "maxTokens": self.max_tokens,
-                "temperature": self.temperature,
-            }
-            if self.top_p != 1.0:
+            # Anthropic on Bedrock rejects setting both `temperature` and `top_p`
+            # simultaneously (Sonnet 4+ surfaces this as ValidationException).
+            # We prefer temperature when set (default 0.0 for deterministic eval)
+            # and only fall back to top_p when temperature is None.
+            inference_config: Dict[str, Any] = {"maxTokens": self.max_tokens}
+            if self.temperature is not None:
+                inference_config["temperature"] = self.temperature
+            elif self.top_p != 1.0:
                 inference_config["topP"] = self.top_p
 
             api_input = {

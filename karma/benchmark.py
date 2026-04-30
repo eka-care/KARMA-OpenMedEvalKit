@@ -270,10 +270,12 @@ class Benchmark:
         rubrics = []
         samples = []
         entities = []
+        tool_traces = []
         for it in ground_truth_and_prediction:
             predictions.append(it["prediction"])
             references.append(it["expected_output"])
             entities.append(it["entities"])
+            tool_traces.append(it.get("tool_trace", "") or "")
             if it.get("sample"):
                 samples.append(it["sample"])
                 rubrics.append(it["sample"].rubric_to_evaluate)
@@ -289,6 +291,7 @@ class Benchmark:
                 rubrics=rubrics,
                 samples=samples,
                 entities=entities,
+                tool_traces=tool_traces,
             )
             if isinstance(score, dict):
                 scores[metric.metric_name] = score[metric.metric_name]
@@ -394,6 +397,7 @@ class Benchmark:
                     "expected_output": expected,
                     "entities": entities,
                     "sample": sample,
+                    "tool_trace": result.get("tool_trace", "") or "",
                     "from_cache": result.get("from_cache", False),
                     "success": result.get("success", True),
                 }

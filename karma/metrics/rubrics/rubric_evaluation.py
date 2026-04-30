@@ -274,6 +274,17 @@ class RubricMetric(BaseMetric):
         serialized_samples = kwargs.get("serialized_samples")
         cache_manager = kwargs.get("cache_manager")
         dataset_name = kwargs.get("dataset_name")
+        # Optional per-sample text to grade against, replacing the default
+        # (sample.conversation + assistant prediction). Used by metrics that
+        # score against tool traces or other non-conversation inputs.
+        input_overrides: Optional[List[Optional[str]]] = kwargs.get("input_overrides")
+        # Optional per-sample pre-computed grading_responses. When provided
+        # for a given index, the metric skips the LLM call and uses the
+        # supplied responses directly. Used to short-circuit empty-trace
+        # samples in the query rubric metric.
+        precomputed_responses: Optional[List[Optional[List[Dict]]]] = kwargs.get(
+            "precomputed_responses"
+        )
         logger.info(
             f"Evaluating {len(predictions)} conversations with {self.provider} model - {self.model}"
         )
@@ -286,6 +297,12 @@ class RubricMetric(BaseMetric):
                 "rubric_evaluation_details": per_sample_details,
             }
 
+        n = len(predictions)
+        if input_overrides is None:
+            input_overrides = [None] * n
+        if precomputed_responses is None:
+            precomputed_responses = [None] * n
+
         # Use ThreadPoolExecutor for parallel conversation processing
         with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
             # Submit all conversation processing tasks and track their order
@@ -295,6 +312,8 @@ class RubricMetric(BaseMetric):
                     prediction,
                     sample,
                     sample_rubrics,
+                    input_override=input_overrides[i],
+                    precomputed=precomputed_responses[i],
                 ): i
                 for i, (prediction, sample, sample_rubrics) in enumerate(
                     zip(predictions, samples, rubrics)
@@ -578,7 +597,15 @@ class RubricMetric(BaseMetric):
 
         return results
 
-    def _process_single_conversation(self, prediction, sample, sample_rubrics):
+    def _process_single_conversation(
+        self,
+        prediction,
+        sample,
+        sample_rubrics,
+        *,
+        input_override: Optional[str] = None,
+        precomputed: Optional[List[Dict]] = None,
+    ):
         """
         Process a single conversation and its rubrics.
 
@@ -587,32 +614,49 @@ class RubricMetric(BaseMetric):
                        or a serialized Conversation JSON from pass-through models)
             sample: The sample containing conversation data
             sample_rubrics: List of rubric criteria for this sample
+            input_override: If provided, used directly as the input text shown to the
+                grader instead of building it from sample.conversation + prediction.
+                Enables grading against tool traces (query rubrics) or other inputs.
+            precomputed: If provided, skip the grader LLM call entirely and use the
+                supplied list as the grading_responses. Used to inject all-false
+                responses for empty-trace samples in with-tools query rubric runs.
 
         Returns:
             Dict containing rubric evaluations and question score
         """
-        # Handle serialized conversations (from pass-through models) vs regular model responses
-        if self.use_serialized_conversations:
-            # Explicitly parse as serialized Conversation (pass-through model case)
-            try:
-                prediction_data = json.loads(prediction)
-                sample.conversation = Conversation.model_validate(prediction_data)
-                logger.debug(
-                    f"Parsed serialized conversation with {len(sample.conversation.conversation_turns)} turns"
-                )
-            except (json.JSONDecodeError, ValueError, TypeError) as e:
-                logger.error(f"Failed to parse serialized conversation: {e}")
-                raise ValueError(
-                    f"use_serialized_conversations=True but prediction is not a valid Conversation JSON: {e}"
-                )
-        else:
-            # Normal model output - always append as assistant response
-            sample.conversation.conversation_turns.append(
-                ConversationTurn(content=prediction, role="assistant")
-            )
+        if precomputed is not None:
+            grading_responses = precomputed
+            question_score = self.calculate_score(sample_rubrics, grading_responses)
+            return {
+                "rubric_evaluations": grading_responses,
+                "question_score": question_score,
+            }
 
-        # Get conversation JSON once
-        conversation_json = sample.conversation.model_dump_json()
+        if input_override is not None:
+            conversation_json = input_override
+        else:
+            # Handle serialized conversations (from pass-through models) vs regular model responses
+            if self.use_serialized_conversations:
+                # Explicitly parse as serialized Conversation (pass-through model case)
+                try:
+                    prediction_data = json.loads(prediction)
+                    sample.conversation = Conversation.model_validate(prediction_data)
+                    logger.debug(
+                        f"Parsed serialized conversation with {len(sample.conversation.conversation_turns)} turns"
+                    )
+                except (json.JSONDecodeError, ValueError, TypeError) as e:
+                    logger.error(f"Failed to parse serialized conversation: {e}")
+                    raise ValueError(
+                        f"use_serialized_conversations=True but prediction is not a valid Conversation JSON: {e}"
+                    )
+            else:
+                # Normal model output - always append as assistant response
+                sample.conversation.conversation_turns.append(
+                    ConversationTurn(content=prediction, role="assistant")
+                )
+
+            # Get conversation JSON once
+            conversation_json = sample.conversation.model_dump_json()
 
         # Extract dataset-provided prompt components (if available)
         rubric_instructions = getattr(sample, "rubric_instructions", None)

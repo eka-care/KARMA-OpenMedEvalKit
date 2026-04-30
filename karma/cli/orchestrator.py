@@ -411,8 +411,13 @@ class MultiDatasetOrchestrator:
                     metric_task = progress.add_task(f"Computing {metric_key}", total=1)
                     progress.remove_task(metric_task)
                 else:
+                    if isinstance(score, dict):
+                        overall = score.get("overall_score")
+                        score_str = f"{overall:.3f}" if isinstance(overall, (int, float)) else str(overall)
+                    else:
+                        score_str = f"{score:.3f}" if isinstance(score, (int, float)) else str(score)
                     self.console.print(f"  Computing [yellow]{metric_key}[/yellow]...")
-                    self.console.print(f"    [green]{metric_key}: {score:.3f}[/green]")
+                    self.console.print(f"    [green]{metric_key}: {score_str}[/green]")
 
             # Store results
             self.results[dataset_name] = {
