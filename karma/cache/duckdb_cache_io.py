@@ -38,6 +38,7 @@ class DuckDBCacheIO:
                 dataset_row_metadata TEXT,
                 dataset_row_hash VARCHAR(64) NOT NULL,
                 model_output TEXT NOT NULL,
+                tool_trace TEXT,
                 ground_truth_output TEXT,
                 config_hash VARCHAR(64) NOT NULL,
                 success BOOLEAN NOT NULL,
@@ -45,6 +46,19 @@ class DuckDBCacheIO:
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """)
+
+        # Migrate existing tables that may not have tool_trace column
+        try:
+            self.db_io.execute(
+                "ALTER TABLE inference_results ADD COLUMN IF NOT EXISTS tool_trace TEXT"
+            )
+        except Exception as e:
+            logger.error(
+                "Failed to migrate inference_results table to add tool_trace column. "
+                "Cache reads may return misaligned results. Error: %s",
+                e,
+            )
+            raise
 
         # Create run metadata table
         self.db_io.execute("""
@@ -72,9 +86,9 @@ class DuckDBCacheIO:
         """Get a cached inference result by cache key from DuckDB."""
         result = self.db_io.fetchone(
             """
-            SELECT cache_key, dataset_name, dataset_row_metadata, dataset_row_hash, 
-                   model_output, ground_truth_output, config_hash, success
-            FROM inference_results 
+            SELECT cache_key, dataset_name, dataset_row_metadata, dataset_row_hash,
+                   model_output, tool_trace, ground_truth_output, config_hash, success
+            FROM inference_results
             WHERE cache_key = ?
         """,
             [cache_key],
@@ -87,9 +101,10 @@ class DuckDBCacheIO:
                 "dataset_row_metadata": result[2],
                 "dataset_row_hash": result[3],
                 "model_output": result[4],
-                "ground_truth_output": result[5],
-                "config_hash": result[6],
-                "success": result[7],
+                "tool_trace": result[5],
+                "ground_truth_output": result[6],
+                "config_hash": result[7],
+                "success": result[8],
             }
         return None
 
@@ -104,9 +119,9 @@ class DuckDBCacheIO:
         placeholders = ",".join("?" for _ in cache_keys)
         results_data = self.db_io.fetchall(
             f"""
-            SELECT cache_key, dataset_name, dataset_row_metadata, dataset_row_hash, 
-                   model_output, ground_truth_output, config_hash, success
-            FROM inference_results 
+            SELECT cache_key, dataset_name, dataset_row_metadata, dataset_row_hash,
+                   model_output, tool_trace, ground_truth_output, config_hash, success
+            FROM inference_results
             WHERE cache_key IN ({placeholders})
         """,
             cache_keys,
@@ -120,9 +135,10 @@ class DuckDBCacheIO:
                 "dataset_row_metadata": row[2],
                 "dataset_row_hash": row[3],
                 "model_output": row[4],
-                "ground_truth_output": row[5],
-                "config_hash": row[6],
-                "success": row[7],
+                "tool_trace": row[5],
+                "ground_truth_output": row[6],
+                "config_hash": row[7],
+                "success": row[8],
             }
 
         # Add None entries for missing keys
@@ -147,6 +163,7 @@ class DuckDBCacheIO:
                     data.get("dataset_row_metadata"),
                     data["dataset_row_hash"],
                     data["model_output"],
+                    data.get("tool_trace") or None,
                     data.get("ground_truth_output"),
                     data["config_hash"],
                     data["success"],
@@ -155,10 +172,10 @@ class DuckDBCacheIO:
 
         return self.db_io.executemany(
             """
-            INSERT OR REPLACE INTO inference_results 
+            INSERT OR REPLACE INTO inference_results
             (cache_key, dataset_name, dataset_row_metadata, dataset_row_hash,
-             model_output, ground_truth_output, config_hash, success, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+             model_output, tool_trace, ground_truth_output, config_hash, success, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
         """,
             batch_data,
         )

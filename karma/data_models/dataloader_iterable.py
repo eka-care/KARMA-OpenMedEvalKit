@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field, model_serializer
 from PIL import Image
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Literal, Optional, Union
 
 
 class ConversationTurn(BaseModel):
@@ -10,6 +10,25 @@ class ConversationTurn(BaseModel):
 
 class Conversation(BaseModel):
     conversation_turns: List[ConversationTurn]
+
+
+class ToolPolicy(BaseModel):
+    tool_instruction: Optional[str] = Field(
+        default=None,
+        description="Optional dataset-provided instruction for how available tools should be used.",
+    )
+    first_turn_tool_choice: Literal["auto", "required"] = Field(
+        default="auto",
+        description="How tool choice should be configured on the first model turn when tools are available.",
+    )
+    later_turn_tool_choice: Literal["auto", "required"] = Field(
+        default="auto",
+        description="How tool choice should be configured after the first turn when tools are available.",
+    )
+    force_tool_call_name: Optional[str] = Field(
+        default=None,
+        description="Optional tool name to force on the first turn when tools are available.",
+    )
 
 
 class RubricCriteria(BaseModel):
@@ -50,6 +69,10 @@ class DataLoaderIterable(BaseModel):
     system_prompt: Optional[str] = Field(
         default=None,
         description="The system prompt in case applicable passed as a sample from the dataset iter",
+    )
+    tool_policy: Optional[ToolPolicy] = Field(
+        default=None,
+        description="Provider-agnostic tool policy attached to this sample.",
     )
 
     class Config:

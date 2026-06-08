@@ -30,7 +30,7 @@ dependencies = [
     "pytrec-eval-terrier>=0.5.7",
     "sentence-transformers>=5.0.0",
     "faiss-cpu>=1.11.0.post1",
-    "hf_transfer==0.1.9"
+    "hf_transfer==0.1.9",
 ]
 
 [project.urls]
@@ -72,7 +72,11 @@ audio = [
     "num2words>=0.5.14",
 ]
 
+tools = [
+    "fastmcp>=3.0.2",
+]
+
 # This enables pip install karma[all]
 all = [
-    "karma-medeval[dev,audio]",
+    "karma-medeval[dev,audio,tools]",
 ]

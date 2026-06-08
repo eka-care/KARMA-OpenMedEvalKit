@@ -608,6 +608,7 @@ class DatasetRegistry:
                 "commit_hash",
                 "processors",
                 "max_samples",
+                "data_files",
             ]
         )
 

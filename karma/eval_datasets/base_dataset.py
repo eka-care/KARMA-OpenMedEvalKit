@@ -7,7 +7,7 @@ to provide model inputs directly to the benchmark system.
 
 import logging
 from abc import ABC, abstractmethod
-from typing import Dict, Any, Tuple, Generator, Optional, List
+from typing import Dict, Any, Tuple, Generator, Optional, List, Union
 from torch.utils.data import IterableDataset
 from datasets import load_dataset
 
@@ -32,6 +32,7 @@ class BaseMultimodalDataset(IterableDataset, ABC):
         processors=None,
         max_samples: Optional[int] = None,
         confinement_instructions: str = "",
+        data_files: Optional[Union[str, List[str], Dict[str, Union[str, List[str]]]]] = None,
         **kwargs,
     ):
         """
@@ -43,6 +44,7 @@ class BaseMultimodalDataset(IterableDataset, ABC):
             config: Configuration/Subset of the dataset
             stream: Whether to stream the dataset
             commit_hash: Commit hash of the dataset
+            data_files: Local JSON/JSONL file(s) to use instead of HuggingFace hub
             **kwargs: Additional dataset-specific arguments
         """
         super().__init__()
@@ -59,7 +61,7 @@ class BaseMultimodalDataset(IterableDataset, ABC):
         self.stream = stream
         self.commit_hash = commit_hash
         self.dataset = self.load_eval_dataset(
-            dataset_name, split, config, stream, commit_hash
+            dataset_name, split, config, stream, commit_hash, data_files=data_files
         )
 
     def load_eval_dataset(
@@ -69,8 +71,22 @@ class BaseMultimodalDataset(IterableDataset, ABC):
         config: Optional[str] = None,
         stream: bool = True,
         commit_hash: Optional[str] = None,
+        data_files: Optional[Union[str, List[str], Dict[str, Union[str, List[str]]]]] = None,
     ) -> IterableDataset:
         """Load the evaluation dataset."""
+        if data_files is not None:
+            logger.info(f"Loading dataset from local file: {data_files}")
+            local_data_files = (
+                {split: data_files} if isinstance(data_files, (str, list)) else data_files
+            )
+            dataset = load_dataset(
+                "json",
+                data_files=local_data_files,
+                split=split,
+                streaming=stream,
+            )
+            return dataset
+
         if config:
             dataset = load_dataset(
                 dataset_name,
