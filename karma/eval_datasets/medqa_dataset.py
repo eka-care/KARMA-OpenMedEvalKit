@@ -10,6 +10,7 @@ from typing import Any, Dict, Tuple
 
 from karma.data_models.dataloader_iterable import DataLoaderIterable
 from karma.eval_datasets.base_dataset import BaseMultimodalDataset
+from karma.eval_datasets.extraction_utils import extract_wrapped_mcq_answer
 from karma.registries.dataset_registry import register_dataset
 
 logger = logging.getLogger(__name__)
@@ -81,14 +82,8 @@ class MedQADataset(BaseMultimodalDataset):
 
         return processed_sample
 
-    def extract_prediction(self, response: str) -> Tuple[str, bool]:
-        answer, success = "", False
-        if "Final Answer:" in response:
-            answer = response.split("Final Answer:")[1].strip()
-            # Remove parentheses if present
-            if answer.startswith("(") and answer.endswith(")"):
-                answer = answer[1:-1]
-            success = True
+    def extract_prediction(self, response: str, **kwargs) -> Tuple[str, bool]:
+        answer, success = extract_wrapped_mcq_answer(response, valid_letters="ABCD")
         if not answer:
             logger.warning(f"No answer found in response: {response}")
         return answer, success

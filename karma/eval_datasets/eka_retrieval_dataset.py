@@ -150,7 +150,7 @@ class EkaRetrievalDataset(BaseMultimodalDataset):
             },
         )
 
-    def extract_prediction(self, prediction):
+    def extract_prediction(self, prediction, **kwargs):
         return prediction, True
 
     def collate_fn(self, batch):

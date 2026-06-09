@@ -7,9 +7,10 @@ to provide model inputs directly to the benchmark system.
 
 import logging
 from abc import ABC, abstractmethod
-from typing import Dict, Any, Tuple, Generator, Optional, List, Union
-from torch.utils.data import IterableDataset
+from typing import Dict, Any, Tuple, Generator, Optional, List
+
 from datasets import load_dataset
+from torch.utils.data import IterableDataset
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +33,6 @@ class BaseMultimodalDataset(IterableDataset, ABC):
         processors=None,
         max_samples: Optional[int] = None,
         confinement_instructions: str = "",
-        data_files: Optional[Union[str, List[str], Dict[str, Union[str, List[str]]]]] = None,
         **kwargs,
     ):
         """
@@ -44,9 +44,9 @@ class BaseMultimodalDataset(IterableDataset, ABC):
             config: Configuration/Subset of the dataset
             stream: Whether to stream the dataset
             commit_hash: Commit hash of the dataset
-            data_files: Local JSON/JSONL file(s) to use instead of HuggingFace hub
             **kwargs: Additional dataset-specific arguments
         """
+        # Initialize parent classes (IterableDataset and ABC)
         super().__init__()
         if processors is None:
             processors = []
@@ -61,7 +61,7 @@ class BaseMultimodalDataset(IterableDataset, ABC):
         self.stream = stream
         self.commit_hash = commit_hash
         self.dataset = self.load_eval_dataset(
-            dataset_name, split, config, stream, commit_hash, data_files=data_files
+            dataset_name, split, config, stream, commit_hash
         )
 
     def load_eval_dataset(
@@ -71,22 +71,9 @@ class BaseMultimodalDataset(IterableDataset, ABC):
         config: Optional[str] = None,
         stream: bool = True,
         commit_hash: Optional[str] = None,
-        data_files: Optional[Union[str, List[str], Dict[str, Union[str, List[str]]]]] = None,
-    ) -> IterableDataset:
+        **kwargs
+    ) -> Any:
         """Load the evaluation dataset."""
-        if data_files is not None:
-            logger.info(f"Loading dataset from local file: {data_files}")
-            local_data_files = (
-                {split: data_files} if isinstance(data_files, (str, list)) else data_files
-            )
-            dataset = load_dataset(
-                "json",
-                data_files=local_data_files,
-                split=split,
-                streaming=stream,
-            )
-            return dataset
-
         if config:
             dataset = load_dataset(
                 dataset_name,
@@ -103,6 +90,22 @@ class BaseMultimodalDataset(IterableDataset, ABC):
                 revision=commit_hash,
             )
         return dataset
+
+    def __len__(self) -> int:
+        """Return the length of the dataset."""
+        if self.stream:
+            raise TypeError(f"Streaming dataset {self.dataset_name} has no len(). Set stream=False.")
+        if hasattr(self.dataset, '__len__'):
+            return min(len(self.dataset), int(self.max_samples) if self.max_samples != float("inf") else len(self.dataset))
+        raise TypeError(f"Dataset {self.dataset_name} has no len().")
+
+    def __getitem__(self, idx: int) -> Dict[str, Any]:
+        """Get a single item by index. Only works for non-streaming datasets."""
+        if self.stream:
+            raise TypeError(f"Streaming dataset {self.dataset_name} does not support indexing. Set stream=False.")
+        if idx >= len(self):
+            raise IndexError(f"Index {idx} out of range for dataset of length {len(self)}")
+        return self.format_item(self.dataset[idx])
 
     def __iter__(self) -> Generator[Dict[str, Any], None, None]:
         """
@@ -147,7 +150,7 @@ class BaseMultimodalDataset(IterableDataset, ABC):
         """Simple collate function that preserves batch structure."""
         return batch
 
-    def extract_prediction(self, prediction: str) -> Tuple[str, bool]:
+    def extract_prediction(self, prediction: str, **kwargs) -> Tuple[str, bool]:
         """
         Extract the prediction from the model output.
         """
@@ -164,30 +167,3 @@ class BaseMultimodalDataset(IterableDataset, ABC):
                 )
                 responses = processor.process(responses)
         return responses
-
-
-# def worker_init_fn(worker_id):
-# """
-# Worker initialization function for DataLoader with IterableDataset.
-#
-# This function splits the dataset workload across all workers to avoid duplicate data.
-# """
-# import math
-# import torch
-#
-# worker_info = torch.utils.data.get_worker_info()
-# dataset = worker_info.dataset  # the dataset copy in this worker process
-#
-# # These attributes must exist on your dataset
-# overall_start = getattr(dataset, "start", None)
-# overall_end = getattr(dataset, "end", None)
-#
-#     per_worker = int(
-#         math.ceil((overall_end - overall_start) / float(worker_info.num_workers))
-#     )
-#     per_worker = int(
-#         math.ceil((overall_end - overall_start) / float(worker_info.num_workers))
-#     )
-#     worker_id = worker_info.id
-#     dataset.start = overall_start + worker_id * per_worker
-#     dataset.end = min(dataset.start + per_worker, overall_end)

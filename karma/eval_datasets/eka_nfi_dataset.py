@@ -18,8 +18,8 @@ logger = logging.getLogger(__name__)
 # Hardcoded confinement instructions
 CONFINEMENT_INSTRUCTIONS = """
 You are an expert at Indian Pharmacology.
-Solve them in a step-by-step fashion.
-Output only the final answer (e.g., A, B, C, D, or E)
+Solve them in a step-by-step fashion. 
+Output only the final answer (e.g., A, B, C, D, or E) 
 Question: <QUESTION>
 """
 DATASET_NAME = "ekacare/Eka_NFI_MCQA"
@@ -82,10 +82,11 @@ class EkaNFIValidationSetDataset(BaseMultimodalDataset):
             input=prompt,
             expected_output=correct_option,
         )
+        # print("-------------*-----------\nPrompt", prompt, correct_option)
 
         return processed_sample
 
-    def extract_prediction(self, response: str) -> Tuple[str, bool]:
+    def extract_prediction(self, response: str, **kwargs) -> Tuple[str, bool]:
         answer, success = "", False
         # Try "Final Answer:" format first
         if "Final Answer:" in response:

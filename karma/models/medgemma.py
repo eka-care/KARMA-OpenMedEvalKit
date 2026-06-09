@@ -21,10 +21,12 @@ class MedGemmaLLM(BaseModel):
         self,
         model_name_or_path,
         device: str,
-        max_tokens: int = 1024,
+        max_new_tokens: int = 1024,
         temperature: float = 0.7,
         top_p: float = 0.9,
         top_k: Optional[int] = None,
+        few_shot: bool = False,
+        do_sample: bool = True,
         **kwargs,
     ):
         """
@@ -43,7 +45,7 @@ class MedGemmaLLM(BaseModel):
         super().__init__(
             model_name_or_path=model_name_or_path,
             device=device,
-            max_tokens=max_tokens,
+            max_new_tokens=max_new_tokens,
             temperature=temperature,
             top_p=top_p,
             top_k=top_k,
@@ -52,11 +54,12 @@ class MedGemmaLLM(BaseModel):
         )
         self.model_name_or_path = model_name_or_path
         self.device = device
-        self.max_tokens = max_tokens
+        self.max_new_tokens = max_new_tokens
         self.temperature = temperature
         self.top_p = top_p
         self.top_k = top_k
-
+        self.few_shot = few_shot
+        self.do_sample = do_sample
     @staticmethod
     def decode_image(image: bytes) -> Image.Image:
         return Image.open(BytesIO(image))
@@ -84,10 +87,11 @@ class MedGemmaLLM(BaseModel):
         model_inputs = self.preprocess(inputs)
         results = self.model.generate(
             **model_inputs,
-            max_new_tokens=self.max_tokens,
+            max_new_tokens=self.max_new_tokens,
             temperature=self.temperature,
             top_p=self.top_p,
             top_k=self.top_k,
+            do_sample=self.do_sample,
         )
 
         # Extract only the newly generated tokens
@@ -104,7 +108,9 @@ class MedGemmaLLM(BaseModel):
         **kwargs,
     ) -> Dict[str, torch.Tensor]:
         batch_messages = []
-
+        if self.few_shot:
+            batch_messages = self.processor.tokenizer([input.input for input in inputs], return_tensors="pt", padding=True, truncation=True).to(self.model.device)
+            return batch_messages
         for i, data_point in enumerate(inputs):
             messages = []
             
@@ -186,10 +192,12 @@ MedGemmaModel = ModelMeta(
         else "mps"
         if torch.mps.is_available()
         else "cpu",
-        "max_tokens": 1024,
+        "max_new_tokens": 1024,
         "temperature": 0.01,
         "top_p": 0.9, 
         "top_k": 50,
+        "few_shot": False,
+        "do_sample": True,
     },
     revision=None,
     reference=None,

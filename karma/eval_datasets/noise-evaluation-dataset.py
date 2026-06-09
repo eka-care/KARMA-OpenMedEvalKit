@@ -4,13 +4,13 @@ from karma.eval_datasets.base_dataset import BaseMultimodalDataset
 from karma.registries.dataset_registry import register_dataset
 from datasets import Audio
 
-DATASET_NAME = "ekacare/noise-evaluation-dataset"
+DATASET_NAME = "ekacare/denoising-impact-evaluation-dataset"
 SPLIT = "test"
-COMMIT_HASH = "16b4cb019b72007a78aa66ed68451c9c7c6926f5"
+COMMIT_HASH = "7f78b4381f0ce365777f4065aa9f32acf4225902"
 
 @register_dataset(
     DATASET_NAME,
-    metrics=["wer", "cer", "asr_semantic_metric"],
+    metrics=["wer", "cer", "semantic_wer_metric"],
    commit_hash=COMMIT_HASH,
     split=SPLIT,
     task_type="transcription",
@@ -55,7 +55,8 @@ class NoiseEvaluationDataset(BaseMultimodalDataset):
             other_args={
                 "language": sample.get("audio_language", "unknown"), 
                 "recording_context": sample.get("recording_context", ""), 
-                "type_concept": sample.get("type_concept", ""), 
+                "type_concept": sample.get("type_concept", ""),
+                "noise_type": self.subset,
                 "entities": sample.get("medical_entities", []),
             },
         )

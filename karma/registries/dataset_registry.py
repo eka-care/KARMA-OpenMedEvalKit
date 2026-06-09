@@ -28,6 +28,8 @@ class DatasetRegistry:
         task_type: str = "mcqa",
         commit_hash: Optional[str] = None,
         split: Optional[str] = None,
+        available_splits: Optional[List[str]] = None,
+        available_subsets: Optional[List[str]] = None,
         processors: Optional[List[str]] = None,
         required_args: Optional[List[str]] = None,
         optional_args: Optional[List[str]] = None,
@@ -42,6 +44,8 @@ class DatasetRegistry:
             task_type: Type of task (e.g., "mcqa", "vqa", "qa", "translation")
             commit_hash: The commit hash of the dataset in huggingface to register.
             split: The split of the dataset from huggingface to register.
+            available_splits: Allowed split values for ingestion/UI validation.
+            available_subsets: Allowed subset/config values for ingestion/UI validation.
             processors: List of processor names that can be applied to this dataset
             required_args: List of required argument names for dataset instantiation
             optional_args: List of optional argument names for dataset instantiation
@@ -88,6 +92,12 @@ class DatasetRegistry:
             processed_required_args = required_args.copy() if required_args else []
             processed_optional_args = optional_args.copy() if optional_args else []
             processed_default_args = default_args.copy() if default_args else {}
+            processed_available_splits = (
+                available_splits.copy() if available_splits else ([split] if split else None)
+            )
+            processed_available_subsets = (
+                available_subsets.copy() if available_subsets else None
+            )
 
             # Validate metrics if possible (warn if invalid, don't fail registration)
             for metric in processed_metrics:
@@ -107,6 +117,8 @@ class DatasetRegistry:
                 "class_name": dataset_class.__name__,
                 "processors": processors,
                 "split": split,
+                "available_splits": processed_available_splits,
+                "available_subsets": processed_available_subsets,
                 "commit_hash": commit_hash,
             }
             logger.debug(
@@ -563,6 +575,18 @@ class DatasetRegistry:
             "defaults": info["default_args"].copy(),
         }
 
+    def get_available_splits(self, name: str) -> Optional[List[str]]:
+        """Get allowed split values for a dataset, if declared."""
+        info = self.get_dataset_info(name)
+        values = info.get("available_splits")
+        return values.copy() if isinstance(values, list) else None
+
+    def get_available_subsets(self, name: str) -> Optional[List[str]]:
+        """Get allowed subset/config values for a dataset, if declared."""
+        info = self.get_dataset_info(name)
+        values = info.get("available_subsets")
+        return values.copy() if isinstance(values, list) else None
+
     def validate_dataset_args(
         self, name: str, provided_args: Dict[str, Any]
     ) -> Dict[str, Any]:
@@ -608,7 +632,6 @@ class DatasetRegistry:
                 "commit_hash",
                 "processors",
                 "max_samples",
-                "data_files",
             ]
         )
 

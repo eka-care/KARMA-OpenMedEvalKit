@@ -88,18 +88,25 @@ class MedicalRecordsParsingDataset(BaseMultimodalDataset):
         if not rubrics:
             logger.warning("No rubrics found in dataset sample")
         
-        # Store document type and rubrics for the metric to access
-        other_args = {
-            "rubric_prompt": rubrics,
-            "document_type": document_type,
-        }
-        
-        # Create the DataLoaderIterable for the model evaluation
-        processed_sample = DataLoaderIterable(
-            input=sample_prompt,
-            images=[image],  # Include image for multimodal models
-            system_prompt=self.system_prompt,
-            other_args=other_args,  # Store rubric and metadata for metric access
-        )
+        rubric_passes = []
+        if rubrics:
+            rubric_passes.append({
+                "name": "rubric_evaluation",
+                "prompt": rubrics,
+                "response_scores_map_key": "rubric_scores",
+                "id_field": "rubric_id",
+                "score_field": "score",
+                "axes": {"*": [{"field": "score", "passes_when": {"eq": 1}}]},
+            })
 
-        return processed_sample
+        other_args = {
+            "document_type": document_type,
+            "rubric_passes": rubric_passes,
+        }
+
+        return DataLoaderIterable(
+            input=sample_prompt,
+            images=[image],
+            system_prompt=self.system_prompt,
+            other_args=other_args,
+        )

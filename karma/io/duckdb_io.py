@@ -17,9 +17,11 @@ class DuckDBIO:
     DuckDB is an embedded database that doesn't require a separate server.
     """
     
-    def __init__(self, 
-                 db_path: str = "cache/benchmark_cache.duckdb",
-                 read_only: bool = False):
+    def __init__(
+        self,
+        db_path: str = "cache/benchmark_cache.duckdb",
+        read_only: bool = False,
+    ):
         """
         Initialize DuckDB connection.
         
@@ -30,12 +32,17 @@ class DuckDBIO:
         self.db_path = Path(db_path)
         self.read_only = read_only
         
-        # Create directory if it doesn't exist
-        self.db_path.parent.mkdir(parents=True, exist_ok=True)
+        if not self.read_only:
+            self.db_path.parent.mkdir(parents=True, exist_ok=True)
         
         # DuckDB connection per thread
         self._local = threading.local()
         
+        if self.read_only and not self.db_path.exists():
+            raise FileNotFoundError(
+                f"DuckDB database not found at {self.db_path}. Provide a valid cache path."
+            )
+
         try:
             # Test connection
             with self._get_connection() as conn:
@@ -47,14 +54,21 @@ class DuckDBIO:
     @contextmanager
     def _get_connection(self):
         """Get a DuckDB connection (one per thread)."""
-        if not hasattr(self._local, 'connection') or self._local.connection is None:
-            self._local.connection = duckdb.connect(str(self.db_path), read_only=self.read_only)
-        
+        if self.read_only:
+            connection = duckdb.connect(str(self.db_path), read_only=True)
+            try:
+                yield connection
+            finally:
+                connection.close()
+            return
+
+        if not hasattr(self._local, "connection") or self._local.connection is None:
+            self._local.connection = duckdb.connect(str(self.db_path), read_only=False)
+
         try:
             yield self._local.connection
         except Exception:
-            # Close connection on error to get a fresh one next time
-            if hasattr(self._local, 'connection') and self._local.connection:
+            if hasattr(self._local, "connection") and self._local.connection:
                 self._local.connection.close()
                 self._local.connection = None
             raise
@@ -170,6 +184,6 @@ class DuckDBIO:
     
     def close_connections(self):
         """Close all connections."""
-        if hasattr(self._local, 'connection') and self._local.connection:
+        if hasattr(self._local, "connection") and self._local.connection:
             self._local.connection.close()
-            self._local.connection = None 
+            self._local.connection = None

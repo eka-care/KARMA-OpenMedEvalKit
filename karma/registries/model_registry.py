@@ -8,12 +8,14 @@ ModelMeta configurations for comprehensive model metadata management.
 
 import importlib
 import pkgutil
-from typing import Dict, List, Any
+from typing import Dict, List, Any, TYPE_CHECKING
 import logging
 import time
 
-from karma.models.base_model_abs import BaseModel
 from karma.data_models.model_meta import ModelMeta, ModelType, ModalityType
+
+if TYPE_CHECKING:
+    from karma.models.base_model_abs import BaseModel
 
 logger = logging.getLogger(__name__)
 
@@ -68,7 +70,7 @@ class ModelRegistry:
 
         logger.debug(f"Registered ModelMeta: {name} -> {model_meta.model_type}")
 
-    def get_model(self, name: str, **override_kwargs) -> BaseModel:
+    def get_model(self, name: str, **override_kwargs) -> "BaseModel":
         """
         Get and instantiate model by name with optional parameter overrides.
 
@@ -114,7 +116,7 @@ class ModelRegistry:
             raise ValueError(f"ModelMeta '{name}' not found. Available: {available}")
         return self.model_metas[name]
 
-    def _get_model_from_meta(self, name: str, **override_kwargs) -> BaseModel:
+    def _get_model_from_meta(self, name: str, **override_kwargs) -> "BaseModel":
         """
         Load model using ModelMeta configuration with parameter overrides.
 
@@ -235,6 +237,8 @@ class ModelRegistry:
                         logger.info(f"Imported model module: {name}")
                     except ImportError as e:
                         logger.warning(f"Could not import model module {name}: {e}")
+                    except Exception as e:
+                        logger.warning(f"Validation or syntax error in model module {name}: {e}")
         except ImportError as e:
             logger.error(f"Could not import karma.models package: {e}")
 
