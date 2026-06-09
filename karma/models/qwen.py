@@ -17,7 +17,7 @@ class QwenThinkingLLM(BaseModel):
     def __init__(
         self,
         model_name_or_path: str,
-        device: str = "mps",
+        device: Optional[str] = None,
         max_tokens: int = 32768,
         temperature: float = 0.7,
         top_p: float = 0.9,
@@ -38,6 +38,14 @@ class QwenThinkingLLM(BaseModel):
             enable_thinking: Whether to enable thinking capabilities
             **kwargs: Additional model-specific parameters
         """
+        if device is None:
+            if torch.cuda.is_available():
+                device = "cuda"
+            elif hasattr(torch, "mps") and torch.mps.is_available():
+                device = "mps"
+            else:
+                device = "cpu"
+
         # Initialize parent class
         super().__init__(
             model_name_or_path=model_name_or_path,
@@ -66,9 +74,7 @@ class QwenThinkingLLM(BaseModel):
             device_map=self.device,
             torch_dtype=torch.bfloat16,
             trust_remote_code=True,
-            attn_implementation="flash_attention_2"
-            if self.device == "cuda"
-            else "eager",
+            attn_implementation="sdpa" if self.device == "cuda" else "eager",
         )
         self.processor = AutoTokenizer.from_pretrained(
             self.model_name_or_path, trust_remote_code=True

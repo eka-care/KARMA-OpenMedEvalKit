@@ -61,7 +61,9 @@ class WhisperTransformersASR(BaseModel):
                 "automatic-speech-recognition",
                 model=self.model_name_or_path,
                 device=self.pipeline_device,
-                torch_dtype=torch.float16 if torch.cuda.is_available() else torch.float32,
+                torch_dtype=torch.bfloat16 if torch.cuda.is_available() else torch.float32,
+                chunk_length_s=30,
+                return_timestamps=False,
             )
             self.is_loaded = True
             logger.info(f"Loaded Whisper model: {self.model_name_or_path}")
@@ -75,11 +77,11 @@ class WhisperTransformersASR(BaseModel):
         **kwargs,
     ) -> List[str]:
         """
-        Forward pass through the Whisper ASR model.
+        Forward pass through the Whisper ASR model with proper batching.
 
         Args:
             inputs: Audio inputs with DataLoaderIterable format
-            **kwargs: Additional forward pass arguments (task, language, etc.)
+            **kwargs: Additional forward pass arguments (task, language, batch_size, etc.)
 
         Returns:
             List of transcriptions
@@ -90,40 +92,43 @@ class WhisperTransformersASR(BaseModel):
         if self.pipe is None:
             raise RuntimeError("Model pipeline is not loaded")
 
-        transcriptions = []
+        # Get batch size from kwargs or default to 8
+        batch_size = kwargs.get("batch_size", 8)
+        task = kwargs.get("task", self.task)
+        
+        # Get language from first item or kwargs (assuming all items have same language)
+        language = kwargs.get("language", self.language)
+        if inputs and inputs[0].other_args and "language" in inputs[0].other_args:
+            language = inputs[0].other_args["language"]
 
-        for input_item in inputs:
-            # Extract parameters from input or use defaults
-            task = kwargs.get("task", self.task)
-            language = kwargs.get("language", self.language)
-            
-            # Override with item-specific language if available
-            if input_item.other_args and "language" in input_item.other_args:
-                language = input_item.other_args["language"]
+        # Preprocess all audio inputs
+        audio_batch = [self.preprocess(input_item) for input_item in inputs]
 
-            # Preprocess audio
-            processed_audio = self.preprocess(input_item)
+        # Build generate kwargs
+        generate_kwargs = {
+            # "repetition_penalty": kwargs.get("repetition_penalty", 1.2),
+            # "num_beams": kwargs.get("num_beams", 1),
+            "temperature": kwargs.get("temperature", 0.01),
+            "task": task,
+            "max_new_tokens": kwargs.get("max_new_tokens", 440),
+        }
+        
+        # Add language if specified
+        if language:
+            generate_kwargs["language"] = self._map_language_code(language)
 
-            # Generate transcription
-            generate_kwargs = {
-                "repetition_penalty": kwargs.get("repetition_penalty", 1.2),
-                "num_beams": kwargs.get("num_beams", 1),
-                "temperature": kwargs.get("temperature", 0.01),
-                "task": task,
-            }
-            
-            # Add language if specified
-            if language:
-                generate_kwargs["language"] = self._map_language_code(language)
+        # Run batched inference
+        batch_results = self.pipe(
+            audio_batch,
+            batch_size=batch_size,
+            generate_kwargs=generate_kwargs,
+        )
 
-            result = self.pipe(
-                processed_audio,
-                generate_kwargs=generate_kwargs,
-                max_new_tokens=kwargs.get("max_new_tokens", 440)
-            )
-
-            transcription = result.get("text", "")
-            transcriptions.append(transcription)
+        # Extract transcriptions from results
+        transcriptions = [
+            result.get("text", "") if isinstance(result, dict) else ""
+            for result in batch_results
+        ]
 
         return transcriptions
 
@@ -212,6 +217,9 @@ WHISPER_LARGE_V3 = ModelMeta(
         "task": "transcribe",
         "target_sample_rate": 16000,
         "language": None,  # Auto-detection
+        "repetition_penalty": 1.0,
+        "temperature": 0.01,
+        "max_new_tokens": 440,  # Auto-detection
     },
     default_eval_kwargs={
         "task": "transcribe",
@@ -239,6 +247,9 @@ AUDIOX_NORTH_V1 = ModelMeta(
         "task": "transcribe",
         "target_sample_rate": 16000,
         "language": None,  # Auto-detection
+        "repetition_penalty": 1.0,
+        "temperature": 0.01,
+        "max_new_tokens": 440,  # Auto-detection
     },
     default_eval_kwargs={
         "task": "transcribe",
@@ -264,6 +275,9 @@ AUDIOX_SOUTH_V1 = ModelMeta(
         "task": "transcribe",
         "target_sample_rate": 16000,
         "language": None,  # Auto-detection
+        "repetition_penalty": 1.0,
+        "temperature": 0.01,
+        "max_new_tokens": 440,  # Auto-detection
     },
     default_eval_kwargs={
         "task": "transcribe",

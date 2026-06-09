@@ -84,7 +84,7 @@ class SLAKEDataset(VQARADDataset):
 
         return processed_sample
     
-    def extract_prediction(self, response: str) -> Tuple[str, bool]:
+    def extract_prediction(self, response: str, **kwargs) -> Tuple[str, bool]:
         """
         Extract the answer from the answer string.
         """

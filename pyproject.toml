@@ -31,6 +31,8 @@ dependencies = [
     "sentence-transformers>=5.0.0",
     "faiss-cpu>=1.11.0.post1",
     "hf_transfer==0.1.9",
+    "sarvamai>=0.1.24",
+    "indic-numtowords>=1.1.0",
 ]
 
 [project.urls]

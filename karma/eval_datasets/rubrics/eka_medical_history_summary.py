@@ -265,7 +265,7 @@ class EkaMedicalHistorySummary(RubricBaseDataset):
 
         return processed_sample
 
-    def extract_prediction(self, response):
+    def extract_prediction(self, response, **kwargs):
         clean_text = response.replace("```json", "").replace("```", "")
         try:
             six_month_overview = json.loads(clean_text).get("six_month_overview")

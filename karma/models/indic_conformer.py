@@ -51,10 +51,10 @@ class IndicConformerASR(BaseModel):
         # login to HF
         from huggingface_hub import login
 
-        try:
-            login(os.getenv("HUGGINGFACE_TOKEN"))
-        except ValueError:
-            logger.warning("HF token not found, will not login.")
+        # try:
+        #     login(os.getenv("HUGGINGFACE_TOKEN"))
+        # except ValueError:
+        #     logger.warning("HF token not found, will not login.")
 
         self.model = AutoModel.from_pretrained(
             self.model_name_or_path,

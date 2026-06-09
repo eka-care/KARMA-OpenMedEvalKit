@@ -222,6 +222,8 @@ class RubricMetric(BaseMetric):
     LLM driven rubric evaluation metric.
     """
 
+    non_percentage_fields = frozenset({"num_questions", "num_valid_questions"})
+
     def __init__(
         self,
         metric_name,
@@ -274,17 +276,6 @@ class RubricMetric(BaseMetric):
         serialized_samples = kwargs.get("serialized_samples")
         cache_manager = kwargs.get("cache_manager")
         dataset_name = kwargs.get("dataset_name")
-        # Optional per-sample text to grade against, replacing the default
-        # (sample.conversation + assistant prediction). Used by metrics that
-        # score against tool traces or other non-conversation inputs.
-        input_overrides: Optional[List[Optional[str]]] = kwargs.get("input_overrides")
-        # Optional per-sample pre-computed grading_responses. When provided
-        # for a given index, the metric skips the LLM call and uses the
-        # supplied responses directly. Used to short-circuit empty-trace
-        # samples in the query rubric metric.
-        precomputed_responses: Optional[List[Optional[List[Dict]]]] = kwargs.get(
-            "precomputed_responses"
-        )
         logger.info(
             f"Evaluating {len(predictions)} conversations with {self.provider} model - {self.model}"
         )
@@ -297,12 +288,6 @@ class RubricMetric(BaseMetric):
                 "rubric_evaluation_details": per_sample_details,
             }
 
-        n = len(predictions)
-        if input_overrides is None:
-            input_overrides = [None] * n
-        if precomputed_responses is None:
-            precomputed_responses = [None] * n
-
         # Use ThreadPoolExecutor for parallel conversation processing
         with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
             # Submit all conversation processing tasks and track their order
@@ -312,8 +297,6 @@ class RubricMetric(BaseMetric):
                     prediction,
                     sample,
                     sample_rubrics,
-                    input_override=input_overrides[i],
-                    precomputed=precomputed_responses[i],
                 ): i
                 for i, (prediction, sample, sample_rubrics) in enumerate(
                     zip(predictions, samples, rubrics)
@@ -324,10 +307,14 @@ class RubricMetric(BaseMetric):
             question_results = [None] * len(predictions)
 
             # Collect results as they complete
+            completed = 0
+            total = len(predictions)
             for future in as_completed(future_to_index):
                 index = future_to_index[future]
                 result = future.result()
                 question_results[index] = result
+                completed += 1
+                logger.info(f"[rubric_evaluation] {completed}/{total} conversations evaluated")
 
         # Aggregate results
         aggregated_summary, per_sample_details = self._aggregate_results(
@@ -496,13 +483,15 @@ class RubricMetric(BaseMetric):
                 rubric_id = rubric.rubric_id or str(len(normalized_results) + 1)
                 if rubric_id in rubric_scores:
                     score_data = rubric_scores[rubric_id]
-                    normalized_results.append(
-                        {
-                            "criteria_met": score_data.get("score", 0) == 1,
-                            "explanation": score_data.get("explanation", ""),
-                            "rubric": rubric,
-                        }
-                    )
+                    raw_score = score_data.get("score")
+                    # null score from judge (N/A) → criteria_met=None; preserves
+                    # N/A distinction in the dashboard vs a genuine FAIL (0).
+                    criteria_met = None if raw_score is None else (raw_score == 1)
+                    normalized_results.append({
+                        "criteria_met": criteria_met,
+                        "explanation": score_data.get("explanation", ""),
+                        "rubric": rubric,
+                    })
                 else:
                     logger.warning(f"Missing rubric_id {rubric_id} in response")
                     normalized_results.append(
@@ -541,7 +530,7 @@ class RubricMetric(BaseMetric):
                     }
                 )
 
-            logger.info(f"Eval results: {normalized_results}")
+            logger.debug(f"Eval results: {normalized_results}")
             return normalized_results
 
     def _evaluate_individual_fallback(
@@ -597,15 +586,7 @@ class RubricMetric(BaseMetric):
 
         return results
 
-    def _process_single_conversation(
-        self,
-        prediction,
-        sample,
-        sample_rubrics,
-        *,
-        input_override: Optional[str] = None,
-        precomputed: Optional[List[Dict]] = None,
-    ):
+    def _process_single_conversation(self, prediction, sample, sample_rubrics):
         """
         Process a single conversation and its rubrics.
 
@@ -614,49 +595,32 @@ class RubricMetric(BaseMetric):
                        or a serialized Conversation JSON from pass-through models)
             sample: The sample containing conversation data
             sample_rubrics: List of rubric criteria for this sample
-            input_override: If provided, used directly as the input text shown to the
-                grader instead of building it from sample.conversation + prediction.
-                Enables grading against tool traces (query rubrics) or other inputs.
-            precomputed: If provided, skip the grader LLM call entirely and use the
-                supplied list as the grading_responses. Used to inject all-false
-                responses for empty-trace samples in with-tools query rubric runs.
 
         Returns:
             Dict containing rubric evaluations and question score
         """
-        if precomputed is not None:
-            grading_responses = precomputed
-            question_score = self.calculate_score(sample_rubrics, grading_responses)
-            return {
-                "rubric_evaluations": grading_responses,
-                "question_score": question_score,
-            }
-
-        if input_override is not None:
-            conversation_json = input_override
-        else:
-            # Handle serialized conversations (from pass-through models) vs regular model responses
-            if self.use_serialized_conversations:
-                # Explicitly parse as serialized Conversation (pass-through model case)
-                try:
-                    prediction_data = json.loads(prediction)
-                    sample.conversation = Conversation.model_validate(prediction_data)
-                    logger.debug(
-                        f"Parsed serialized conversation with {len(sample.conversation.conversation_turns)} turns"
-                    )
-                except (json.JSONDecodeError, ValueError, TypeError) as e:
-                    logger.error(f"Failed to parse serialized conversation: {e}")
-                    raise ValueError(
-                        f"use_serialized_conversations=True but prediction is not a valid Conversation JSON: {e}"
-                    )
-            else:
-                # Normal model output - always append as assistant response
-                sample.conversation.conversation_turns.append(
-                    ConversationTurn(content=prediction, role="assistant")
+        # Handle serialized conversations (from pass-through models) vs regular model responses
+        if self.use_serialized_conversations:
+            # Explicitly parse as serialized Conversation (pass-through model case)
+            try:
+                prediction_data = json.loads(prediction)
+                sample.conversation = Conversation.model_validate(prediction_data)
+                logger.debug(
+                    f"Parsed serialized conversation with {len(sample.conversation.conversation_turns)} turns"
                 )
+            except (json.JSONDecodeError, ValueError, TypeError) as e:
+                logger.error(f"Failed to parse serialized conversation: {e}")
+                raise ValueError(
+                    f"use_serialized_conversations=True but prediction is not a valid Conversation JSON: {e}"
+                )
+        else:
+            # Normal model output - always append as assistant response
+            sample.conversation.conversation_turns.append(
+                ConversationTurn(content=prediction, role="assistant")
+            )
 
-            # Get conversation JSON once
-            conversation_json = sample.conversation.model_dump_json()
+        # Get conversation JSON once
+        conversation_json = sample.conversation.model_dump_json()
 
         # Extract dataset-provided prompt components (if available)
         rubric_instructions = getattr(sample, "rubric_instructions", None)
@@ -822,11 +786,12 @@ class RubricMetric(BaseMetric):
                     if tag not in tag_scores:
                         tag_scores[tag] = []
 
-                    # For tag-level scoring, we consider individual rubric performance
-                    if evaluation["criteria_met"]:
-                        tag_scores[tag].append(1.0)
-                    else:
-                        tag_scores[tag].append(0.0)
+                    # Skip N/A rubrics (criteria_met=None) — same as calculate_score
+                    # which excludes points=0.0 from the denominator.
+                    # Counting None as 0 would inflate fail rates.
+                    if evaluation["criteria_met"] is None:
+                        continue
+                    tag_scores[tag].append(1.0 if evaluation["criteria_met"] else 0.0)
 
         # Aggregate tag scores
         aggregated_tags = {}
