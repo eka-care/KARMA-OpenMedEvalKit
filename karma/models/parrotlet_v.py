@@ -58,12 +58,7 @@ class ParrotletVLiteLLM(MedGemmaLLM):
 
     def load_model(self):
         # authenticate HF
-        from huggingface_hub import login
-
-        try:
-            login(os.getenv("HF_TOKEN"))
-        except ValueError:
-            logger.warning("HF token not found, will not login.")
+        from karma.utils.auth import ensure_hf_login
 
         self.model = AutoModel.from_pretrained(
             self.model_name_or_path,
