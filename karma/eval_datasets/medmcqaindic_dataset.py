@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 # Hardcoded confinement instructions
 DATASET_NAME = "ekacare/MedMCQA-Indic"
 SPLIT = "test"
-COMMIT_HASH = "dc18742d78a3486eef3d68b610ec47411ae383dd"
+COMMIT_HASH = "c1e955a50a123c7534c768ec4e693b35a1817170"
 CONFINEMENT_INSTRUCTIONS = """Instructions: The following are multiple choice questions about medical knowledge. Solve them in a
 step-by-step fashion, starting by summarizing the available information. Output a single option from the
 four options as the final answer. Question: <QUESTION> Response (think step by step and then

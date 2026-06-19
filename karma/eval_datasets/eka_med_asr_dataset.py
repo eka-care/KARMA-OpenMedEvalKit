@@ -8,9 +8,10 @@ DATASET_NAME = "ekacare/eka-medical-asr-evaluation-dataset"
 SPLIT = "test"
 COMMIT_HASH = "991bc807cab1f323f0283c836c634796bbf1ed3e"
 
+
 @register_dataset(
     DATASET_NAME,
-    metrics=["wer", "cer", "asr_semantic_metric"],
+    metrics=["wer", "cer"],
     commit_hash=COMMIT_HASH,
     split=SPLIT,
     task_type="transcription",
@@ -49,9 +50,9 @@ class EkaMedicalAsrDataset(BaseMultimodalDataset):
             audio=sample.get("audio", {}).get("bytes"),
             expected_output=sample.get("text", ""),
             other_args={
-                "language": sample.get("audio_language", "unknown"), 
-                "recording_context": sample.get("recording_context", ""), 
-                "type_concept": sample.get("type_concept", ""), 
+                "language": sample.get("audio_language", "unknown"),
+                "recording_context": sample.get("recording_context", ""),
+                "type_concept": sample.get("type_concept", ""),
                 "entities": sample.get("medical_entities", []),
             },
         )

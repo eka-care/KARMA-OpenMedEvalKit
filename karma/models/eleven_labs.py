@@ -55,4 +55,18 @@ ElevenLabsASRModel = ModelMeta(
     model_type=ModelType.AUDIO_RECOGNITION,
     modalities=[ModalityType.AUDIO]
 )
+
+ElevenLabsASRModel_2 = ModelMeta(
+    name="scribe_v2",
+    description="ElevenLabs ASR model v2",
+    loader_class="karma.models.eleven_labs.ElevenLabsASR",
+    loader_kwargs={
+        "model_name_or_path": "scribe_v2",
+    },
+    revision=None,
+    reference=None,
+    model_type=ModelType.AUDIO_RECOGNITION,
+    modalities=[ModalityType.AUDIO],
+)
 register_model_meta(ElevenLabsASRModel)
+register_model_meta(ElevenLabsASRModel_2)

@@ -84,23 +84,30 @@ class ClinicalNoteGenerationDataset(BaseMultimodalDataset):
         if not rubrics:
             logger.warning("No rubrics found in dataset sample")
         
-        # Store rubrics for the metric to access
+        rubric_passes = []
+        if rubrics:
+            rubric_passes.append({
+                "name": "rubric_evaluation",
+                "prompt": rubrics,
+                "response_scores_map_key": "rubric_scores",
+                "id_field": "rubric_id",
+                "score_field": "score",
+                "axes": {"*": [{"field": "score", "passes_when": {"eq": 1}}]},
+            })
+
         other_args = {
-            "rubric_prompt": rubrics,
-            "document_type": "clinical_note",  # Set document type for consistency
+            "document_type": "clinical_note",
+            "rubric_passes": rubric_passes,
         }
-        
-        # Create the DataLoaderIterable for the model evaluation
-        processed_sample = DataLoaderIterable(
+
+        return DataLoaderIterable(
             input=conversation_text,
-            system_prompt=sample_prompt,  # Use system prompt from dataset
-            other_args=other_args,  # Store rubric and metadata for metric access
+            system_prompt=sample_prompt,
+            other_args=other_args,
         )
 
-        return processed_sample
 
-
-    def extract_prediction(self, response: str) -> Tuple[str, bool]:
+    def extract_prediction(self, response: str, **kwargs) -> Tuple[str, bool]:
         """
         Extract the prediction from model response.
 

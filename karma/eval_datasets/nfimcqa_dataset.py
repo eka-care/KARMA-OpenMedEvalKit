@@ -88,7 +88,7 @@ class NFIMCQADataset(BaseMultimodalDataset):
 
         return dataloader_item
 
-    def extract_prediction(self, response: str) -> Tuple[str, bool]:
+    def extract_prediction(self, response: str, **kwargs) -> Tuple[str, bool]:
         """
         Extracts the model's predicted option from its response.
         Expected format: Final Answer: (A)

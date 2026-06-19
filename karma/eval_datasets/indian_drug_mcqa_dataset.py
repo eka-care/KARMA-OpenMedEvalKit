@@ -67,7 +67,7 @@ class IndianDrugMCQADataset(BaseMultimodalDataset):
             expected_output=sample["correct_answer"],
         )
 
-    def extract_prediction(self, response: str) -> Tuple[str, bool]:
+    def extract_prediction(self, response: str, **kwargs) -> Tuple[str, bool]:
         answer, success = "", False
         # Try "Final Answer:" format first
         if "Final Answer:" in response:
