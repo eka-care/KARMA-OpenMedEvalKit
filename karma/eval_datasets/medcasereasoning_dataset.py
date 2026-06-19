@@ -195,7 +195,7 @@ class MedCaseReasoningDataset(BaseMultimodalDataset):
             other_args={"reasoning_steps": reasoning_steps_json},
         )
 
-    def extract_prediction(self, response: str) -> Tuple[str, bool]:
+    def extract_prediction(self, response: str, **kwargs) -> Tuple[str, bool]:
         """Extract the prediction from a model response.
 
         CRITICAL: returns the FULL response rather than just the ``<answer>``

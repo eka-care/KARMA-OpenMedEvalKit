@@ -102,7 +102,7 @@ class MedXpertQATextDataset(BaseMultimodalDataset):
 
         return processed_sample
 
-    def extract_prediction(self, response: str) -> Tuple[str, bool]:
+    def extract_prediction(self, response: str, **kwargs) -> Tuple[str, bool]:
         answer, success = "", False
         if "Final Answer:" in response:
             answer = response.split("Final Answer:")[1].strip()

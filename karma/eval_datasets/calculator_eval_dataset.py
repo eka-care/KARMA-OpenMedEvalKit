@@ -69,7 +69,7 @@ class CalculatorEvalDataset(BaseMultimodalDataset):
             ),
         )
 
-    def extract_prediction(self, prediction: str) -> Tuple[str, bool]:
+    def extract_prediction(self, prediction: str, **kwargs) -> Tuple[str, bool]:
         stripped = prediction.strip()
 
         # Try to extract a JSON object from the response (last one wins, as the
