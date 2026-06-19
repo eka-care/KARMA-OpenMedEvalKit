@@ -162,6 +162,9 @@ cython_debug/
 # VS Code
 .vscode/
 
+# Serena IDE
+.serena/
+
 # Mac OS
 .DS_Store
 .DS_Store?
