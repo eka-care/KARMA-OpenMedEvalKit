@@ -52,7 +52,7 @@ class IndicConformerASR(BaseModel):
         from huggingface_hub import login
 
         # try:
-        #     login(os.getenv("HUGGINGFACE_TOKEN"))
+        #     login(os.getenv("HF_TOKEN"))
         # except ValueError:
         #     logger.warning("HF token not found, will not login.")
 

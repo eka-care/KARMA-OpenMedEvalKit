@@ -270,7 +270,7 @@ KARMA_CACHE_TYPE=duckdb
 KARMA_CACHE_PATH=./cache.db
 
 # Model configuration
-HUGGINGFACE_TOKEN=your_token
+HF_TOKEN=your_token
 LOG_LEVEL=INFO
 ```
 
