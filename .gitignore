@@ -204,6 +204,9 @@ data/
 *.h5
 *.hdf5
 test*.py
+!tests/test_*.py
+!tests/**/test_*.py
+!karma/metrics/lang_resources/*.json
 # Results and outputs
 results/
 outputs/

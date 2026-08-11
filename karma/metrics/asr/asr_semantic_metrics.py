@@ -86,26 +86,30 @@ class DatasetMetrics:
 class ASRSemanticMetrics(BaseMetric):
     def __init__(self, metric_name: str, language = "en", **kwargs):
         super().__init__(metric_name, **kwargs)
-        self.language = language
+        from karma.utils.language import metric_language
+
+        self.language = metric_language(language)
         self.cer_threshold = 0.4
 
     @staticmethod
     def get_aligner(language: str, cer_threshold: float = 0.4) -> BaseCERAligner:
-        """Factory function to get language-specific aligner."""
+        """Language-specific aligner; unsupported languages degrade to the
+        English aligner (lenient by design — a metric must not fail a run)."""
         aligners = {
             'english': EnglishCERAligner,
             'hindi': HindiCERAligner,
             'en': EnglishCERAligner,
             'hi': HindiCERAligner,
         }
-        
-        if language.lower() not in aligners:
-            available = ', '.join(aligners.keys())
-            raise ValueError(f"Unsupported language: {language}. Available: {available}")
-        
-        aligner = aligners[language.lower()](cer_threshold)
-        
-        return aligner
+
+        aligner_cls = aligners.get(language.lower())
+        if aligner_cls is None:
+            logging.getLogger(__name__).warning(
+                "No CER aligner for %r; using the English aligner.", language
+            )
+            aligner_cls = EnglishCERAligner
+
+        return aligner_cls(cer_threshold)
 
     @staticmethod
     def _process_utterance_regular(args: Tuple) -> AlignmentResult:

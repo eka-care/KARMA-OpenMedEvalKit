@@ -1,6 +1,6 @@
 [project]
 name = "karma-medeval"
-version = "0.2.0"
+version = "0.3.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -8,9 +8,14 @@ dependencies = [
     "accelerate>=1.7.0",
     "boto3>=1.35.0",
     "click>=8.0.0",
-    "datasets>=3.6.0",
+    # Pinned: media bytes representation feeds cache keys — a floating datasets
+    # version silently re-keys image/audio samples (5.x decodes parquet images
+    # to PIL where 4.5 yields raw bytes). Bump only with a planned cache reset.
+    "datasets==4.5.0",
     "duckdb>=0.9.0",
     "evaluate>=0.4.0",
+    "rouge-score>=0.1.2",
+    "nltk>=3.8.0",
     "mysql-connector-python>=9.3.0",
     "pillow>=11.1.0",
     "python-dotenv>=1.1.0",
@@ -28,7 +33,7 @@ dependencies = [
     "simple-term-menu>=1.6.6",
     "ipython>=8.37.0",
     "pytrec-eval-terrier>=0.5.7",
-    "sentence-transformers>=5.0.0",
+    "sentence-transformers>=5.1.0",
     "faiss-cpu>=1.11.0.post1",
     "hf_transfer==0.1.9",
     "sarvamai>=0.1.24",
@@ -50,6 +55,7 @@ karma = "karma.cli.main:main"
 [tool.setuptools.package-data]
 karma = [
     "processors/glm/*",
+    "metrics/lang_resources/*.json",
 ]
 
 
@@ -62,6 +68,7 @@ dev = [
 ]
 
 audio = [
+    "deepgram-sdk>=3.0.0",
     "elevenlabs>=2.5.0",
     "indic-nlp-library>=0.92",
     "langdetect>=1.0.9",

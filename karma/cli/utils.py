@@ -6,6 +6,7 @@ and other CLI-related functionality.
 """
 
 import json
+import os
 import re
 from typing import Dict, Any, List, Optional
 from pathlib import Path
@@ -14,6 +15,7 @@ from dataclasses import fields, is_dataclass
 import click
 from rich.console import Console
 from rich.prompt import Prompt
+import yaml
 
 from karma.registries.dataset_registry import dataset_registry
 from karma.registries.processor_registry import processor_registry
@@ -160,6 +162,113 @@ def parse_metric_args(metric_args_str: str) -> Dict[str, Dict[str, Any]]:
         metric_args[metric_name.strip()] = args
 
     return metric_args
+
+
+def _load_config_file(config_path: str) -> dict:
+    """Load configuration from JSON or YAML file."""
+
+    if not os.path.exists(config_path):
+        raise FileNotFoundError(f"Config file not found: {config_path}")
+
+    file_ext = os.path.splitext(config_path)[1].lower()
+
+    with open(config_path, "r") as f:
+        if file_ext in [".json"]:
+            return json.load(f)
+        if file_ext in [".yaml", ".yml"]:
+            return yaml.safe_load(f)
+
+        content = f.read()
+        f.seek(0)
+
+        try:
+            return json.loads(content)
+        except json.JSONDecodeError:
+            try:
+                return yaml.safe_load(content)
+            except yaml.YAMLError as exc:
+                raise ValueError(
+                    f"Unsupported config file format: {config_path}"
+                ) from exc
+
+
+def prepare_model_overrides(
+    model_name: str,
+    model_path: Optional[str],
+    model_config: Optional[str],
+    model_kwargs: Optional[str],
+    console: Console,
+) -> dict:
+    """Prepare model configuration overrides consistent with the eval CLI."""
+
+    final_config: Dict[str, Any] = {}
+
+    try:
+        model_meta = model_registry.get_model_meta(model_name)
+        final_config.update(model_meta.loader_kwargs)
+
+        if not model_path:
+            final_config["model_name_or_path"] = model_meta.name
+            console.print(
+                f"[dim]Using model path from metadata: {model_meta.name}[/dim]"
+            )
+
+        console.print(
+            f"[dim]Loaded {len(model_meta.loader_kwargs)} default parameters from model metadata[/dim]"
+        )
+    except Exception as exc:  # pragma: no cover - defensive feedback
+        console.print(
+            ClickFormatter.warning(f"Could not load model metadata: {exc}")
+        )
+
+    if model_path:
+        final_config["model_name_or_path"] = model_path
+
+    if model_config:
+        try:
+            config_data = _load_config_file(model_config)
+            final_config.update(config_data)
+            console.print(
+                f"[dim]Loaded {len(config_data)} parameters from config file: {model_config}[/dim]"
+            )
+        except Exception as exc:  # pragma: no cover - surfacing to CLI
+            console.print(
+                ClickFormatter.warning(
+                    f"Could not load model config file '{model_config}': {exc}"
+                )
+            )
+
+    if model_kwargs:
+        try:
+            cli_overrides = json.loads(model_kwargs)
+            final_config.update(cli_overrides)
+            console.print(
+                f"[dim]Applied {len(cli_overrides)} model parameter overrides from CLI[/dim]"
+            )
+            console.print(f"[dim]Loaded overrides {cli_overrides}[/dim]")
+        except json.JSONDecodeError:
+            # Fall back to key=value parsing (e.g. "bot_prompt_version=v1.2,foo=bar")
+            try:
+                cli_overrides = {}
+                for pair in model_kwargs.split(","):
+                    if "=" not in pair:
+                        raise ValueError(
+                            f"Invalid model-args format: '{pair}'. "
+                            f"Expected 'key=value' or JSON."
+                        )
+                    key, value = pair.split("=", 1)
+                    cli_overrides[key.strip()] = value.strip()
+                final_config.update(cli_overrides)
+                console.print(
+                    f"[dim]Applied {len(cli_overrides)} model parameter overrides from CLI[/dim]"
+                )
+                console.print(f"[dim]Loaded overrides {cli_overrides}[/dim]")
+            except ValueError as exc:
+                console.print(
+                    ClickFormatter.warning(f"Invalid model-args: {exc}")
+                )
+
+    return final_config
 
 
 def parse_processor_args(

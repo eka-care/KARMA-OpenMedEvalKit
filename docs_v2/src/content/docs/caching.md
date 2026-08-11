@@ -30,3 +30,21 @@ To use DynamoDB caching, you need to configure the following environment variabl
 - `AWS_REGION`: The AWS region where your DynamoDB table is located.
 
 Once you have configured these environment variables, you can enable DynamoDB caching by setting the `KARMA_CACHE_TYPE` environment variable to `dynamodb`.
+
+### DynamoDB table layout
+
+KARMA writes to three DynamoDB tables that share the same prefix (default:
+`parrotlet_omni_benchmark_cache`). Besides the primary cache table and the
+`_run_metadata` collection, metric persistence expects a
+`parrotlet_omni_benchmark_cache_metric_results` table with:
+
+- `config_hash` as the partition key.
+- `target_scope#target_id#metric_name` as the sort key (stored in the `target_sort_key`
+  attribute).
+- A `config_hash-index` global secondary index that uses `config_hash` (HASH) +
+  `metric_name` (RANGE) and projects all attributes.
+- On‑demand (`PAY_PER_REQUEST`) billing unless you have a specific capacity plan.
+
+This layout mirrors the uniqueness constraints DuckDB enforces across
+`config_hash`, `metric_name`, `target_scope`, and `target_id`, ensuring run-level and
+sample-level metrics can coexist without clobbering each other.

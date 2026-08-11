@@ -130,7 +130,13 @@ class MetricRegistry:
                 )
         # Get the metric class from the registry
         metric_info = self.metrics[name]
-        metric_class = metric_info["class"]
+        if "class" not in metric_info or metric_info["class"] is None:
+            import importlib
+            module = importlib.import_module(metric_info["module"])
+            metric_class = getattr(module, metric_info["class_name"])
+            metric_info["class"] = metric_class
+        else:
+            metric_class = metric_info["class"]
         return metric_class(name, **kwargs)
 
     def list_metrics(self) -> List[str]:
@@ -347,7 +353,16 @@ class MetricRegistry:
             from karma.registries.cache_manager import get_cache_manager
 
             cache_manager = get_cache_manager()
-            cache_data = {"metrics": self.metrics}
+
+            # Strip raw class references before pickling to prevent imports on load
+            cached_metrics = {}
+            for name, info in self.metrics.items():
+                info_copy = info.copy()
+                if "class" in info_copy:
+                    del info_copy["class"]
+                cached_metrics[name] = info_copy
+
+            cache_data = {"metrics": cached_metrics}
 
             cache_manager.set_cached_discovery("metrics", cache_data)
             logger.debug("Saved metrics registry to cache")

@@ -12,18 +12,20 @@ DATASET_NAME = "GBaker/MedQA-USMLE-4-options"
 SPLIT = "test"
 COMMIT_HASH = None
 
-CONFINEMENT_INSTRUCTIONS = """Instructions: The following are multiple choice questions about medical knowledge. Solve them in a step-by-step fashion, starting by summarizing the available information. Output a single option from the four options as the final answer. Question: <QUESTION> Response (think step by step and then end with "Final Answer:" followed by *only* the letter corresponding to the correct answer enclosed in parentheses)"""
-
-
-@register_dataset(DATASET_NAME, commit_hash=COMMIT_HASH, split=SPLIT, metrics=["exact_match"], task_type="mcqa")
+@register_dataset(
+    DATASET_NAME,
+    commit_hash=COMMIT_HASH,
+    split=SPLIT,
+    metrics=["exact_match"],
+    task_type="mcqa",
+    default_args={"user_prompt": "medqa_usmle_cot"},
+)
 class MedQAUSMLEDataset(BaseMultimodalDataset):
     def __init__(self, dataset_name: str = DATASET_NAME, split: str = SPLIT, commit_hash: str = COMMIT_HASH, **kwargs):
-        self.confinement_instructions = CONFINEMENT_INSTRUCTIONS
         super().__init__(
             dataset_name=dataset_name,
             split=split,
             stream=False,
-            confinement_instructions=self.confinement_instructions,
             commit_hash=commit_hash,
             **kwargs
         )

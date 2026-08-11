@@ -8,12 +8,15 @@ This module provides caching functionality including:
 - Model configuration management for cache keys
 """
 
-from .cache_manager import CacheManager
+from .cache_manager import CacheManager, export_run_samples_to_parquet, create_cache_io, export_run_to_dynamodb
 from .duckdb_cache_io import DuckDBCacheIO
 from .dynamodb_cache_io import DynamoDBCacheIO
 
 __all__ = [
     'CacheManager',
+    'create_cache_io',
+    'export_run_samples_to_parquet',
+    'export_run_to_dynamodb',
     'DuckDBCacheIO',
     'DynamoDBCacheIO',
 ]

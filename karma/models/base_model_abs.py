@@ -1,7 +1,9 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Union
-import torch
-from transformers import PreTrainedModel, PreTrainedTokenizer
+from typing import Any, Dict, List, Optional, Union, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import torch
+    from transformers import PreTrainedModel, PreTrainedTokenizer
 
 
 class BaseModel(ABC):
@@ -27,10 +29,24 @@ class BaseModel(ABC):
             device: Device to run the model on ('cuda', 'cpu', etc.)
             **kwargs: Additional model-specific arguments
         """
+        import os
+
+        import torch
         self.model_name_or_path = model_name_or_path
-        self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
-        self.model: Optional[PreTrainedModel] = None
-        self.tokenizer: Optional[PreTrainedTokenizer] = None
+        self.revision = kwargs.get("revision")
+        self.device = (
+            device
+            or os.getenv("KARMA_DEVICE")
+            or (
+                "cuda"
+                if torch.cuda.is_available()
+                else "mps"
+                if torch.backends.mps.is_available()
+                else "cpu"
+            )
+        )
+        self.model: Optional["PreTrainedModel"] = None
+        self.tokenizer: Optional["PreTrainedTokenizer"] = None
         self.is_loaded = False
 
     @abstractmethod
@@ -52,9 +68,9 @@ class BaseModel(ABC):
     @abstractmethod
     def run(
         self,
-        inputs: Union[torch.Tensor, Dict[str, torch.Tensor], List[str], Any],
+        inputs: Union["torch.Tensor", Dict[str, "torch.Tensor"], List[str], Any],
         **kwargs,
-    ) -> Union[torch.Tensor, Dict[str, torch.Tensor]]:
+    ) -> Union["torch.Tensor", Dict[str, "torch.Tensor"]]:
         """
         Forward pass through the model.
 
@@ -107,26 +123,6 @@ class BaseModel(ABC):
         """
         pass
 
-    def run_with_metadata(
-        self,
-        inputs: Union[torch.Tensor, Dict[str, torch.Tensor], List[str], Any],
-        **kwargs,
-    ) -> List[Dict[str, str]]:
-        """
-        Run inference while returning normalized metadata for benchmark-style callers.
-
-        By default, this wraps ``run()`` and exposes a plain text prediction plus an
-        empty tool trace so existing model implementations remain compatible.
-        """
-        outputs = self.run(inputs, **kwargs)
-        return [
-            {
-                "text": str(output).strip() if output is not None else "",
-                "tool_trace": "",
-            }
-            for output in outputs
-        ]
-
     def get_model_info(self) -> Dict[str, Any]:
         """
         Get information about the loaded model.
@@ -178,6 +174,26 @@ class BaseModel(ABC):
         if self.is_loaded and self.model is not None:
             self.model.eval()
         return self
+
+    def run_with_metadata(
+        self,
+        inputs: Union["torch.Tensor", Dict[str, "torch.Tensor"], List[str], Any],
+        **kwargs,
+    ) -> List[Dict[str, str]]:
+        """
+        Run inference while returning normalized metadata for benchmark-style callers.
+
+        By default, this wraps ``run()`` and exposes a plain text prediction plus an
+        empty tool trace so existing model implementations remain compatible.
+        """
+        outputs = self.run(inputs, **kwargs)
+        return [
+            {
+                "text": str(output).strip() if output is not None else "",
+                "tool_trace": "",
+            }
+            for output in outputs
+        ]
 
     def __repr__(self) -> str:
         return (

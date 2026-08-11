@@ -8,7 +8,6 @@ from karma.registries.dataset_registry import register_dataset
 
 logger = logging.getLogger(__name__)
 
-CONFINEMENT_INSTRUCTIONS = """Instructions: The following are multiple choice questions about medical knowledge. Solve them in a step-by-step fashion. Output only the final answer (e.g., A, B, C, or D) at the end using the format "Final Answer: (X)". Question: <QUESTION>"""
 SPLIT = "test"
 DATASET_NAME = "nfi_mcqa"
 
@@ -18,13 +17,13 @@ DATASET_NAME = "nfi_mcqa"
     split=SPLIT,
     metrics=["exact_match"],
     task_type="mcqa",
+    default_args={"user_prompt": "nfimcqa_cot"},
 )
 class NFIMCQADataset(BaseMultimodalDataset):
     def __init__(
         self,
         dataset_name: str = DATASET_NAME,
         split: str = SPLIT,
-        confinement_instructions: str = CONFINEMENT_INSTRUCTIONS,
         **kwargs,
     ):
         # Load local data first
@@ -39,12 +38,10 @@ class NFIMCQADataset(BaseMultimodalDataset):
         super().__init__(
             dataset_name=dataset_name,
             split=split,
-            confinement_instructions=confinement_instructions,
             **kwargs,
         )
 
         self.dataset_name = dataset_name
-        self.confinement_instructions = confinement_instructions
         self.split = SPLIT
         self.stream = False
         self.processors = kwargs.get("processors", [])

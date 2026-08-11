@@ -13,9 +13,6 @@ from karma.registries.dataset_registry import register_dataset
 from karma.eval_datasets.base_dataset import BaseMultimodalDataset
 
 logger = logging.getLogger(__name__)
-CONFINEMENT_INSTRUCTIONS = """<QUESTION> Think
-step by step through each of the multiple choice options. You MUST end your response with "Final
-Answer:" followed by only the letter corresponding to the correct answer enclosed in parentheses)."""
 DATASET_NAME = "ChuGyouk/MedXpertQA"
 SPLIT = "test"
 CONFIG = "MM"
@@ -28,6 +25,7 @@ COMMIT_HASH = "7186bd593752a47d6bd72ccf99ca67df69be18bd"
     split=SPLIT,
     metrics=["exact_match"],
     task_type="mcqa",
+    default_args={"user_prompt": "medxpertqa_cot"},
 )
 class MedXpertQADataset(BaseMultimodalDataset):
     """
@@ -41,7 +39,6 @@ class MedXpertQADataset(BaseMultimodalDataset):
         split: str = SPLIT,
         commit_hash: str = COMMIT_HASH,
         config: str = CONFIG,
-        confinement_instructions: str = CONFINEMENT_INSTRUCTIONS,
         **kwargs,
     ):
         """
@@ -55,7 +52,6 @@ class MedXpertQADataset(BaseMultimodalDataset):
             split=split,
             commit_hash=commit_hash,
             config=config,
-            confinement_instructions=confinement_instructions,
             **kwargs,
         )
         self.dataset = self.dataset.cast_column("images", [Image(decode=False)])

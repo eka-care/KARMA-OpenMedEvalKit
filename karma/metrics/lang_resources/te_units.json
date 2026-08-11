@@ -1,0 +1,25 @@
+{
+  "mm": ["మిల్లీమీటర్", "మిల్లీమీటర్లు", "millimeter", "millimeters"],
+  "cm": ["సెంటీమీటర్", "సెంటీమీటర్లు", "centimeter", "centimeters"],
+  "m": ["మీటర్", "మీటర్లు", "meter", "meters"],
+  "km": ["కిలోమీటర్", "కిలోమీటర్లు", "kilometer", "kilometers"],
+  "g": ["గ్రాము", "గ్రాములు", "gram", "grams"],
+  "kg": ["కిలోగ్రాము", "కిలోగ్రాములు", "kilogram", "kilograms"],
+  "mg": ["మిల్లీగ్రాము", "మిల్లీగ్రాములు", "milligram", "milligrams"],
+  "ml": ["మిల్లీలీటర్", "మిల్లీలీటర్లు", "milliliter", "milliliters"],
+  "l": ["లీటర్", "లీటర్లు", "liter", "liters"],
+  "sec": ["సెకను", "సెకన్లు", "second", "seconds"],
+  "min": ["నిమిషం", "నిమిషాలు", "minute", "minutes"],
+  "hr": ["గంట", "గంటలు", "hour", "hours"],
+  "db": ["డెసిబెల్", "decibel", "decibels"],
+  "hz": ["హెర్ట్జ్", "hertz"],
+  "mv": ["మిల్లీవోల్ట్", "millivolt", "millivolts"],
+  "cc": ["సీసీ", "క్యూబిక్ సెంటీమీటర్", "cubic centimeter"],
+  "ppm": ["పిపిఎం", "parts per million"],
+  "rpm": ["ఆర్పిఎం", "revolutions per minute"],
+  "iu": ["అంతర్జాతీయ యూనిట్", "international unit"],
+  "conc": ["ఏకాగ్రత", "concentration"],
+  "ok": ["సరే", "okay"],
+  "°c": ["డిగ్రీ సెల్సియస్", "degree celsius"]
+}
+

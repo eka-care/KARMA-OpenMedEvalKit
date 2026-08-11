@@ -3,7 +3,7 @@ import numpy as np
 import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from typing import List, Dict, Any, Optional, Tuple
+from typing import List, Dict, Any, NamedTuple, Optional, Tuple
 from karma.metrics.base_metric_abs import BaseMetric
 from karma.models.aws_bedrock import AWSBedrock
 from karma.models.openai_llm import OpenAILLM
@@ -16,6 +16,15 @@ from karma.data_models.dataloader_iterable import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+class _EvalSpec(NamedTuple):
+    """One assembled judge call for a rubric batch — built once, hashed and run."""
+
+    eval_input: DataLoaderIterable
+    rubric_batch: List[RubricCriteria]
+    use_structured: bool
+    is_single: bool
 
 PROMPT = """
 Your job is to evaluate how well the last assistant response (i.e., the completion) satisfies the rubric item below, based on its intended clinical meaning rather than exact phrasing.
@@ -288,19 +297,58 @@ class RubricMetric(BaseMetric):
                 "rubric_evaluation_details": per_sample_details,
             }
 
-        # Use ThreadPoolExecutor for parallel conversation processing
+        # Prepare each conversation (append the model output / parse pass-through)
+        # up front so judge_hash lookups can be batched in one query. The hash is
+        # taken over the assembled eval_input(s) the judge actually receives, so
+        # any prompt/rubric/output change invalidates the cache automatically.
+        judge_model_config = self._build_judge_model_config()
+        prepared = []
+        judge_hashes = []
+        for prediction, sample, sample_rubrics in zip(predictions, samples, rubrics):
+            conv = self._prepare_conversation(prediction, sample)
+            judge_input = self._build_judge_input(conv, sample_rubrics)
+            # Build the judge inputs once; they are hashed for the cache key here
+            # and run directly on a miss (no second assembly).
+            specs = self._build_eval_specs(conv, sample_rubrics)
+            prepared.append((conv, judge_input, specs))
+            if cache_manager:
+                judge_hashes.append(
+                    cache_manager.generate_hash(
+                        {
+                            "eval_inputs": [spec.eval_input.model_dump() for spec in specs],
+                            "judge_model_config": judge_model_config,
+                        }
+                    )
+                )
+            else:
+                judge_hashes.append(None)
+
+        cached_by_hash = {}
+        if cache_manager:
+            wanted = [h for h in judge_hashes if h]
+            if wanted:
+                try:
+                    cached_by_hash = cache_manager.get_rubric_outputs(wanted)
+                except Exception as exc:  # pragma: no cover - defensive logging
+                    logger.warning("Rubric cache lookup failed: %s", exc)
+
+        hits = sum(1 for h in judge_hashes if h and h in cached_by_hash)
+        if cache_manager:
+            logger.info(
+                f"[rubric_evaluation] judge cache: {hits}/{len(predictions)} reused"
+            )
+
+        # Use ThreadPoolExecutor for parallel conversation processing (misses only
+        # call the judge; hits reconstruct from the cached row).
         with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
-            # Submit all conversation processing tasks and track their order
             future_to_index = {
                 executor.submit(
-                    self._process_single_conversation,
-                    prediction,
-                    sample,
-                    sample_rubrics,
+                    self._score_conversation,
+                    prepared[i],
+                    rubrics[i],
+                    cached_by_hash.get(judge_hashes[i]) if judge_hashes[i] else None,
                 ): i
-                for i, (prediction, sample, sample_rubrics) in enumerate(
-                    zip(predictions, samples, rubrics)
-                )
+                for i in range(len(predictions))
             }
 
             # Initialize results list with correct size
@@ -315,6 +363,12 @@ class RubricMetric(BaseMetric):
                 question_results[index] = result
                 completed += 1
                 logger.info(f"[rubric_evaluation] {completed}/{total} conversations evaluated")
+
+        # Attach the eval_input-derived judge_hash so persistence keys on the
+        # exact value looked up above (no recompute drift).
+        for i, result in enumerate(question_results):
+            if result is not None:
+                result["judge_hash"] = judge_hashes[i]
 
         # Aggregate results
         aggregated_summary, per_sample_details = self._aggregate_results(
@@ -332,84 +386,54 @@ class RubricMetric(BaseMetric):
             except Exception as exc:  # pragma: no cover - defensive logging
                 logger.warning("Failed to persist rubric evaluation results: %s", exc)
 
+        if cache_manager and serialized_samples:
+            try:
+                self._persist_rubric_outputs(
+                    cache_manager=cache_manager,
+                    question_results=question_results,
+                    serialized_samples=serialized_samples,
+                )
+            except Exception as exc:  # pragma: no cover - defensive logging
+                logger.warning("Failed to persist rubric outputs: %s", exc)
+
         return {
             "rubric_evaluation": aggregated_summary,
             "rubric_evaluation_details": per_sample_details,
         }
 
-    def _evaluate_batch(
+    _JUDGE_SYSTEM_PROMPT = "You are an expert evaluator for medical question answering."
+
+    def _build_eval_input(
         self,
         conversation_json: str,
         rubric_batch: List[RubricCriteria],
         rubric_instructions: Optional[str] = None,
         rubric_definitions: Optional[str] = None,
         rubric_output_guidelines: Optional[str] = None,
-    ) -> List[Dict]:
-        """
-        Evaluate a batch of rubrics for a single conversation.
+    ) -> Tuple[DataLoaderIterable, bool, bool]:
+        """Assemble the exact judge input for a rubric batch.
 
-        Args:
-            conversation_json: JSON representation of the conversation
-            rubric_batch: List of rubric criteria to evaluate
-            rubric_instructions: Optional dataset-specific instructions (scoring format, output structure)
-            rubric_definitions: Optional dataset-specific rubric category definitions
-            rubric_output_guidelines: Optional dataset-specific evaluation guidelines
-
-        Returns:
-            List of evaluation results, one per rubric
+        Returns ``(eval_input, use_structured_prompt, is_single)``. This is what
+        the judge receives *and* what judge_hash is computed over, so template,
+        conversation, rubrics and system prompt are all captured by one object.
         """
-        # Check if dataset provides structured prompt components
         use_structured_prompt = all(
-            [
-                rubric_instructions,
-                rubric_definitions,
-                rubric_output_guidelines,
-            ]
+            [rubric_instructions, rubric_definitions, rubric_output_guidelines]
         )
+        is_single = len(rubric_batch) == 1 and not use_structured_prompt
 
-        if len(rubric_batch) == 1 and not use_structured_prompt:
-            # Use single rubric prompt for batch size 1 (only when not using structured prompt)
+        if is_single:
             prompt_template = (
                 PROMPT_MULTI_TURN if self.use_multi_turn_prompts else PROMPT
             )
             prompt = prompt_template.replace(
                 "<<input_prompt>>", conversation_json
             ).replace("<<rubric>>", rubric_batch[0].model_dump_json())
-
-            eval_input = DataLoaderIterable(
-                input=prompt,
-                system_prompt="You are an expert evaluator for medical question answering.",
-            )
-
-            response = self.model.run([eval_input])[0]
-
-            try:
-                eval_result = json.loads(response)
-                if not isinstance(eval_result, dict):
-                    raise ValueError(
-                        f"Expected JSON object with rubric fields, received {type(eval_result).__name__}"
-                    )
-                return [
-                    {
-                        "criteria_met": eval_result["criteria_met"],
-                        "explanation": eval_result["explanation"],
-                        "rubric": rubric_batch[0],
-                    }
-                ]
-            except (json.JSONDecodeError, KeyError, TypeError, ValueError):
-                return [
-                    {
-                        "criteria_met": False,
-                        "explanation": f"Failed to parse response: {response}",
-                        "rubric": rubric_batch[0],
-                    }
-                ]
         else:
-            # Use batch prompt for multiple rubrics or structured prompt
-            rubrics_json = json.dumps([rubric.model_dump() for rubric in rubric_batch])
-
+            rubrics_json = json.dumps(
+                [rubric.model_dump() for rubric in rubric_batch]
+            )
             if use_structured_prompt:
-                # Use dataset-provided structured prompt
                 prompt = (
                     BATCH_PROMPT_STRUCTURED.replace(
                         "<<instructions>>", rubric_instructions
@@ -420,7 +444,6 @@ class RubricMetric(BaseMetric):
                     .replace("<<output_guidelines>>", rubric_output_guidelines)
                 )
             else:
-                # Use default batch prompt
                 prompt_template = (
                     BATCH_PROMPT_MULTI_TURN
                     if self.use_multi_turn_prompts
@@ -430,26 +453,92 @@ class RubricMetric(BaseMetric):
                     "<<input_prompt>>", conversation_json
                 ).replace("<<rubrics>>", rubrics_json)
 
-            eval_input = DataLoaderIterable(
-                input=prompt,
-                system_prompt="You are an expert evaluator for medical question answering.",
+        eval_input = DataLoaderIterable(
+            input=prompt, system_prompt=self._JUDGE_SYSTEM_PROMPT
+        )
+        return eval_input, use_structured_prompt, is_single
+
+    def _run_eval_input(
+        self,
+        eval_input: DataLoaderIterable,
+        rubric_batch: List[RubricCriteria],
+        use_structured_prompt: bool,
+        is_single: bool,
+        conversation_json: str,
+    ) -> Tuple[List[Dict], str]:
+        """Call the judge on a prebuilt eval_input and parse its response.
+
+        Returns ``(evaluation results, raw judge response)`` — raw is kept for
+        the rubric_outputs cache, including when parsing fails.
+        """
+        response = self.model.run([eval_input])[0]
+
+        if is_single:
+            try:
+                eval_result = json.loads(response)
+                if not isinstance(eval_result, dict):
+                    raise ValueError(
+                        f"Expected JSON object with rubric fields, received {type(eval_result).__name__}"
+                    )
+                return (
+                    [
+                        {
+                            "criteria_met": eval_result["criteria_met"],
+                            "explanation": eval_result["explanation"],
+                            "rubric": rubric_batch[0],
+                        }
+                    ],
+                    response,
+                )
+            except (json.JSONDecodeError, KeyError, TypeError, ValueError):
+                return (
+                    [
+                        {
+                            "criteria_met": False,
+                            "explanation": f"Failed to parse response: {response}",
+                            "rubric": rubric_batch[0],
+                        }
+                    ],
+                    response,
+                )
+
+        try:
+            eval_results = self._parse_structured_response(
+                response, rubric_batch, use_structured_prompt
+            )
+            return eval_results, response
+        except (json.JSONDecodeError, ValueError, KeyError, TypeError) as e:
+            logger.warning(
+                f"Batch evaluation failed: {e}. Falling back to individual evaluation."
+            )
+            return (
+                self._evaluate_individual_fallback(conversation_json, rubric_batch),
+                response,
             )
 
-            response = self.model.run([eval_input])[0]
-
-            try:
-                eval_results = self._parse_structured_response(
-                    response, rubric_batch, use_structured_prompt
-                )
-                return eval_results
-            except (json.JSONDecodeError, ValueError, KeyError, TypeError) as e:
-                # Fallback to individual evaluation if batch fails
-                logger.warning(
-                    f"Batch evaluation failed: {e}. Falling back to individual evaluation."
-                )
-                return self._evaluate_individual_fallback(
-                    conversation_json, rubric_batch
-                )
+    def _evaluate_batch(
+        self,
+        conversation_json: str,
+        rubric_batch: List[RubricCriteria],
+        rubric_instructions: Optional[str] = None,
+        rubric_definitions: Optional[str] = None,
+        rubric_output_guidelines: Optional[str] = None,
+    ) -> Tuple[List[Dict], str]:
+        """Build the judge input for a rubric batch and run it."""
+        eval_input, use_structured_prompt, is_single = self._build_eval_input(
+            conversation_json,
+            rubric_batch,
+            rubric_instructions,
+            rubric_definitions,
+            rubric_output_guidelines,
+        )
+        return self._run_eval_input(
+            eval_input,
+            rubric_batch,
+            use_structured_prompt,
+            is_single,
+            conversation_json,
+        )
 
     def _parse_structured_response(
         self,
@@ -557,7 +646,7 @@ class RubricMetric(BaseMetric):
 
             eval_input = DataLoaderIterable(
                 input=prompt,
-                system_prompt="You are an expert evaluator for medical question answering.",
+                system_prompt=self._JUDGE_SYSTEM_PROMPT,
             )
 
             response = self.model.run([eval_input])[0]
@@ -586,69 +675,105 @@ class RubricMetric(BaseMetric):
 
         return results
 
-    def _process_single_conversation(self, prediction, sample, sample_rubrics):
-        """
-        Process a single conversation and its rubrics.
+    def _prepare_conversation(self, prediction, sample) -> Dict[str, Any]:
+        """Append the model output (or parse a pass-through conversation) and
+        return the conversation JSON plus any dataset-provided prompt parts.
 
-        Args:
-            prediction: The prediction text for this conversation (can be a response string
-                       or a serialized Conversation JSON from pass-through models)
-            sample: The sample containing conversation data
-            sample_rubrics: List of rubric criteria for this sample
-
-        Returns:
-            Dict containing rubric evaluations and question score
+        Mutates ``sample`` exactly once — done sequentially before the thread
+        pool so judge_hashes can be computed and looked up in one batch.
         """
-        # Handle serialized conversations (from pass-through models) vs regular model responses
         if self.use_serialized_conversations:
-            # Explicitly parse as serialized Conversation (pass-through model case)
             try:
                 prediction_data = json.loads(prediction)
                 sample.conversation = Conversation.model_validate(prediction_data)
-                logger.debug(
-                    f"Parsed serialized conversation with {len(sample.conversation.conversation_turns)} turns"
-                )
             except (json.JSONDecodeError, ValueError, TypeError) as e:
                 logger.error(f"Failed to parse serialized conversation: {e}")
                 raise ValueError(
                     f"use_serialized_conversations=True but prediction is not a valid Conversation JSON: {e}"
                 )
         else:
-            # Normal model output - always append as assistant response
             sample.conversation.conversation_turns.append(
                 ConversationTurn(content=prediction, role="assistant")
             )
 
-        # Get conversation JSON once
-        conversation_json = sample.conversation.model_dump_json()
+        return {
+            "conversation_json": sample.conversation.model_dump_json(),
+            "rubric_instructions": getattr(sample, "rubric_instructions", None),
+            "rubric_definitions": getattr(sample, "rubric_definitions", None),
+            "rubric_output_guidelines": getattr(
+                sample, "rubric_output_guidelines", None
+            ),
+        }
 
-        # Extract dataset-provided prompt components (if available)
-        rubric_instructions = getattr(sample, "rubric_instructions", None)
-        rubric_definitions = getattr(sample, "rubric_definitions", None)
-        rubric_output_guidelines = getattr(sample, "rubric_output_guidelines", None)
+    def _build_judge_input(
+        self, conv: Dict[str, Any], sample_rubrics
+    ) -> Dict[str, Any]:
+        """Everything that determines the judge output for one sample. Hashed
+        with the judge model config to key the rubric_outputs cache."""
+        return {
+            "conversation": conv["conversation_json"],
+            "rubrics": [rubric.model_dump() for rubric in sample_rubrics],
+            "multi_turn": self.use_multi_turn_prompts,
+            "structured": bool(
+                conv["rubric_instructions"]
+                and conv["rubric_definitions"]
+                and conv["rubric_output_guidelines"]
+            ),
+        }
 
-        # Evaluate rubrics in batches
-        grading_responses = []
+    def _build_eval_specs(self, conv, sample_rubrics) -> List["_EvalSpec"]:
+        """Assemble the judge input(s) for one sample, chunked by batch_size.
+
+        Each spec's ``eval_input`` is hashed for the cache key and run directly
+        on a miss, so the prompt is assembled exactly once.
+        """
+        specs = []
         for i in range(0, len(sample_rubrics), self.batch_size):
-            batch_end = min(i + self.batch_size, len(sample_rubrics))
-            rubric_batch = sample_rubrics[i:batch_end]
-
-            # Evaluate this batch
-            batch_results = self._evaluate_batch(
-                conversation_json,
+            rubric_batch = sample_rubrics[i : i + self.batch_size]
+            eval_input, use_structured, is_single = self._build_eval_input(
+                conv["conversation_json"],
                 rubric_batch,
-                rubric_instructions=rubric_instructions,
-                rubric_definitions=rubric_definitions,
-                rubric_output_guidelines=rubric_output_guidelines,
+                conv["rubric_instructions"],
+                conv["rubric_definitions"],
+                conv["rubric_output_guidelines"],
+            )
+            specs.append(_EvalSpec(eval_input, rubric_batch, use_structured, is_single))
+        return specs
+
+    def _score_conversation(self, prepared, sample_rubrics, cached=None):
+        """Score one conversation. On a cache hit, reconstruct from the stored
+        judge output and skip the LLM entirely; otherwise run the prebuilt
+        judge inputs."""
+        conv, judge_input, specs = prepared
+
+        if cached is not None:
+            reconstructed = self._reconstruct_from_cache(cached, sample_rubrics)
+            if reconstructed is not None:
+                reconstructed["judge_input"] = judge_input
+                reconstructed["from_cache"] = True
+                return reconstructed
+
+        grading_responses = []
+        raw_responses = []
+        for spec in specs:
+            batch_results, batch_raw = self._run_eval_input(
+                spec.eval_input,
+                spec.rubric_batch,
+                spec.use_structured,
+                spec.is_single,
+                conv["conversation_json"],
             )
             grading_responses.extend(batch_results)
+            if batch_raw:
+                raw_responses.append(batch_raw)
 
-        # Calculate score for this question
         question_score = self.calculate_score(sample_rubrics, grading_responses)
 
         return {
             "rubric_evaluations": grading_responses,
             "question_score": question_score,
+            "judge_input": judge_input,
+            "raw_response": "\n\n".join(raw_responses),
         }
 
     def calculate_score(
@@ -850,6 +975,103 @@ class RubricMetric(BaseMetric):
 
         if records:
             cache_manager.batch_save_rubric_question_results(records)
+
+    def _reconstruct_from_cache(
+        self, cached: Dict[str, Any], sample_rubrics
+    ) -> Optional[Dict[str, Any]]:
+        """Rebuild grading responses from a cached judge row. Returns None on a
+        shape mismatch so the caller re-runs the judge instead of mis-pairing.
+
+        The score is recomputed from the cached judge decisions so scoring
+        changes apply to reused judgements without a new judge call.
+        """
+        criteria = cached.get("criteria") or []
+        if len(criteria) != len(sample_rubrics):
+            return None
+
+        grading_responses = [
+            {
+                "criteria_met": crit.get("criteria_met"),
+                "explanation": crit.get("explanation"),
+                "rubric": rubric,
+            }
+            for crit, rubric in zip(criteria, sample_rubrics)
+        ]
+        return {
+            "rubric_evaluations": grading_responses,
+            "question_score": self.calculate_score(
+                sample_rubrics, grading_responses
+            ),
+            "raw_response": cached.get("raw_response"),
+        }
+
+    def _build_judge_model_config(self) -> Dict[str, Any]:
+        """Whitelisted judge identity used in the judge_hash.
+
+        Only stable identity (provider + model id) — generation defaults live
+        inside the judge model and are not part of the key.
+        """
+        model_identifier = None
+        if getattr(self, "model", None) is not None:
+            model_identifier = getattr(
+                self.model,
+                "model_id",
+                getattr(self.model, "model_name_or_path", None),
+            )
+        return {"provider": self.provider, "model_id": model_identifier}
+
+    def _persist_rubric_outputs(
+        self,
+        *,
+        cache_manager,
+        question_results: List[Dict[str, Any]],
+        serialized_samples: List[Any],
+    ) -> None:
+        """Write one content-addressed rubric_outputs row per judged sample."""
+
+        if not question_results:
+            return
+
+        judge_model_config = self._build_judge_model_config()
+        judge_model = judge_model_config.get("model_id")
+        records = []
+        for index, (result, serialized_sample) in enumerate(
+            zip(question_results, serialized_samples, strict=False)
+        ):
+            if result is None or serialized_sample is None:
+                continue
+            if result.get("from_cache"):
+                continue
+            judge_hash = result.get("judge_hash")
+            if not judge_hash:
+                continue
+
+            identifiers = cache_manager.get_cache_identifiers_for_sample(
+                serialized_sample
+            )
+            criteria = [
+                self._serialize_rubric_evaluation(evaluation)
+                for evaluation in result.get("rubric_evaluations", [])
+            ]
+
+            records.append(
+                {
+                    "judge_hash": judge_hash,
+                    "cache_key": identifiers["cache_key"],
+                    "metric_name": self.metric_name,
+                    "question_index": index,
+                    "judge_model": judge_model,
+                    "judge_model_config": judge_model_config,
+                    "judge_input": result.get("judge_input"),
+                    "question_score": result.get("question_score"),
+                    "criteria": criteria,
+                    "raw_response": result.get("raw_response"),
+                    "error": result.get("error"),
+                }
+            )
+
+        if records:
+            cache_manager.save_rubric_outputs(records)
 
     @staticmethod
     def _serialize_rubric_evaluation(evaluation: Dict[str, Any]) -> Dict[str, Any]:

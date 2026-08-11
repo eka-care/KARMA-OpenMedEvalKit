@@ -15,12 +15,6 @@ from karma.registries.dataset_registry import register_dataset
 
 logger = logging.getLogger(__name__)
 
-# Hardcoded confinement instructions
-CONFINEMENT_INSTRUCTIONS = """Instructions: The following are multiple choice questions about medical knowledge. Solve them in a
-step-by-step fashion, starting by summarizing the available information. Output a single option from the
-four options as the final answer. Question: <QUESTION> Response (think step by step and then
-end with "Final Answer:" followed by *only* the letter corresponding to the correct answer enclosed in
-parentheses)"""
 DATASET_NAME = "openlifescienceai/medmcqa"
 SPLIT = "validation"
 COMMIT_HASH = "91c6572c454088bf71b679ad90aa8dffcd0d5868"
@@ -32,6 +26,7 @@ COMMIT_HASH = "91c6572c454088bf71b679ad90aa8dffcd0d5868"
     split=SPLIT,
     metrics=["exact_match"],
     task_type="mcqa",
+    default_args={"user_prompt": "medmcqa_cot"},
 )
 class MedMCQADataset(BaseMultimodalDataset):
     """
@@ -42,71 +37,12 @@ class MedMCQADataset(BaseMultimodalDataset):
         self,
         dataset_name: str = DATASET_NAME,
         split: str = SPLIT,
-        confinement_instructions: str = CONFINEMENT_INSTRUCTIONS,
         commit_hash: str = COMMIT_HASH,
         **kwargs,
     ):
-        """
-        Initialize MedMCQA dataset.
-
-        Args:
-            dataset_name: HuggingFace dataset identifier (defaults to
-                ``openlifescienceai/medmcqa``).
-            split: dataset split name (defaults to ``validation``).
-            confinement_instructions: prompt template wrapping the question.
-                Exposed as a keyword argument (rather than assigned directly
-                on ``self`` before ``super().__init__``) so that the value is
-                correctly forwarded into ``BaseMultimodalDataset.__init__``.
-            commit_hash: HuggingFace dataset revision pin.
-            **kwargs: Additional arguments passed to base class.
-
-        Notes:
-            -----------------------------------------------------------------
-            Confinement-instructions overwrite bug (fixed 2026-04-14)
-            -----------------------------------------------------------------
-            BUG (pre-fix): the previous implementation set
-            ``self.confinement_instructions = CONFINEMENT_INSTRUCTIONS`` on
-            the child instance BEFORE calling ``super().__init__(...)`` and
-            did NOT forward the value to the super call. That looked correct
-            but silently clobbered the child's assignment because
-            ``BaseMultimodalDataset.__init__`` (see
-            ``karma/eval_datasets/base_dataset.py:59``) unconditionally runs
-            ``self.confinement_instructions = confinement_instructions``,
-            where the ``confinement_instructions`` parameter defaults to the
-            empty string ``""``. Net effect: the child's pre-assignment was
-            overwritten to ``""`` the moment control passed into the parent
-            constructor, and every downstream call to
-            ``self.confinement_instructions.replace("<QUESTION>", input_text)``
-            produced an empty prompt. The empty prompt propagated through the
-            benchmark loop and crashed in ``karma/benchmark.py:581`` with an
-            ``AttributeError: 'NoneType' object has no attribute 'get'``
-            because the empty prompt caused a ``None`` to appear in the
-            ``model_results`` list returned by ``batch_predict``.
-
-            WHY THIS FIX WORKS: by accepting ``confinement_instructions`` as
-            a keyword argument in this ``__init__`` signature and forwarding
-            it into ``super().__init__(confinement_instructions=...)``, the
-            parent constructor receives the correct template string and its
-            unconditional ``self.confinement_instructions = ...`` assignment
-            now lands on the intended value rather than the empty-string
-            default. This mirrors the clean pattern already used by
-            ``karma/eval_datasets/medqa_dataset.py`` (the authoritative
-            reference pattern confirmed working end-to-end by sub-agent A).
-
-            Reference: the bug was identified and the fix recommended by
-            Phase 2.5 sub-agent A in
-            ``.claude/reports/clinical_ai_implementation/phase3_q3q5_investigation_handoff.md``
-            (Q3 section). Sub-agent A additionally verified that the three
-            sibling MCQA datasets (``medqa``, ``medqa_usmle``,
-            ``eka_mmlu_medical``) had already been remediated upstream via
-            either this clean pattern or the belt-and-suspenders pattern
-            (pre-assign AND forward to super), while ``medmcqa`` was the
-            last remaining instance of the buggy pattern.
-        """
         super().__init__(
             dataset_name=dataset_name,
             split=split,
-            confinement_instructions=confinement_instructions,
             commit_hash=commit_hash,
             **kwargs,
         )

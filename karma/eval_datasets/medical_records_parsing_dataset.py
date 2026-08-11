@@ -25,7 +25,8 @@ SPLIT = "test"  # Adjust as needed based on actual dataset splits
     split=SPLIT,
     metrics=["json_rubric_evaluation"],
     task_type="image_to_json",
-    optional_args=["system_prompt"],
+    optional_args=["document_type"],
+    default_args={"system_prompt": "medical_records_parsing_system"},
 )
 class MedicalRecordsParsingDataset(BaseMultimodalDataset):
     """
@@ -48,7 +49,7 @@ class MedicalRecordsParsingDataset(BaseMultimodalDataset):
         self,
         dataset_name: str = DATASET_NAME,
         split: str = SPLIT,
-        system_prompt: str = "You are an expert at parsing medical records. Extract the information accurately from the provided medical record image.",
+        document_type: str = None,
         **kwargs,
     ):
         super().__init__(
@@ -56,7 +57,13 @@ class MedicalRecordsParsingDataset(BaseMultimodalDataset):
             split=split,
             **kwargs,
         )
-        self.system_prompt = system_prompt
+        self.document_type = document_type
+
+        if document_type:
+            self.subset = document_type
+            self.dataset = self.dataset.filter(
+                lambda s: s["document_type"] == document_type
+            )
         # Cast the image column to handle image bytes properly
         self.dataset = self.dataset.cast_column("image", Image(decode=False))
 

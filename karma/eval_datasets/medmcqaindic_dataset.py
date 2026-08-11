@@ -9,6 +9,7 @@ import logging
 from typing import Any, Dict, Tuple
 
 from karma.registries.dataset_registry import register_dataset
+from karma.utils.language import normalize_language
 from karma.eval_datasets.medmcqa_dataset import MedMCQADataset
 
 logger = logging.getLogger(__name__)
@@ -17,11 +18,6 @@ logger = logging.getLogger(__name__)
 DATASET_NAME = "ekacare/MedMCQA-Indic"
 SPLIT = "test"
 COMMIT_HASH = "c1e955a50a123c7534c768ec4e693b35a1817170"
-CONFINEMENT_INSTRUCTIONS = """Instructions: The following are multiple choice questions about medical knowledge. Solve them in a
-step-by-step fashion, starting by summarizing the available information. Output a single option from the
-four options as the final answer. Question: <QUESTION> Response (think step by step and then
-end with "Final Answer:" followed by *only* the letter corresponding to the correct answer enclosed in
-parentheses)"""
 
 
 @register_dataset(
@@ -31,7 +27,7 @@ parentheses)"""
     required_args=["subset"],
     metrics=["exact_match"],
     task_type="mcqa",
-    optional_args=["confinement_instructions"],
+    default_args={"user_prompt": "medmcqa_indic_cot"},
 )
 class MedMCQAIndicDataset(MedMCQADataset):
     def __init__(
@@ -40,7 +36,6 @@ class MedMCQAIndicDataset(MedMCQADataset):
         split: str = SPLIT,
         subset: str = "as",
         commit_hash: str = COMMIT_HASH,
-        confinement_instructions: str = CONFINEMENT_INSTRUCTIONS,
         **kwargs,
     ):
         """
@@ -49,15 +44,13 @@ class MedMCQAIndicDataset(MedMCQADataset):
         Args:
             **kwargs: Additional arguments passed to base class
         """
-        self.subset = subset
-        self.dataset_name = f"{DATASET_NAME}-{self.subset}"
-        # kwargs.pop('dataset_name', None)
+        self.subset = normalize_language(subset)
+        self.dataset_subset = self.subset
         super().__init__(
             dataset_name=dataset_name,
             split=split,
             config=self.subset,
             commit_hash=commit_hash,
-            confinement_instructions=confinement_instructions,
             **kwargs,
         )
 

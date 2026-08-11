@@ -17,7 +17,7 @@ class QwenThinkingLLM(BaseModel):
     def __init__(
         self,
         model_name_or_path: str,
-        device: Optional[str] = None,
+        device: str = "auto",
         max_tokens: int = 32768,
         temperature: float = 0.7,
         top_p: float = 0.9,
@@ -71,14 +71,17 @@ class QwenThinkingLLM(BaseModel):
     def load_model(self):
         self.model = AutoModelForCausalLM.from_pretrained(
             self.model_name_or_path,
+            revision=self.revision,
             device_map=self.device,
             torch_dtype=torch.bfloat16,
             trust_remote_code=True,
-            attn_implementation="sdpa" if self.device == "cuda" else "eager",
+            attn_implementation="sdpa" if self.device not in ("cpu", "mps") else "eager",
         )
         self.processor = AutoTokenizer.from_pretrained(
-            self.model_name_or_path, trust_remote_code=True
+            self.model_name_or_path, revision=self.revision, trust_remote_code=True
         )
+        # Resolve actual device after loading (handles device_map="auto")
+        self._resolved_device = next(self.model.parameters()).device
 
     def preprocess(
         self,
@@ -131,7 +134,7 @@ class QwenThinkingLLM(BaseModel):
             padding=True,
             truncation=True,
             padding_side="left",
-        ).to(self.device)
+        ).to(self._resolved_device)
         return model_inputs
 
     def run(

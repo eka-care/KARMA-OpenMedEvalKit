@@ -5,6 +5,8 @@ This module implements the 'eval' command which evaluates models across
 multiple healthcare datasets with support for dataset-specific arguments.
 """
 
+from typing import Optional
+
 import click
 from rich.console import Console
 from rich.panel import Panel
@@ -15,6 +17,7 @@ from karma.cli.utils import (
     parse_processor_args,
     parse_metric_args,
     parse_datasets_list,
+    prepare_model_overrides,
     validate_model_path,
     get_cache_info,
     ClickFormatter,
@@ -25,11 +28,39 @@ from karma.registries.model_registry import model_registry
 from karma.registries.dataset_registry import dataset_registry
 from karma.registries.metrics_registry import metric_registry
 from karma.registries.registry_manager import discover_all_registries
-import json
-import yaml
 import os
 
 from karma.registries.processor_registry import processor_registry
+
+
+def _mark_run_failed(error: Optional[BaseException] = None) -> None:
+    """Update job status to 'failed' in DB, keyed by KARMA_JOB_ID or KARMA_CONFIG_HASH."""
+    import os
+    import logging
+    job_id = os.environ.get("KARMA_JOB_ID", "").strip()
+    config_hash = os.environ.get("KARMA_CONFIG_HASH", "").strip()
+    reason = None
+    if error is not None:
+        last_line = str(error).strip().splitlines()[-1] if str(error).strip() else ""
+        reason = f"{type(error).__name__}: {last_line}" if last_line else type(error).__name__
+    try:
+        from karma.cache.cache_manager import PROCESS_JOB_IDS, create_cache_io
+        cache_io = create_cache_io()
+        if job_id or config_hash:
+            payload = {"status": "failed", "error_message": reason}
+            if job_id:
+                payload["job_id"] = job_id
+            if config_hash:
+                payload["config_hash"] = config_hash
+            cache_io.save_run_metadata(payload)
+        # mark_failed only flips running/submitted rows — completed jobs stay untouched.
+        marker = getattr(cache_io, "mark_failed", None)
+        if callable(marker):
+            for jid in PROCESS_JOB_IDS:
+                if jid != job_id:
+                    marker(jid, reason)
+    except Exception:
+        logging.getLogger(__name__).warning("Could not mark run as failed in DB", exc_info=True)
 
 
 @click.command(name="eval")
@@ -118,6 +149,15 @@ from karma.registries.processor_registry import processor_registry
     is_flag=True,
     help="Skip cache lookup and force regeneration of all results",
 )
+@click.option(
+    "--cached-only",
+    is_flag=True,
+    help=(
+        "Score only samples that already have cached model outputs; never "
+        "initialize/run the evaluated model (no GPU needed). Configs with no "
+        "cache are reported and skipped. Useful for re-running the LLM judge."
+    ),
+)
 @click.pass_context
 def eval_cmd(
     ctx,
@@ -140,6 +180,7 @@ def eval_cmd(
     max_samples,
     verbose,
     refresh_cache,
+    cached_only,
 ):
     """
     Evaluate a model on healthcare datasets.
@@ -201,7 +242,7 @@ def eval_cmd(
 
         # Handle model configuration and parameter overrides
         # This either loads the file or else provided args from CLI.
-        model_overrides = _prepare_model_overrides(
+        model_overrides = prepare_model_overrides(
             model, model_path, model_config, model_args, console
         )
 
@@ -316,6 +357,7 @@ def eval_cmd(
             verbose=verbose,
             dry_run=dry_run,
             refresh_cache=refresh_cache,
+            cached_only=cached_only,
         )
 
         # Display results
@@ -337,15 +379,14 @@ def eval_cmd(
             else:
                 console.print("Cache: Disabled")
 
-    except KeyboardInterrupt:
+    except KeyboardInterrupt as e:
         console.print("\n[yellow]Evaluation interrupted by user[/yellow]")
+        _mark_run_failed(e)
         raise click.Abort()
     except Exception as e:
         console.print(f"\n{ClickFormatter.error(f'Evaluation failed: {str(e)}')}")
+        _mark_run_failed(e)
         raise e
-        if verbose:
-            console.print_exception()
-        raise click.Abort()
 
 
 def _handle_interactive_args(
@@ -685,8 +726,6 @@ def _show_evaluation_plan(
 
     # Show cache info if caching is enabled
     if use_cache:
-        import os
-
         cache_path = os.getenv("KARMA_CACHE_PATH", "./cache.db")
         cache_info = get_cache_info(cache_path)
         if cache_info["exists"]:
@@ -697,120 +736,6 @@ def _show_evaluation_plan(
             console.print(f"[cyan]Cache Status:[/cyan] New cache will be created")
     else:
         console.print(f"[cyan]Cache Status:[/cyan] Disabled")
-
-
-def _prepare_model_overrides(
-    model_name: str,
-    model_path: str,
-    model_config: str,
-    model_kwargs: str,
-    console: Console,
-) -> dict:
-    """
-    Prepare model configuration with proper override hierarchy.
-
-    Priority: CLI kwargs > config file > model metadata defaults > CLI model_path
-
-    Args:
-        model_name: Name of the model from registry
-        model_path: Model path from CLI (can be None if using metadata)
-        model_config: Path to config file (JSON/YAML)
-        model_kwargs: JSON string of parameter overrides
-        console: Rich console for output
-
-    Returns:
-        Dictionary of merged model parameters
-    """
-    final_config = {}
-
-    # 1. Start with model metadata defaults (always available in new system)
-    try:
-        model_meta = model_registry.get_model_meta(model_name)
-        final_config.update(model_meta.loader_kwargs)
-
-        # Use model name from metadata if no CLI path provided
-        if not model_path:
-            final_config["model_name_or_path"] = model_meta.name
-            console.print(
-                f"[dim]Using model path from metadata: {model_meta.name}[/dim]"
-            )
-
-        console.print(
-            f"[dim]Loaded {len(model_meta.loader_kwargs)} default parameters from model metadata[/dim]"
-        )
-    except Exception as e:
-        console.print(ClickFormatter.warning(f"Could not load model metadata: {e}"))
-
-    # 2. Override with CLI model path if provided
-    if model_path:
-        final_config["model_name_or_path"] = model_path
-
-    # 3. Override with config file parameters
-    if model_config:
-        try:
-            config_data = _load_config_file(model_config)
-            final_config.update(config_data)
-            console.print(
-                f"[dim]Loaded {len(config_data)} parameters from config file: {model_config}[/dim]"
-            )
-        except Exception as e:
-            console.print(
-                ClickFormatter.warning(
-                    f"Could not load model config file '{model_config}': {e}"
-                )
-            )
-
-    # 4. Override with CLI kwargs (highest priority)
-    if model_kwargs:
-        try:
-            cli_overrides = json.loads(model_kwargs)
-            final_config.update(cli_overrides)
-            console.print(
-                f"[dim]Applied {len(cli_overrides)} model parameter overrides from CLI[/dim]"
-            )
-            console.print(f"[dim]Loaded overrides {cli_overrides}[/dim]")
-        except json.JSONDecodeError as e:
-            console.print(ClickFormatter.warning(f"Invalid JSON in model-kwargs: {e}"))
-
-    return final_config
-
-
-def _load_config_file(config_path: str) -> dict:
-    """
-    Load configuration from JSON or YAML file.
-
-    Args:
-        config_path: Path to configuration file
-
-    Returns:
-        Configuration dictionary
-
-    Raises:
-        FileNotFoundError: If file doesn't exist
-        ValueError: If file format is unsupported or invalid
-    """
-    if not os.path.exists(config_path):
-        raise FileNotFoundError(f"Config file not found: {config_path}")
-
-    file_ext = os.path.splitext(config_path)[1].lower()
-
-    with open(config_path, "r") as f:
-        if file_ext in [".json"]:
-            return json.load(f)
-        elif file_ext in [".yaml", ".yml"]:
-            return yaml.safe_load(f)
-        else:
-            # Try to auto-detect format
-            content = f.read()
-            f.seek(0)
-
-            try:
-                return json.loads(content)
-            except json.JSONDecodeError:
-                try:
-                    return yaml.safe_load(content)
-                except yaml.YAMLError:
-                    raise ValueError(f"Unsupported config file format: {config_path}")
 
 
 def _get_model_specific_help(model_name: str) -> str:

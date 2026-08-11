@@ -22,8 +22,8 @@ class DocAssistChatModel(BaseModel):
         self,
         model_name_or_path: str,
         base_url: str,
-        d_oid: str,
-        d_hash: str,
+        d_oid: str = None,
+        d_hash: str = None,
         timeout: int = 30,
         max_retries: int = 3,
         retry_delay: int = 1,
@@ -33,8 +33,8 @@ class DocAssistChatModel(BaseModel):
 
         # API configuration
         self.base_url = base_url
-        self.d_oid = d_oid
-        self.d_hash = d_hash
+        self.d_oid = d_oid or os.getenv("DOC_ASSIST_CHAT_D_OID")
+        self.d_hash = d_hash or os.getenv("DOC_ASSIST_CHAT_D_HASH")
         self.timeout = timeout
         self.max_retries = max_retries
         self.retry_delay = retry_delay
@@ -241,11 +241,6 @@ DocAssistChatDefault = ModelMeta(
     loader_class="karma.models.docassist_chat.DocAssistChatModel",
     loader_kwargs={
         "base_url": "http://lucid.eka.care/doc_chat/v1/stream_chat",
-        "d_oid": os.getenv("DOC_ASSIST_CHAT_D_OID"),
-        "d_hash": os.getenv("DOC_ASSIST_CHAT_D_HASH"),
-        "timeout": 30,
-        "max_retries": 3,
-        "retry_delay": 1,
     },
     model_type=ModelType.TEXT_GENERATION,
     modalities=[ModalityType.TEXT],

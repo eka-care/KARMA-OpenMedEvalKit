@@ -27,25 +27,7 @@ DATASET_NAME = "intronhealth/afrimedqa_v2"
 SPLIT = "train"  # The HuggingFace split (dataset uses internal 'split' field for train/test)
 COMMIT_HASH = None  # Use latest version
 
-# Confinement instructions for Consumer Queries (open-ended)
-CONSUMER_QUERIES_INSTRUCTIONS = """You are a medical assistant helping answer health questions from African healthcare consumers.
 
-Clinical Context: <CONTEXT>
-
-Question: <QUESTION>
-
-Provide a helpful, accurate, and medically sound response. Your answer should be informative yet accessible to a general audience."""
-
-# Confinement instructions for MCQ
-MCQ_CONFINEMENT_INSTRUCTIONS = """
-Read the question carefully and select the most appropriate answer.
-
-Question: <QUESTION>
-
-Options:
-<OPTIONS>
-
-Response in the following format - "A", no additional reasoning or justification needed."""
 
 
 @register_dataset(
@@ -54,8 +36,8 @@ Response in the following format - "A", no additional reasoning or justification
     commit_hash=COMMIT_HASH,
     metrics=["tokenised_f1", "bleu", "rouge"],
     task_type="open_ended_qa",
-    optional_args=["confinement_instructions", "internal_split"],
-    default_args={"internal_split": "test"},
+    optional_args=["internal_split"],
+    default_args={"internal_split": "test", "user_prompt": "afrimedqa_consumer"},
 )
 class AfriMedQAConsumerQueriesDataset(BaseMultimodalDataset):
     """
@@ -82,7 +64,6 @@ class AfriMedQAConsumerQueriesDataset(BaseMultimodalDataset):
         dataset_name: str = DATASET_NAME,
         split: str = SPLIT,
         commit_hash: Optional[str] = COMMIT_HASH,
-        confinement_instructions: str = CONSUMER_QUERIES_INSTRUCTIONS,
         internal_split: str = "test",
         **kwargs,
     ):
@@ -93,11 +74,9 @@ class AfriMedQAConsumerQueriesDataset(BaseMultimodalDataset):
             dataset_name: HuggingFace dataset identifier
             split: HuggingFace dataset split (always 'train' for this dataset)
             commit_hash: Specific commit hash for reproducibility
-            confinement_instructions: Instructions template for the model
             internal_split: Internal data split - 'train' or 'test'
             **kwargs: Additional arguments passed to base class
         """
-        self.confinement_instructions = confinement_instructions
         self.internal_split = internal_split
 
         super().__init__(
@@ -154,12 +133,10 @@ class AfriMedQAConsumerQueriesDataset(BaseMultimodalDataset):
             "clinical_scenario": context,
         }
 
-        # Note: Consumer queries don't have reference answers
-        # Using the question as expected_output for basic tracking
-        # For proper evaluation, use rubric-based or LLM-as-judge approaches
+        # Consumer queries have no reference answer — evaluation is
+        # rubric/LLM-judge based, so expected_output stays empty.
         return DataLoaderIterable(
             input=prompt,
-            expected_output=question,  # No reference answer available
             other_args=other_args,
             **kwargs,
         )
@@ -180,8 +157,12 @@ MCQ_DATASET_IDENTIFIER = f"{DATASET_NAME}/mcq"
     commit_hash=COMMIT_HASH,
     metrics=["exact_match", "geographic_accuracy", "demographic_accuracy"],
     task_type="mcqa",
-    optional_args=["confinement_instructions", "internal_split", "specialty"],
-    default_args={"internal_split": "test", "specialty": None},
+    optional_args=["internal_split", "specialty"],
+    default_args={
+        "internal_split": "test",
+        "specialty": None,
+        "user_prompt": "afrimedqa_mcq",
+    },
 )
 class AfriMedQAMCQDataset(BaseMultimodalDataset):
     """
@@ -204,7 +185,6 @@ class AfriMedQAMCQDataset(BaseMultimodalDataset):
         dataset_name: str = DATASET_NAME,
         split: str = SPLIT,
         commit_hash: Optional[str] = COMMIT_HASH,
-        confinement_instructions: str = MCQ_CONFINEMENT_INSTRUCTIONS,
         internal_split: str = "test",
         specialty: Optional[str] = None,
         **kwargs,
@@ -228,7 +208,6 @@ class AfriMedQAMCQDataset(BaseMultimodalDataset):
             dataset_name=dataset_name,
             split=split,
             commit_hash=commit_hash,
-            confinement_instructions=confinement_instructions,
             **kwargs,
         )
 

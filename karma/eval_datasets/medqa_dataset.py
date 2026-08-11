@@ -15,12 +15,6 @@ from karma.registries.dataset_registry import register_dataset
 
 logger = logging.getLogger(__name__)
 
-# Hardcoded confinement instructions
-CONFINEMENT_INSTRUCTIONS = """Instructions: The following are multiple choice questions about medical knowledge. Solve them in a
-step-by-step fashion, starting by summarizing the available information. Output a single option from the
-four options as the final answer. Question: <QUESTION> Response (think step by step and then
-end with "Final Answer:" followed by *only* the letter corresponding to the correct answer enclosed in
-parentheses)"""
 DATASET_NAME = "openlifescienceai/medqa"
 SPLIT = "test"
 COMMIT_HASH = "153e61cdd129eb79d3c27f82cdf3bc5e018c11b0"
@@ -32,6 +26,7 @@ COMMIT_HASH = "153e61cdd129eb79d3c27f82cdf3bc5e018c11b0"
     split=SPLIT,
     metrics=["exact_match"],
     task_type="mcqa",
+    default_args={"user_prompt": "medqa_cot"},
 )
 class MedQADataset(BaseMultimodalDataset):
     """
@@ -42,7 +37,6 @@ class MedQADataset(BaseMultimodalDataset):
         self,
         dataset_name=DATASET_NAME,
         split=SPLIT,
-        confinement_instructions: str = CONFINEMENT_INSTRUCTIONS,
         commit_hash: str = COMMIT_HASH,
         **kwargs,
     ):
@@ -55,7 +49,6 @@ class MedQADataset(BaseMultimodalDataset):
         super().__init__(
             dataset_name=dataset_name,
             split=split,
-            confinement_instructions=confinement_instructions,
             commit_hash=commit_hash,
             **kwargs,
         )

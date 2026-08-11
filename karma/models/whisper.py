@@ -22,6 +22,8 @@ class WhisperTransformersASR(BaseModel):
         target_sample_rate: int = 16000,
         task: str = "transcribe",
         language: Optional[str] = None,
+        temperature: float = 0.01,
+        max_new_tokens: int = 440,
         **kwargs,
     ):
         """
@@ -44,6 +46,8 @@ class WhisperTransformersASR(BaseModel):
         self.target_sample_rate = target_sample_rate
         self.task = task
         self.language = language
+        self.temperature = temperature
+        self.max_new_tokens = max_new_tokens
         self.pipe = None
 
         # Set device for pipeline
@@ -98,19 +102,17 @@ class WhisperTransformersASR(BaseModel):
         
         # Get language from first item or kwargs (assuming all items have same language)
         language = kwargs.get("language", self.language)
-        if inputs and inputs[0].other_args and "language" in inputs[0].other_args:
-            language = inputs[0].other_args["language"]
+        if inputs and inputs[0].language:
+            language = inputs[0].language
 
         # Preprocess all audio inputs
         audio_batch = [self.preprocess(input_item) for input_item in inputs]
 
         # Build generate kwargs
         generate_kwargs = {
-            # "repetition_penalty": kwargs.get("repetition_penalty", 1.2),
-            # "num_beams": kwargs.get("num_beams", 1),
-            "temperature": kwargs.get("temperature", 0.01),
+            "temperature": kwargs.get("temperature", self.temperature),
             "task": task,
-            "max_new_tokens": kwargs.get("max_new_tokens", 440),
+            "max_new_tokens": kwargs.get("max_new_tokens", self.max_new_tokens),
         }
         
         # Add language if specified
@@ -217,7 +219,6 @@ WHISPER_LARGE_V3 = ModelMeta(
         "task": "transcribe",
         "target_sample_rate": 16000,
         "language": None,  # Auto-detection
-        "repetition_penalty": 1.0,
         "temperature": 0.01,
         "max_new_tokens": 440,  # Auto-detection
     },
@@ -247,7 +248,6 @@ AUDIOX_NORTH_V1 = ModelMeta(
         "task": "transcribe",
         "target_sample_rate": 16000,
         "language": None,  # Auto-detection
-        "repetition_penalty": 1.0,
         "temperature": 0.01,
         "max_new_tokens": 440,  # Auto-detection
     },
@@ -275,7 +275,6 @@ AUDIOX_SOUTH_V1 = ModelMeta(
         "task": "transcribe",
         "target_sample_rate": 16000,
         "language": None,  # Auto-detection
-        "repetition_penalty": 1.0,
         "temperature": 0.01,
         "max_new_tokens": 440,  # Auto-detection
     },

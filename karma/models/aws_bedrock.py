@@ -18,8 +18,66 @@ from karma.models.mcp_client import (
 )
 from karma.data_models.model_meta import ModelMeta, ModalityType, ModelType
 from karma.registries.model_registry import register_model_meta
+from karma.utils.retry import call_with_retry
 
 logger = logging.getLogger(__name__)
+
+
+
+# Bedrock Converse rejects images over ~3.75 MB; recompress/downscale ONLY
+# oversized images, just enough to fit, so smaller pages keep full quality.
+_BEDROCK_IMAGE_MAX_BYTES = int(3.5 * 1024 * 1024)
+
+
+def _fit_bedrock_image(image_bytes: bytes) -> bytes:
+    if len(image_bytes) <= _BEDROCK_IMAGE_MAX_BYTES:
+        return image_bytes
+    try:
+        import io
+        from PIL import Image as PILImage
+
+        img = PILImage.open(io.BytesIO(image_bytes)).convert("RGB")
+        scale = 1.0
+        quality = 90
+        for _ in range(8):
+            buf = io.BytesIO()
+            resized = (
+                img if scale >= 0.999
+                else img.resize(
+                    (max(1, round(img.width * scale)), max(1, round(img.height * scale))),
+                    PILImage.LANCZOS,
+                )
+            )
+            resized.save(buf, format="JPEG", quality=quality, optimize=True)
+            data = buf.getvalue()
+            if len(data) <= _BEDROCK_IMAGE_MAX_BYTES:
+                logger.info(
+                    "Recompressed oversized image for Bedrock: %d -> %d bytes (scale=%.2f q=%d)",
+                    len(image_bytes), len(data), scale, quality,
+                )
+                return data
+            if quality > 75:
+                quality -= 10
+            else:
+                scale *= 0.85
+        return data  # best effort
+    except Exception as e:  # pragma: no cover - defensive
+        logger.warning("Failed to recompress oversized image: %s", e)
+        return image_bytes
+
+
+def _image_format(image_bytes: bytes) -> str:
+    """Detect the actual image format from magic bytes — Bedrock validates the
+    payload against the declared format, so a PNG sent as "jpeg" is rejected."""
+    if image_bytes[:3] == b"\xff\xd8\xff":
+        return "jpeg"
+    if image_bytes[:8] == b"\x89PNG\r\n\x1a\n":
+        return "png"
+    if image_bytes[:4] == b"RIFF" and image_bytes[8:12] == b"WEBP":
+        return "webp"
+    if image_bytes[:6] in (b"GIF87a", b"GIF89a"):
+        return "gif"
+    return "jpeg"
 
 
 class AWSBedrock(BaseModel):
@@ -38,6 +96,7 @@ class AWSBedrock(BaseModel):
         max_workers: int = 4,
         tools: Optional[List[str]] = None,
         force_tool_call: Optional[str] = None,
+        inference_profile: Optional[str] = None,
         **kwargs,
     ):
         """
@@ -54,6 +113,9 @@ class AWSBedrock(BaseModel):
             top_p: Top-p sampling parameter (0.0 to 1.0)
             max_workers: Maximum number of concurrent API calls (default: 4)
             tools: Optional list of MCP server URLs for tool discovery
+            inference_profile: Optional application inference profile ARN to
+                invoke instead of the raw model ID (infra routing only; kept
+                out of loader_kwargs/cache hashes)
             **kwargs: Additional arguments passed to BaseModel
         """
         super().__init__(
@@ -61,7 +123,7 @@ class AWSBedrock(BaseModel):
             **kwargs,
         )
 
-        self.model_id = model_name_or_path
+        self.model_id = inference_profile or model_name_or_path
         self.region_name = region_name or os.getenv("AWS_REGION", "us-east-1")
         self.aws_access_key_id = aws_access_key_id or os.getenv("AWS_ACCESS_KEY_ID")
         self.aws_secret_access_key = aws_secret_access_key or os.getenv(
@@ -163,6 +225,7 @@ class AWSBedrock(BaseModel):
 
             if item.images:
                 for image in item.images:
+                    fitted = _fit_bedrock_image(image)
                     # Convert image bytes to base64 for OpenAI API
                     # image_b64 = base64.b64encode(image).decode("utf-8")
 
@@ -173,8 +236,8 @@ class AWSBedrock(BaseModel):
                             "content": [
                                 {
                                     "image": {
-                                        "format": "jpeg",
-                                        "source": {"bytes": image},
+                                        "format": _image_format(fitted),
+                                        "source": {"bytes": fitted},
                                     },
                                 }
                             ],
@@ -262,16 +325,25 @@ class AWSBedrock(BaseModel):
                 return asyncio.run(self._tool_loop(api_input))
             except Exception as e:
                 logger.error(f"Tool loop failed for Bedrock: {str(e)}")
-                return {"text": f"Error: {str(e)}", "tool_trace": ""}
+                return {"text": "", "tool_trace": "", "error": str(e)}
 
         try:
             api_kwargs = {k: v for k, v in api_input.items() if k != "tool_policy"}
-            response = self.client.converse(**api_kwargs)
-            generated_text = response["output"]["message"]["content"][0]["text"]
+            response = call_with_retry(
+                lambda: self.client.converse(**api_kwargs),
+                description="Bedrock converse",
+            )
+            # Models with extended thinking (e.g. Sonnet 5) emit a reasoning
+            # block before the text block — join all text blocks instead of
+            # assuming content[0] is text (same as the tool-loop path).
+            content_blocks = response["output"]["message"]["content"]
+            generated_text = "\n".join(
+                b["text"] for b in content_blocks if "text" in b
+            ).strip()
             return {"text": generated_text or "", "tool_trace": ""}
         except Exception as e:
             logger.error(f"Failed to generate text with AWS Bedrock: {str(e)}")
-            return {"text": f"Error: {str(e)}", "tool_trace": ""}
+            return {"text": "", "tool_trace": "", "error": str(e)}
 
     async def _tool_loop(self, api_input: Dict[str, Any]) -> Dict[str, str]:
         """Autonomous agentic loop: call Bedrock, execute tool calls via MCP, repeat until final text.
@@ -311,7 +383,10 @@ class AWSBedrock(BaseModel):
                 }
                 first_turn = False
                 try:
-                    response = self.client.converse(messages=messages, **call_kwargs)
+                    response = call_with_retry(
+                        lambda: self.client.converse(messages=messages, **call_kwargs),
+                        description="Bedrock converse (tool loop)",
+                    )
                 except Exception as e:
                     logger.error(f"Bedrock API call failed in tool loop: {e}")
                     raise RuntimeError(f"Bedrock API call failed: {e}") from e
@@ -490,6 +565,7 @@ class AWSBedrock(BaseModel):
                 {
                     "text": output.get("text", "").strip(),
                     "tool_trace": output.get("tool_trace", "") or "",
+                    "error": output.get("error"),
                 }
             )
         return result
@@ -598,6 +674,43 @@ claude_Sonnet46_bedrock = ModelMeta(
     version="1.0",
 )
 
+claude_Haiku45_bedrock = ModelMeta(
+    name="us.anthropic.claude-haiku-4-5-20251001-v1:0",
+    description="Anthropic Haiku 4.5 via AWS Bedrock",
+    loader_class="karma.models.aws_bedrock.AWSBedrock",
+    loader_kwargs={
+        "model_name_or_path": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+        "max_tokens": 8192,
+        "temperature": 0.0,
+    },
+    revision=None,
+    reference="https://docs.aws.amazon.com/bedrock/latest/userguide/model-parameters-anthropic-claude-3-haiku.html",
+    model_type=ModelType.TEXT_GENERATION,
+    modalities=[ModalityType.TEXT],
+    release_date="2025-10-01",
+    version="1.0",
+)
+
+claude_Sonnet5_bedrock = ModelMeta(
+    name="us.anthropic.claude-sonnet-5",
+    description="Anthropic Claude Sonnet 5 via AWS Bedrock",
+    loader_class="karma.models.aws_bedrock.AWSBedrock",
+    loader_kwargs={
+        "model_name_or_path": "us.anthropic.claude-sonnet-5",
+        "max_tokens": 8192,
+        # Sonnet 5 rejects `temperature` and `top_p` on Bedrock ("deprecated for
+        # this model"); temperature=None + top_p=1.0 keep both out of inferenceConfig.
+        "temperature": None,
+        "top_p": 1.0,
+    },
+    revision=None,
+    reference="https://docs.aws.amazon.com/bedrock/latest/userguide/models-supported.html",
+    model_type=ModelType.TEXT_GENERATION,
+    modalities=[ModalityType.TEXT, ModalityType.IMAGE],
+    release_date="2026-05-01",
+    version="1.0",
+)
+
 
 # Register the models
 register_model_meta(claude_sonnet_35_bedrock)
@@ -605,3 +718,5 @@ register_model_meta(claude_sonnet_35_v2_bedrock)
 register_model_meta(claude_Sonnet4_bedrock)
 register_model_meta(claude_Sonnet45_bedrock)
 register_model_meta(claude_Sonnet46_bedrock)
+register_model_meta(claude_Sonnet5_bedrock)
+register_model_meta(claude_Haiku45_bedrock)

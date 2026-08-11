@@ -89,11 +89,7 @@ class IndicConformerASR(BaseModel):
         transcriptions = []
 
         for input_item in inputs:
-            language = (
-                input_item.other_args["language"][:2].lower()
-                if input_item.other_args is not None
-                else self.language
-            )
+            language = input_item.language or self.language
             decoding_method = kwargs.get("decoding_method", self.decoding_method)
 
             processed_audio = self.preprocess(input_item)
@@ -151,7 +147,6 @@ INDIC_CONFORMER_MULTILINGUAL_META = ModelMeta(
     loader_class="karma.models.indic_conformer.IndicConformerASR",
     loader_kwargs={
         "language": "hi",  # Hindi by default
-        "device": "cpu",
         "decoding_method": "ctc",
         "target_sample_rate": 16000,
     },

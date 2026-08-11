@@ -18,16 +18,11 @@ logger = logging.getLogger(__name__)
 DATASET_NAME = "flaviagiammarino/vqa-rad"
 SPLIT = "test"
 COMMIT_HASH = "bcf91e7654fb9d51c8ab6a5b82cacf3fafd2fae9"
-CONFINEMENT_INSTRUCTIONS = """Given this radiology image, which can be a frontal chest X-ray, a single slice head or
-abdominal CT or MR image, provide a very short, definitive, and concise answer (if possible, a single
-word) to the following question: <QUESTION>"""
-
-
 @register_dataset(
     DATASET_NAME,
     split=SPLIT,
     commit_hash=COMMIT_HASH,
-    optional_args=["confinement_instructions"],
+    default_args={"user_prompt": "vqa_rad_cot"},
     metrics=["exact_match", "tokenised_f1"],
     task_type="vqa",
 )
@@ -42,7 +37,6 @@ class VQARADDataset(BaseMultimodalDataset):
         dataset_name=DATASET_NAME,
         split=SPLIT,
         commit_hash=COMMIT_HASH,
-        confinement_instructions: str = CONFINEMENT_INSTRUCTIONS,
         **kwargs,
     ):
         """
@@ -55,7 +49,6 @@ class VQARADDataset(BaseMultimodalDataset):
             dataset_name=dataset_name,
             split=split,
             commit_hash=commit_hash,
-            confinement_instructions=confinement_instructions,
             **kwargs,
         )
         self.dataset = self.dataset.cast_column("image", Image(decode=False))

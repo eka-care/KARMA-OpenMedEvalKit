@@ -512,7 +512,6 @@ SARVAM_105B_LLM = ModelMeta(
         "model_name_or_path": "sarvam-105b",
         # 4096 = starter-tier ceiling. Bump to 16384 on higher tiers.
         "max_tokens": 4096,
-        "max_workers": 1,
         "temperature": 0.0,
         "top_p": 1.0,
         "frequency_penalty": 0.0,
@@ -532,7 +531,6 @@ SARVAM_30B_LLM = ModelMeta(
         "model_name_or_path": "sarvam-30b",
         # 4096 = starter-tier ceiling. Bump to 16384 on higher tiers.
         "max_tokens": 4096,
-        "max_workers": 1,
         "temperature": 0.0,
         "top_p": 1.0,
         "frequency_penalty": 0.0,

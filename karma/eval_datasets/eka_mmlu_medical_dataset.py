@@ -28,16 +28,13 @@ VALID_SUBSETS = [
     "virology",
 ]
 
-CONFINEMENT_INSTRUCTIONS = """Instructions: The following are multiple choice questions about medical knowledge. Solve them in a step-by-step fashion, starting by summarizing the available information. Output a single option from the four options as the final answer. Question: <QUESTION> Response (think step by step and then end with "Final Answer:" followed by *only* the letter corresponding to the correct answer enclosed in parentheses)"""
-
-
 @register_dataset(
     DATASET_NAME,
     split=SPLIT,
     required_args=["subset"],
     metrics=["exact_match"],
     task_type="mcqa",
-    optional_args=["confinement_instructions"],
+    default_args={"user_prompt": "eka_mmlu_medical_cot"},
 )
 class EkaMMLUMedicalDataset(BaseMultimodalDataset):
     """
@@ -65,7 +62,6 @@ class EkaMMLUMedicalDataset(BaseMultimodalDataset):
         dataset_name: str = DATASET_NAME,
         split: str = SPLIT,
         subset: str = "anatomy",
-        confinement_instructions: str = CONFINEMENT_INSTRUCTIONS,
         **kwargs,
     ):
         """
@@ -75,24 +71,21 @@ class EkaMMLUMedicalDataset(BaseMultimodalDataset):
             dataset_name: HuggingFace dataset name
             split: Dataset split (default: test)
             subset: One of the 12 medical subsets
-            confinement_instructions: Instructions for the model
             **kwargs: Additional arguments passed to base class
         """
         if subset not in VALID_SUBSETS:
             raise ValueError(
                 f"Invalid subset '{subset}'. Must be one of: {VALID_SUBSETS}"
             )
-        
+
         self.subset = subset
-        self.confinement_instructions = confinement_instructions
         # Update dataset_name to include subset for unique identification
         self.dataset_name = f"{DATASET_NAME}-{self.subset}"
-        
+
         super().__init__(
             dataset_name=dataset_name,
             split=split,
             config=self.subset,
-            confinement_instructions=confinement_instructions,
             **kwargs,
         )
         

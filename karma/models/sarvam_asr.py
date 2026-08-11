@@ -7,6 +7,7 @@ from karma.models.base_model_abs import BaseModel
 from karma.data_models.model_meta import ModelMeta, ModelType, ModalityType
 from karma.registries.model_registry import register_model_meta
 from karma.data_models.dataloader_iterable import DataLoaderIterable
+from karma.utils.retry import call_with_retry
 
 logger = logging.getLogger(__name__)
 
@@ -65,12 +66,27 @@ class SarvamASR(BaseModel):
         if self.client is None:
             raise RuntimeError("Model is not loaded")
 
-        transcriptions = []
-        for input_item in inputs:
-            transcription = self.transcribe(input_item)
-            transcriptions.append(transcription)
+        # Per-sample isolation: a sample that fails even after retries becomes
+        # a model_error row; it never aborts the whole run.
+        results = []
+        for i, input_item in enumerate(inputs):
+            try:
+                results.append({"text": self.transcribe(input_item), "error": None})
+            except Exception as e:
+                logger.warning("Sarvam transcription failed for input %d: %s", i, e)
+                results.append({"text": "", "error": str(e)})
+        return results
 
-        return transcriptions
+    def run_with_metadata(self, inputs: List[DataLoaderIterable], **kwargs):
+        outputs = self.run(inputs, **kwargs)
+        return [
+            {
+                "text": (out.get("text") or "").strip(),
+                "tool_trace": "",
+                "error": out.get("error"),
+            }
+            for out in outputs
+        ]
 
     def transcribe(self, input_item: DataLoaderIterable) -> str:
         """
@@ -88,12 +104,14 @@ class SarvamASR(BaseModel):
             temp_file_path = temp_file.name
 
         try:
-            # Transcribe using Sarvam AI
-            with open(temp_file_path, "rb") as audio_file:
-                response = self.client.speech_to_text.transcribe(
-                    file=audio_file,
-                    model=self.model_name_or_path
-                )
+            def _call():
+                with open(temp_file_path, "rb") as audio_file:
+                    return self.client.speech_to_text.transcribe(
+                        file=audio_file,
+                        model=self.model_name_or_path,
+                    )
+
+            response = call_with_retry(_call, description="Sarvam transcribe")
             
             # Extract text from response
             if hasattr(response, 'transcript'):

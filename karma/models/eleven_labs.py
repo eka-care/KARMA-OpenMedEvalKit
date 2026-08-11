@@ -1,3 +1,4 @@
+import logging
 from karma.models.base_model_abs import BaseModel
 from elevenlabs import ElevenLabs
 from typing import List
@@ -5,6 +6,9 @@ from karma.data_models.dataloader_iterable import DataLoaderIterable
 import os
 from karma.data_models.model_meta import ModelMeta, ModalityType, ModelType
 from karma.registries.model_registry import register_model_meta
+from karma.utils.retry import call_with_retry
+
+logger = logging.getLogger(__name__)
 
 class ElevenLabsASR(BaseModel):
     def __init__(self, model_name_or_path: str = "scribe_v1"):
@@ -29,17 +33,31 @@ class ElevenLabsASR(BaseModel):
         return audio_items
 
     def run(self, inputs: List[DataLoaderIterable], **kwargs):
-        transcriptions = []
+        results = []
         audio_items = self.preprocess(inputs)
-        for audio_item in audio_items:
-            transcriptions.append(self.transcribe(audio_item))
-        return transcriptions
+        for i, audio_item in enumerate(audio_items):
+            try:
+                results.append({"text": self.transcribe(audio_item), "error": None})
+            except Exception as e:
+                logger.warning("ElevenLabs transcription failed for input %d: %s", i, e)
+                results.append({"text": "", "error": str(e)})
+        return results
 
+    def run_with_metadata(self, inputs: List[DataLoaderIterable], **kwargs):
+        outputs = self.run(inputs, **kwargs)
+        return [
+            {
+                "text": (out.get("text") or "").strip(),
+                "tool_trace": "",
+                "error": out.get("error"),
+            }
+            for out in outputs
+        ]
 
     def transcribe(self, audio_item):
-        transcription = self.client.speech_to_text.convert(
-            file=audio_item,
-            **self.config
+        transcription = call_with_retry(
+            lambda: self.client.speech_to_text.convert(file=audio_item, **self.config),
+            description="ElevenLabs transcribe",
         )
         return transcription.text
 
