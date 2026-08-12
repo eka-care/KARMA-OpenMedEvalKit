@@ -15,11 +15,6 @@ from karma.data_models.dataloader_iterable import (
 from karma.eval_datasets.rubrics.rubric_base_dataset import RubricBaseDataset
 from karma.registries.dataset_registry import register_dataset
 
-# base_default_system_prompt = """You are a helpful assistant. Generate a succinct summary of the medical history for the last 6 months."""
-base_default_system_prompt = """You are a medical copilot with expansive medical knowledge that should mimic an experienced medical professional (a doctor).
-Do not give anny information that is not in the data provided to you. If no data is given, then return an empty response.
-You will never paraphrase or speculate information, always faithfully reproduce the evidence as reported in all the output.
-Always cross-reference information across different sections of the patient data to ensure consistency in reporting"""
 
 DATASET_NAME = "ekacare/ekacare_medical_history_summarisation"
 SPLIT = "test"
@@ -154,15 +149,14 @@ def prepare_data_for_summary(dumped_model, key_replacement_dict):
     split=SPLIT,
     commit_hash=COMMIT_HASH,
     metrics=["rubric_evaluation"],
-    optional_args=["system_prompt"],
     task_type="rubric_evaluation",
+    default_args={"system_prompt": "medical_history_summary_system"},
 )
 class EkaMedicalHistorySummary(RubricBaseDataset):
-    def __init__(self, system_prompt=base_default_system_prompt, **kwargs):
+    def __init__(self, **kwargs):
         super().__init__(
             dataset_name=DATASET_NAME,
             split=SPLIT,
-            system_prompt=system_prompt,
             **kwargs,
         )
         self.key_replacement_dict = {
@@ -183,7 +177,6 @@ class EkaMedicalHistorySummary(RubricBaseDataset):
             "frequency": "freq",
             "prescribed_lab_tests": "plt",
         }
-        self.system_prompt = system_prompt
 
     def format_item(self, sample: Dict[str, Any]) -> DataLoaderIterable:
         prompt = json.loads(sample.get("prompt")[0].get("content"))

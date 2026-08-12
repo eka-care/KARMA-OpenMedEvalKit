@@ -19,10 +19,6 @@ from karma.eval_datasets.base_dataset import BaseMultimodalDataset
 
 logger = logging.getLogger(__name__)
 
-CONFINEMENT_INSTRUCTIONS = """<QUESTION> Think
-step by step through each of the multiple choice options. You MUST end your response with "Final
-Answer:" followed by only the letter corresponding to the correct answer enclosed in parentheses)."""
-
 DATASET_NAME = "TsinghuaC3I/MedXpertQA"
 SPLIT = "test"
 CONFIG = "Text"
@@ -35,6 +31,7 @@ COMMIT_HASH = "7e7c465a68eb2b866926bfa59c8c9d17a8daba65"
     split=SPLIT,
     metrics=["exact_match"],
     task_type="mcqa",
+    default_args={"user_prompt": "medxpertqa_text_cot"},
 )
 class MedXpertQATextDataset(BaseMultimodalDataset):
     """
@@ -50,7 +47,6 @@ class MedXpertQATextDataset(BaseMultimodalDataset):
         split: str = SPLIT,
         commit_hash: str = COMMIT_HASH,
         config: str = CONFIG,
-        confinement_instructions: str = CONFINEMENT_INSTRUCTIONS,
         **kwargs,
     ):
         """
@@ -61,7 +57,6 @@ class MedXpertQATextDataset(BaseMultimodalDataset):
             split: Dataset split (default: ``test``).
             commit_hash: Pinned HF repo commit for reproducibility.
             config: HF dataset config / subset name (``Text``).
-            confinement_instructions: Prompt template wrapping the question.
             **kwargs: Additional arguments passed to base class.
         """
         super().__init__(
@@ -69,7 +64,6 @@ class MedXpertQATextDataset(BaseMultimodalDataset):
             split=split,
             commit_hash=commit_hash,
             config=config,
-            confinement_instructions=confinement_instructions,
             **kwargs,
         )
 

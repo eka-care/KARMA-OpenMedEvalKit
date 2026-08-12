@@ -60,7 +60,7 @@ class GemmaHFLLM(BaseModel):
     def __init__(
         self,
         model_name_or_path: str,
-        device: str,
+        device: Optional[str] = None,
         max_new_tokens: int = 1024,
         temperature: float = 0.01,
         top_p: float = 0.9,
@@ -97,8 +97,6 @@ class GemmaHFLLM(BaseModel):
             enable_thinking=False,  # Gemma family does not expose thinking mode.
             **kwargs,
         )
-        self.model_name_or_path = model_name_or_path
-        self.device = device
         self.max_new_tokens = max_new_tokens
         self.temperature = temperature
         self.top_p = top_p
@@ -138,7 +136,7 @@ class GemmaHFLLM(BaseModel):
 
         # 2. Config sniff -> architecture name.
         cfg = AutoConfig.from_pretrained(
-            self.model_name_or_path, trust_remote_code=True
+            self.model_name_or_path, revision=self.revision, trust_remote_code=True
         )
         arch = (cfg.architectures or [""])[0]
 
@@ -160,12 +158,13 @@ class GemmaHFLLM(BaseModel):
         if is_text_only:
             self.model = AutoModelForCausalLM.from_pretrained(
                 self.model_name_or_path,
+                revision=self.revision,
                 device_map=self.device,
                 torch_dtype=torch.bfloat16,
                 trust_remote_code=True,
             )
             self.tokenizer = AutoTokenizer.from_pretrained(
-                self.model_name_or_path, trust_remote_code=True
+                self.model_name_or_path, revision=self.revision, trust_remote_code=True
             )
             # Left-padding is required for causal-LM batched generate(); Gemma
             # tokenizers ship without a pad_token, so fall back to eos_token.
@@ -175,12 +174,13 @@ class GemmaHFLLM(BaseModel):
         else:
             self.model = AutoModelForImageTextToText.from_pretrained(
                 self.model_name_or_path,
+                revision=self.revision,
                 device_map=self.device,
                 torch_dtype=torch.bfloat16,
                 trust_remote_code=True,
             )
             self.processor = AutoProcessor.from_pretrained(
-                self.model_name_or_path, trust_remote_code=True
+                self.model_name_or_path, revision=self.revision, trust_remote_code=True
             )
 
         # 5. Record branch for preprocess/run dispatch.
@@ -424,11 +424,6 @@ class GemmaHFLLM(BaseModel):
 # ---------------------------------------------------------------------------
 
 _SHARED_GEMMA_LOADER_KWARGS = {
-    "device": "cuda"
-    if torch.cuda.is_available()
-    else "mps"
-    if torch.mps.is_available()
-    else "cpu",
     "max_new_tokens": 1024,
     "temperature": 0.01,
     "top_p": 0.9,

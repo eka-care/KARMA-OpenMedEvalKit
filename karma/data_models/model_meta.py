@@ -68,7 +68,7 @@ class ModelMeta(BaseModel):
 
     # Language and domain support
     languages: Optional[List[str]] = Field(
-        default_factory=lambda: ["eng-Latn"],
+        default=None,
         description="Supported languages in ISO format",
     )
 
@@ -77,13 +77,6 @@ class ModelMeta(BaseModel):
         default=None, description="Model release date (YYYY-MM-DD)"
     )
     version: Optional[str] = Field(default=None, description="Model version")
-
-    @validator("languages")
-    def validate_languages(cls, v):
-        """Validate language codes format."""
-        if not v:
-            return ["eng-Latn"]
-        return v
 
     @validator("loader_class")
     def validate_loader_class(cls, v):

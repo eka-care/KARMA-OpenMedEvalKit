@@ -15,13 +15,6 @@ from karma.registries.dataset_registry import register_dataset
 
 logger = logging.getLogger(__name__)
 
-# Hardcoded confinement instructions
-CONFINEMENT_INSTRUCTIONS = """
-You are an expert at Indian Pharmacology.
-Solve them in a step-by-step fashion. 
-Output only the final answer (e.g., A, B, C, D, or E) 
-Question: <QUESTION>
-"""
 DATASET_NAME = "ekacare/Eka_NFI_MCQA"
 SPLIT = "test"
 COMMIT_HASH = "428cf44c302baf9e649c257ce07d7fb718c118dd"
@@ -33,6 +26,7 @@ COMMIT_HASH = "428cf44c302baf9e649c257ce07d7fb718c118dd"
     split=SPLIT,
     metrics=["exact_match"],
     task_type="mcqa",
+    default_args={"user_prompt": "eka_nfi_cot"},
 )
 class EkaNFIValidationSetDataset(BaseMultimodalDataset):
     """
@@ -43,7 +37,6 @@ class EkaNFIValidationSetDataset(BaseMultimodalDataset):
         self,
         dataset_name=DATASET_NAME,
         split=SPLIT,
-        confinement_instructions: str = CONFINEMENT_INSTRUCTIONS,
         commit_hash: str = COMMIT_HASH,
         **kwargs,
     ):
@@ -56,7 +49,6 @@ class EkaNFIValidationSetDataset(BaseMultimodalDataset):
         super().__init__(
             dataset_name=dataset_name,
             split=split,
-            confinement_instructions=confinement_instructions,
             commit_hash=commit_hash,
             **kwargs,
         )

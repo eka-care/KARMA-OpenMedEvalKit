@@ -17,20 +17,13 @@ logger = logging.getLogger(__name__)
 DATASET_NAME = "openlifescienceai/pubmedqa"
 SPLIT = "test"
 COMMIT_HASH = "50fc41dcd0bd6eb63c18d436d854c6f9e8f3c7e2"
-CONFINEMENT_INSTRUCTIONS = """Instructions: The following are multiple choice questions about medical knowledge. Solve them in a
-step-by-step fashion, starting by summarizing the available information. Output a single option from the
-four options as the final answer. Answer the following question given the context (reply with one of the
-options): Context: <CONTEXT> Question: <QUESTION> Response (think step by step and
-then end with "Final Answer:" followed by *only* the letter corresponding to the correct answer enclosed
-in parentheses)"""
-
-
 @register_dataset(
     DATASET_NAME,
     commit_hash=COMMIT_HASH,
     split=SPLIT,
     metrics=["exact_match"],
     task_type="mcqa",
+    default_args={"user_prompt": "pubmedmcqa_cot"},
 )
 class PubMedMCQADataset(MedQADataset):
     """
@@ -42,7 +35,6 @@ class PubMedMCQADataset(MedQADataset):
         dataset_name=DATASET_NAME,
         split=SPLIT,
         commit_hash: str = COMMIT_HASH,
-        confinement_instructions: str = CONFINEMENT_INSTRUCTIONS,
         **kwargs,
     ):
         """
@@ -56,7 +48,6 @@ class PubMedMCQADataset(MedQADataset):
             dataset_name=dataset_name,
             split=split,
             commit_hash=commit_hash,
-            confinement_instructions=confinement_instructions,
             **kwargs,
         )
 

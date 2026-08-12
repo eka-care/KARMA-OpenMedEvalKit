@@ -1,6 +1,7 @@
 import os
 import time
 import uuid
+import logging
 from typing import List
 import boto3
 import requests
@@ -8,6 +9,9 @@ from karma.models.base_model_abs import BaseModel
 from karma.data_models.dataloader_iterable import DataLoaderIterable
 from karma.data_models.model_meta import ModelMeta, ModalityType, ModelType
 from karma.registries.model_registry import register_model_meta
+from karma.utils.retry import call_with_retry
+
+logger = logging.getLogger(__name__)
 
 
 class AWSTranscribeASR(BaseModel):
@@ -16,9 +20,9 @@ class AWSTranscribeASR(BaseModel):
     def __init__(
         self,
         model_name_or_path: str = "aws-transcribe",
-        region_name: str = os.getenv("AWS_REGION"),
-        s3_bucket: str = os.getenv("AWS_S3_BUCKET"),
-        s3_key_prefix: str = os.getenv("AWS_S3_KEY_PREFIX"),
+        region_name: str = None,
+        s3_bucket: str = None,
+        s3_key_prefix: str = None,
         **kwargs
     ):
         """
@@ -35,9 +39,9 @@ class AWSTranscribeASR(BaseModel):
             **kwargs,
         )
         
-        self.region_name = region_name
-        self.s3_bucket = s3_bucket
-        self.s3_key_prefix = s3_key_prefix
+        self.region_name = region_name or os.getenv("AWS_REGION")
+        self.s3_bucket = s3_bucket or os.getenv("AWS_S3_BUCKET")
+        self.s3_key_prefix = s3_key_prefix or os.getenv("AWS_S3_KEY_PREFIX")
         self.client = None
         self.load_model()
     
@@ -76,10 +80,12 @@ class AWSTranscribeASR(BaseModel):
             raise RuntimeError(f"Failed to transcribe with AWS Transcribe: {status['TranscriptionJob']['TranscriptionJobStatus']}")
         
     def transcribe(self, audio_bytes):
-        s3_key = f"{self.s3_key_prefix}temp_{uuid.uuid4()}.mp4"
-        self.upload_obj_to_s3(self.s3_bucket, s3_key, audio_bytes)
-        response = self.transcribe_audio(f"s3://{self.s3_bucket}/{s3_key}")
-        return response
+        def _call():
+            s3_key = f"{self.s3_key_prefix}temp_{uuid.uuid4()}.mp4"
+            self.upload_obj_to_s3(self.s3_bucket, s3_key, audio_bytes)
+            return self.transcribe_audio(f"s3://{self.s3_bucket}/{s3_key}")
+
+        return call_with_retry(_call, description="AWS Transcribe")
     
     def preprocess(self, inputs: List[DataLoaderIterable], **kwargs):
         """
@@ -99,21 +105,33 @@ class AWSTranscribeASR(BaseModel):
     def run(self, inputs: List[DataLoaderIterable], **kwargs):
         """
         Run transcription on the input audio files.
-        
+
         Args:
             inputs: List of DataLoaderIterable objects containing audio data
-            
+
         Returns:
-            List of transcribed text strings
+            List of {"text", "error"} dicts, one per input
         """
-        transcriptions = []
+        results = []
         audio_items = self.preprocess(inputs)
-        
-        for audio_item in audio_items:
-            transcription = self.transcribe(audio_item)
-            transcriptions.append(transcription)
-        
-        return transcriptions
+        for i, audio_item in enumerate(audio_items):
+            try:
+                results.append({"text": self.transcribe(audio_item), "error": None})
+            except Exception as e:
+                logger.warning("AWS Transcribe failed for input %d: %s", i, e)
+                results.append({"text": "", "error": str(e)})
+        return results
+
+    def run_with_metadata(self, inputs: List[DataLoaderIterable], **kwargs):
+        outputs = self.run(inputs, **kwargs)
+        return [
+            {
+                "text": (out.get("text") or "").strip(),
+                "tool_trace": "",
+                "error": out.get("error"),
+            }
+            for out in outputs
+        ]
     
     
     def postprocess(self, transcriptions: List[str], **kwargs):
@@ -134,11 +152,7 @@ AWSTranscribeASRModel = ModelMeta(
     name="aws-transcribe",
     description="AWS Transcribe ASR model with automatic language detection",
     loader_class="karma.models.aws_transcribe_asr.AWSTranscribeASR",
-    loader_kwargs={
-        "region_name": os.getenv("AWS_REGION"),
-        "s3_bucket": os.getenv("AWS_S3_BUCKET"),
-        "s3_key_prefix": os.getenv("AWS_S3_KEY_PREFIX"),
-    },
+    loader_kwargs={},
     revision=None,
     reference="https://docs.aws.amazon.com/transcribe/",
     model_type=ModelType.AUDIO_RECOGNITION,

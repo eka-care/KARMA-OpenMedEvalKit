@@ -8,6 +8,15 @@ from karma.models.base_model_abs import BaseModel
 from karma.data_models.dataloader_iterable import DataLoaderIterable
 from karma.data_models.model_meta import ModelMeta, ModalityType, ModelType
 from karma.registries.model_registry import register_model_meta
+from karma.utils.retry import call_with_retry, is_transient_error
+
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+def _gemini_retryable(exc: BaseException) -> bool:
+    return is_transient_error(exc) or "already been terminated" in str(exc)
 
 
 class GeminiASR(BaseModel):
@@ -88,14 +97,29 @@ class GeminiASR(BaseModel):
             results = [None] * len(inputs)
             for future in as_completed(future_to_index):
                 index = future_to_index[future]
-                results[index] = future.result()
+                try:
+                    results[index] = {"text": future.result(), "error": None}
+                except Exception as e:
+                    logger.warning("Gemini call failed for input %d: %s", index, e)
+                    results[index] = {"text": "", "error": str(e)}
 
         return results
+
+    def run_with_metadata(self, inputs: List[DataLoaderIterable], **kwargs):
+        outputs = self.run(inputs, **kwargs)
+        return [
+            {
+                "text": (out.get("text") or "").strip(),
+                "tool_trace": "",
+                "error": out.get("error"),
+            }
+            for out in outputs
+        ]
 
     def _dispatch_item(self, item: DataLoaderIterable) -> str:
         """Route a single sample to the appropriate Gemini call."""
         if item.audio is not None:
-            return self.transcribe(item.audio)
+            return self.transcribe(item.audio, item.input)
         return self.generate_text(item)
 
     def generate_text(self, item: DataLoaderIterable) -> str:
@@ -120,50 +144,66 @@ class GeminiASR(BaseModel):
             raise ValueError("DataLoaderIterable has neither audio nor text input")
 
         try:
-            response = self.client.models.generate_content(
-                model=self.model_id,
-                config=self._build_generation_config(system_prompt=item.system_prompt),
-                contents=contents,
+            return call_with_retry(
+                lambda: (
+                    self.client.models.generate_content(
+                        model=self.model_id,
+                        config=self._build_generation_config(system_prompt=item.system_prompt),
+                        contents=contents,
+                    ).text
+                    or ""
+                ),
+                is_retryable=_gemini_retryable,
+                description="Gemini generate",
             )
-            return response.text if response.text else ""
         except Exception as e:
             raise RuntimeError(f"Failed to generate text with Gemini: {str(e)}") from e
 
-    def transcribe(self, audio_bytes):
+    def transcribe(self, audio_bytes, instruction=None):
         """
         Transcribe audio bytes using Gemini models via the Google AI API.
 
         Args:
             audio_bytes (bytes): Raw audio bytes to transcribe
+            instruction (str): task instruction supplied by the dataset's
+                user_prompt (``item.input``). Required — this is a general model,
+                so it must be told the task; it does not assume transcription.
 
         Returns:
             str: Transcribed text
         """
+        if not instruction:
+            raise ValueError(
+                "GeminiASR received audio with no instruction. Set a user_prompt "
+                "on the dataset (e.g. default_args={'user_prompt': 'asr_transcribe'}) "
+                "or pass --dataset-args '<dataset>:user_prompt_text=...'."
+            )
         # Create a temporary file to store the audio bytes
         with tempfile.NamedTemporaryFile(delete=False, suffix='.wav') as temp_file:
             temp_file.write(audio_bytes)
             temp_file_path = temp_file.name
 
         try:
-            # Upload file to Google AI
-            uploaded_file = self.client.files.upload(file=temp_file_path)
+            def _call():
+                # A 503 can kill the resumable upload session ("already been
+                # terminated"); the SDK cannot resume it, so each attempt
+                # starts a fresh upload.
+                uploaded_file = self.client.files.upload(file=temp_file_path)
+                response = self.client.models.generate_content(
+                    model=self.model_id,
+                    config=self._build_generation_config(),
+                    contents=[instruction, uploaded_file],
+                )
+                return response.text if response.text else ""
 
-            # Generate transcription
-            response = self.client.models.generate_content(
-                model=self.model_id,
-                config=self._build_generation_config(),
-                contents=[
-                    'Transcribe the given audio. Instruction: 1. Do not generate any timestamps or speaker information, just provide the text.',
-                    uploaded_file
-                ]
+            return call_with_retry(
+                _call,
+                is_retryable=_gemini_retryable,
+                description="Gemini transcribe",
             )
-
-            return response.text if response.text else ""
-
         except Exception as e:
             raise RuntimeError(f"Failed to transcribe with Gemini: {str(e)}") from e
         finally:
-            # Clean up the temporary file
             if os.path.exists(temp_file_path):
                 os.unlink(temp_file_path)
 
@@ -182,7 +222,6 @@ GeminiASR_2_0_Flash = ModelMeta(
     description="Google Gemini 2.0 Flash ASR model",
     loader_class="karma.models.gemini_asr.GeminiASR",
     loader_kwargs={
-        "model_id": "gemini-2.0-flash",
         "thinking_budget": None,
     },
     revision=None,
@@ -198,7 +237,6 @@ GeminiASR_2_5_Flash = ModelMeta(
     description="Google Gemini 2.5 Flash ASR model",
     loader_class="karma.models.gemini_asr.GeminiASR",
     loader_kwargs={
-        "model_id": "gemini-2.5-flash",
         "thinking_budget": None,
     },
     revision=None,
@@ -214,7 +252,6 @@ GeminiASR_2_5_Flash_lite = ModelMeta(
     description="Google Gemini 2.5 Flash Lite ASR model",
     loader_class="karma.models.gemini_asr.GeminiASR",
     loader_kwargs={
-        "model_id": "gemini-2.5-flash-lite",
         "thinking_budget": None,
     },
     revision=None,
@@ -230,7 +267,6 @@ GeminiASR_2_5_Pro = ModelMeta(
     description="Google Gemini 2.5 Pro ASR model",
     loader_class="karma.models.gemini_asr.GeminiASR",
     loader_kwargs={
-        "model_id": "gemini-2.5-pro",
         "thinking_budget": None,
     },
     revision=None,
@@ -246,7 +282,6 @@ GeminiASR_3_Flash_Preview = ModelMeta(
     description="Google Gemini 3 Flash Preview ASR model",
     loader_class="karma.models.gemini_asr.GeminiASR",
     loader_kwargs={
-        "model_id": "gemini-3-flash-preview",
         "thinking_budget": None,
     },
     revision=None,
@@ -257,12 +292,41 @@ GeminiASR_3_Flash_Preview = ModelMeta(
     version="3",
 )
 
+GeminiASR_3_5_Flash = ModelMeta(
+    name="gemini-3.5-flash",
+    description="Google Gemini 3.5 Flash ASR model",
+    loader_class="karma.models.gemini_asr.GeminiASR",
+    loader_kwargs={
+        "thinking_budget": 0,
+    },
+    revision=None,
+    reference="https://ai.google.dev/gemini-api/docs",
+    model_type=ModelType.AUDIO_RECOGNITION,
+    modalities=[ModalityType.AUDIO],
+    release_date="2026-06-17",
+    version="3.5",
+)
+
+GeminiASR_3_6_Flash = ModelMeta(
+    name="gemini-3.6-flash",
+    description="Google Gemini 3.5 Flash ASR model",
+    loader_class="karma.models.gemini_asr.GeminiASR",
+    loader_kwargs={
+        "thinking_budget": None,
+    },
+    revision=None,
+    reference="https://ai.google.dev/gemini-api/docs",
+    model_type=ModelType.AUDIO_RECOGNITION,
+    modalities=[ModalityType.AUDIO],
+    release_date="2026-06-17",
+    version="3.5",
+)
+
 GeminiASR_3_1_Pro_Preview = ModelMeta(
     name="gemini-3.1-pro-preview",
     description="Google Gemini 3.1 Pro Preview ASR model",
     loader_class="karma.models.gemini_asr.GeminiASR",
     loader_kwargs={
-        "model_id": "gemini-3.1-pro-preview",
         "thinking_budget": None,
     },
     revision=None,
@@ -278,7 +342,6 @@ GeminiASR_3_1_Flash_Lite_Preview = ModelMeta(
     description="Google Gemini 3.1 Flash Lite Preview ASR model",
     loader_class="karma.models.gemini_asr.GeminiASR",
     loader_kwargs={
-        "model_id": "gemini-3.1-flash-lite-preview",
         "thinking_budget": None,
     },
     revision=None,
@@ -296,4 +359,6 @@ register_model_meta(GeminiASR_2_5_Flash_lite)
 register_model_meta(GeminiASR_2_5_Pro)
 register_model_meta(GeminiASR_3_Flash_Preview)
 register_model_meta(GeminiASR_3_1_Pro_Preview)
+register_model_meta(GeminiASR_3_5_Flash)
+register_model_meta(GeminiASR_3_6_Flash)
 register_model_meta(GeminiASR_3_1_Flash_Lite_Preview)

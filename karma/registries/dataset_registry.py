@@ -164,7 +164,22 @@ class DatasetRegistry:
         Raises:
             ValueError: If dataset is not found
         """
-        info = self.get_dataset_info(name)
+        if not self._discovered:
+            self.discover_datasets()
+
+        if name not in self.datasets:
+            available = list(self.datasets.keys())
+            raise ValueError(
+                f"Dataset '{name}' not found. Available datasets: {available}"
+            )
+
+        info = self.datasets[name]
+        if "class" not in info or info["class"] is None:
+            import importlib
+            module = importlib.import_module(info["module"])
+            dataset_class = getattr(module, info["class_name"])
+            info["class"] = dataset_class
+
         return info["class"]
 
     def list_datasets(self) -> List[str]:
@@ -194,8 +209,7 @@ class DatasetRegistry:
             ValueError: If dataset is not found or required arguments are missing
             TypeError: If argument validation fails
         """
-        info = self.get_dataset_info(name)
-        dataset_class = info["class"]
+        dataset_class = self.get_dataset_class(name)
 
         if validate_args:
             # Validate and merge arguments
@@ -210,6 +224,7 @@ class DatasetRegistry:
             )
         else:
             # Use arguments as provided (backwards compatibility)
+            info = self.get_dataset_info(name)
             logger.debug(
                 f"Creating dataset '{name}' without validation with args: {list(kwargs.keys())}"
             )
@@ -429,7 +444,16 @@ class DatasetRegistry:
 
             cache_manager = get_cache_manager()
 
-            cache_data = {"datasets": self.datasets}
+            # Strip the raw class objects from the cached dictionary to prevent
+            # pickle from dynamically importing all dataset modules upon load.
+            cached_datasets = {}
+            for name, info in self.datasets.items():
+                info_copy = info.copy()
+                if "class" in info_copy:
+                    del info_copy["class"]
+                cached_datasets[name] = info_copy
+
+            cache_data = {"datasets": cached_datasets}
 
             cache_manager.set_cached_discovery("dataset", cache_data)
             logger.debug("Saved dataset registry to cache")
@@ -632,6 +656,12 @@ class DatasetRegistry:
                 "commit_hash",
                 "processors",
                 "max_samples",
+                "model_name",
+                # Prompt-registry slots — universal, resolved in BaseMultimodalDataset.
+                "user_prompt",
+                "system_prompt",
+                "user_prompt_text",
+                "system_prompt_text",
             ]
         )
 

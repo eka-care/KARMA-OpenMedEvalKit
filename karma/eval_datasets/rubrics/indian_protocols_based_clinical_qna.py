@@ -11,8 +11,8 @@ or from a local Arrow dataset path if provided.
 
 The single boolean ``has_tools`` flag (default False) is the source of truth for
 whether the run is a tools run:
-- has_tools=False -> uses BASE_SYSTEM_PROMPT, query_rubric_evaluation will short-circuit
-- has_tools=True  -> uses TOOL_AUGMENTED_SYSTEM_PROMPT, query_rubric_evaluation runs
+- has_tools=False -> uses prompt "indian_protocols_base", query_rubric_evaluation will short-circuit
+- has_tools=True  -> uses prompt "indian_protocols_tool", query_rubric_evaluation runs
 
 Usage:
     karma eval --model us.anthropic.claude-sonnet-4-6 \\
@@ -36,72 +36,14 @@ from karma.data_models.dataloader_iterable import (
     RubricCriteria,
 )
 from karma.eval_datasets.base_dataset import BaseMultimodalDataset
+from karma.prompts import resolve_prompt
 from karma.registries.dataset_registry import register_dataset
 
 logger = logging.getLogger(__name__)
 
 DATASET_NAME = "ekacare/indian_protocols_based_clinical_QnA"
 
-BASE_SYSTEM_PROMPT = """\
-You are a medical assistant with deep knowledge of clinical guidelines, \
-Indian medical protocols, and pharmacology. You help experienced doctors \
-by answering clinical queries concisely and accurately.
 
-RESPONSE RULES:
-- Provide direct, evidence-based answers. Be concise but clinically complete.
-- Use markdown formatting: headers (h2/h3), bullet points, and tables where helpful.
-- When the doctor's query references a specific guideline or publisher, \
-answer from that guideline's recommendations based on your training knowledge.
-
-CRITICAL — NEVER REFUSE OR DEFER:
-- This is a single-turn interaction. There is no follow-up.
-- NEVER ask the user to clarify, choose between options, or confirm anything.
-- NEVER say "please select", "which one do you mean", or "reply with 1/2/3".
-- ALWAYS provide your best answer in a single response, even if you are uncertain.
-- If a query is ambiguous, state your interpretation briefly and answer it.
-"""
-
-TOOL_AUGMENTED_SYSTEM_PROMPT = """\
-You are a medical assistant with deep knowledge of clinical guidelines, \
-Indian medical protocols, and pharmacology. You help experienced doctors \
-by answering clinical queries concisely and accurately.
-
-RESPONSE RULES:
-- Provide direct, evidence-based answers. Be concise but clinically complete.
-- Use markdown formatting: headers (h2/h3), bullet points, and tables where helpful.
-- When the doctor's query references a specific guideline or publisher, \
-answer from that guideline's recommendations.
-
-TOOL USAGE:
-- The medai-tools MCP server exposes `indian_treatment_protocol_search` for \
-searching published Indian and international medical protocols. Use it whenever \
-the doctor's query references a guideline, publisher, treatment protocol, \
-diagnostic criteria, drug selection per protocol, or threshold values.
-- Workflow: call `indian_treatment_protocol_search` with intent="publishers" \
-first if the publisher is ambiguous; then call again with intent="search" and \
-a list of {query, publisher} objects. Keep queries concise — use clinical \
-keywords, not question words. Break broad questions into multiple targeted \
-sub-queries.
-- When the query references a publisher acronym, map it to the closest match:
-  - "JH" likely refers to "Journal of Hypertension" (European Society of Hypertension)
-  - "STG 2022" under an Indian pediatrics context likely refers to IAP or MoHFW
-  - "RSSDI" refers to the Research Society for the Study of Diabetes in India
-  - "ACG" refers to the American College of Gastroenterology
-- The medai-tools MCP also exposes `indian_branded_drug_search`, \
-`indian_pharmacology_details`, and a `medical_calculator_*` family — use them \
-when the query is about Indian-branded medicines, NFI 2011 generic details, or \
-medical calculations respectively.
-- If tool results are empty or irrelevant, answer from your own medical knowledge.
-- Treat tool results as supplementary context — if they conflict with \
-well-established guidelines, prefer the established evidence.
-
-CRITICAL — NEVER REFUSE OR DEFER:
-- This is a single-turn interaction. There is no follow-up.
-- NEVER ask the user to clarify, choose between options, or confirm anything.
-- NEVER say "please select", "which one do you mean", or "reply with 1/2/3".
-- ALWAYS provide your best answer in a single response, even if you are uncertain.
-- If a query is ambiguous, state your interpretation briefly and answer it.
-"""
 
 
 @register_dataset(
@@ -109,7 +51,7 @@ CRITICAL — NEVER REFUSE OR DEFER:
     split="test",
     metrics=["answer_rubric_evaluation", "query_rubric_evaluation"],
     task_type="conversation_rubric_evaluation",
-    optional_args=["dataset_path", "system_prompt", "has_tools"],
+    optional_args=["dataset_path", "has_tools"],
 )
 class IndianProtocolsClinicalQnA(BaseMultimodalDataset):
     """
@@ -139,9 +81,8 @@ class IndianProtocolsClinicalQnA(BaseMultimodalDataset):
         if system_prompt is not None:
             self.system_prompt = system_prompt
         else:
-            self.system_prompt = (
-                TOOL_AUGMENTED_SYSTEM_PROMPT if self.has_tools else BASE_SYSTEM_PROMPT
-            )
+            name = "indian_protocols_tool" if self.has_tools else "indian_protocols_base"
+            self.system_prompt = resolve_prompt(name).body
 
         max_samples_raw = kwargs.get("max_samples", None)
         self.max_samples = int(max_samples_raw) if max_samples_raw is not None else None

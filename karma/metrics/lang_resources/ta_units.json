@@ -1,0 +1,25 @@
+{
+  "mm": ["மில்லிமீட்டர்", "மில்லிமீட்டர்கள்", "millimeter", "millimeters"],
+  "cm": ["சென்டிமீட்டர்", "சென்டிமீட்டர்கள்", "centimeter", "centimeters"],
+  "m": ["மீட்டர்", "மீட்டர்கள்", "meter", "meters"],
+  "km": ["கிலோமீட்டர்", "கிலோமீட்டர்கள்", "kilometer", "kilometers"],
+  "g": ["கிராம்", "கிராம்கள்", "gram", "grams"],
+  "kg": ["கிலோகிராம்", "கிலோகிராம்கள்", "kilogram", "kilograms"],
+  "mg": ["மில்லிகிராம்", "மில்லிகிராம்கள்", "milligram", "milligrams"],
+  "ml": ["மில்லிலிட்டர்", "மில்லிலிட்டர்கள்", "milliliter", "milliliters"],
+  "l": ["லிட்டர்", "லிட்டர்கள்", "liter", "liters"],
+  "sec": ["விநாடி", "விநாடிகள்", "second", "seconds"],
+  "min": ["நிமிடம்", "நிமிடங்கள்", "minute", "minutes"],
+  "hr": ["மணி", "மணிநேரம்", "hour", "hours"],
+  "db": ["டெசிபெல்", "decibel", "decibels"],
+  "hz": ["ஹெர்ட்ஸ்", "hertz"],
+  "mv": ["மில்லிவோல்ட்", "millivolt", "millivolts"],
+  "cc": ["சிசி", "கன சென்டிமீட்டர்", "cubic centimeter"],
+  "ppm": ["பிபிஎம்", "parts per million"],
+  "rpm": ["ஆர்பிஎம்", "revolutions per minute"],
+  "iu": ["சர்வதேச அலகு", "international unit"],
+  "conc": ["செறிவு", "concentration"],
+  "ok": ["சரி", "okay"],
+  "°c": ["டிகிரி செல்சியஸ்", "degree celsius"]
+}
+

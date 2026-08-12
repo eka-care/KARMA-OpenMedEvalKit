@@ -17,7 +17,6 @@ from karma.registries.dataset_registry import register_dataset
 
 logger = logging.getLogger(__name__)
 
-CONFINEMENT_INSTRUCTIONS = """Instructions: The following are multiple choice questions about Indian pharmaceutical medications. Solve them in a step-by-step fashion. Output only the final answer (e.g., A, B, C, D, or E) at the end using the format "Final Answer: (X)". Question: <QUESTION>"""
 SPLIT = "test"
 DATASET_NAME = "ekacare/indian_drug_mcqa"
 
@@ -27,20 +26,18 @@ DATASET_NAME = "ekacare/indian_drug_mcqa"
     split=SPLIT,
     metrics=["exact_match"],
     task_type="mcqa",
+    default_args={"user_prompt": "indian_drug_mcqa_cot"},
 )
 class IndianDrugMCQADataset(BaseMultimodalDataset):
     def __init__(
         self,
         dataset_name: str = DATASET_NAME,
         split: str = SPLIT,
-        confinement_instructions: str = CONFINEMENT_INSTRUCTIONS,
         **kwargs,
     ):
-        self.confinement_instructions = confinement_instructions
         super().__init__(
             dataset_name=dataset_name,
             split=split,
-            confinement_instructions=confinement_instructions,
             **kwargs,
         )
 

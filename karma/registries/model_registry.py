@@ -137,6 +137,8 @@ class ModelRegistry:
         final_kwargs["model_name_or_path"] = (
             model_meta.name if model_meta.model_path is None else model_meta.model_path
         )
+        if model_meta.revision:
+            final_kwargs.setdefault("revision", model_meta.revision)
         logger.info(f"Loading model '{name}' from {final_kwargs['model_name_or_path']}")
         return model_class(**final_kwargs)
 

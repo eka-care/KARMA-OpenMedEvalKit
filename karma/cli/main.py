@@ -10,10 +10,8 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.traceback import install
 
-from karma.cli.commands.eval import eval_cmd
 from karma.cli.commands.list import list_cmd
 from karma.cli.commands.info import info_cmd
-from karma.cli.commands.interactive import interactive_cmd
 
 import logging
 from rich.logging import RichHandler
@@ -23,6 +21,11 @@ logging.basicConfig(
     level="INFO", format=FORMAT, datefmt="[%X]", handlers=[RichHandler()]
 )
 
+for _noisy in (
+    "httpx", "httpcore", "urllib3", "botocore", "boto3", "openai", "google", "deepgram"
+):
+    logging.getLogger(_noisy).setLevel(logging.WARNING)
+
 # # Install rich traceback handler for better error display
 install()
 
@@ -30,7 +33,21 @@ install()
 console = Console()
 
 
-@click.group()
+class LazyGroup(click.Group):
+    def get_command(self, ctx, cmd_name):
+        if cmd_name == "eval":
+            from karma.cli.commands.eval import eval_cmd
+            return eval_cmd
+        if cmd_name == "interactive":
+            from karma.cli.commands.interactive import interactive_cmd
+            return interactive_cmd
+        return super().get_command(ctx, cmd_name)
+
+    def list_commands(self, ctx):
+        return ["eval", "list", "info", "interactive"]
+
+
+@click.group(cls=LazyGroup)
 @click.version_option(version="0.1.0", prog_name="karma")
 @click.option("--verbose", "-v", is_flag=True, help="Enable verbose output")
 @click.option("--quiet", "-q", is_flag=True, help="Suppress non-essential output")
@@ -56,8 +73,14 @@ def karma(ctx, verbose, quiet):
     ctx.obj["console"] = console
 
     # Adjust console verbosity
-    if quiet:
+    root_logger = logging.getLogger()
+    if verbose:
+        root_logger.setLevel(logging.DEBUG)
+    elif quiet:
+        root_logger.setLevel(logging.WARNING)
         console.quiet = True
+    else:
+        root_logger.setLevel(logging.INFO)
 
         # Show header
     console.print(
@@ -68,10 +91,8 @@ def karma(ctx, verbose, quiet):
     )
 
 
-karma.add_command(eval_cmd)
 karma.add_command(list_cmd)
 karma.add_command(info_cmd)
-karma.add_command(interactive_cmd, name="interactive")
 
 
 def main():

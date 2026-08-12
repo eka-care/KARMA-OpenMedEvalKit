@@ -55,6 +55,10 @@ class DataLoaderIterable(BaseModel):
         default=None,
         description="Audio prompt passed as a sample from the dataset iter",
     )
+    language: Optional[str] = Field(
+        default=None,
+        description="ISO language code of the sample (normalized at the benchmark chokepoint; model-visible, hashed)",
+    )
     other_args: Optional[Dict[str, Any]] = Field(
         default=None,
         description="Other arguments passed as a sample from the dataset iter",

@@ -9,9 +9,9 @@ from typing import Dict, Any, Tuple, List, Optional
 
 from karma.eval_datasets.base_dataset import BaseMultimodalDataset
 from karma.registries.dataset_registry import register_dataset
+from karma.utils.language import normalize_language
 from karma.data_models.dataloader_iterable import DataLoaderIterable
 
-CONFINEMENT_INSTRUCTIONS = "Translate the given text to the target language. Output only the translation without any additional text."
 DATASET_NAME = "ai4bharat/IN22-Conv"
 SPLIT = "test"
 COMMIT_HASH = "18cd45870ff0a9e65df9b80dbbcc615eec0e4899"
@@ -75,8 +75,12 @@ CODE_TO_NAME = {
     split=SPLIT,
     processors=["devnagari_transliterator"],
     required_args=["source_language", "target_language"],
-    optional_args=["domain", "processors", "confinement_instructions"],
-    default_args={"source_language": "en", "domain": "conversational"},
+    optional_args=["domain", "processors"],
+    default_args={
+        "source_language": "en",
+        "domain": "conversational",
+        "user_prompt": "in22conv_translate",
+    },
 )
 class IN22ConvDataset(BaseMultimodalDataset):
     """
@@ -92,7 +96,6 @@ class IN22ConvDataset(BaseMultimodalDataset):
         split=SPLIT,
         domain: str = "conversational",
         processors: Optional[List] = None,
-        confinement_instructions: Optional[str] = CONFINEMENT_INSTRUCTIONS,
         **kwargs,
     ):
         """
@@ -108,6 +111,8 @@ class IN22ConvDataset(BaseMultimodalDataset):
             commit_hash: Specific commit hash of the dataset
             **kwargs: Additional arguments passed to parent class
         """
+        source_language = normalize_language(source_language)
+        target_language = normalize_language(target_language)
         # Validate language codes
         if source_language not in ID_TO_CODE:
             raise ValueError(
@@ -128,12 +133,9 @@ class IN22ConvDataset(BaseMultimodalDataset):
         self.domain = domain
         super().__init__(
             processors=processors,
-            confinement_instructions=confinement_instructions,
             **kwargs,
         )
-        self.dataset_name = (
-            f"{DATASET_NAME}-{self.source_language}-{self.target_language}"
-        )
+        self.dataset_subset = f"{self.source_language_code}-{self.target_language_code}"
 
     def format_item(self, sample: Dict[str, Any]) -> DataLoaderIterable:
         """

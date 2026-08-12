@@ -2,6 +2,7 @@ from typing import Dict, Any
 from karma.data_models.dataloader_iterable import DataLoaderIterable
 from karma.eval_datasets.base_dataset import BaseMultimodalDataset
 from karma.registries.dataset_registry import register_dataset
+from karma.utils.language import sample_language
 from datasets import Audio
 
 DATASET_NAME = "ekacare/denoising-impact-evaluation-dataset"
@@ -14,7 +15,7 @@ COMMIT_HASH = "7f78b4381f0ce365777f4065aa9f32acf4225902"
    commit_hash=COMMIT_HASH,
     split=SPLIT,
     task_type="transcription",
-    default_args={"language": "en", "subset": "original"}
+    default_args={"user_prompt": "asr_transcribe", "language": "en", "subset": "original"}
 )
 class NoiseEvaluationDataset(BaseMultimodalDataset):
     def __init__(
@@ -31,7 +32,9 @@ class NoiseEvaluationDataset(BaseMultimodalDataset):
         Initialize the NoiseEvaluationDataset dataset.
         
         Args:
-            language: Language code (stored but not used as config)
+            language: Metric-level default only (propagated to metrics via
+                dataset args); rows keep their own audio_language, so this is
+                deliberately NOT stored as self.language.
             subset: Specific noise condition subset to evaluate on
         """
         super().__init__(
@@ -41,9 +44,7 @@ class NoiseEvaluationDataset(BaseMultimodalDataset):
             processors=processors,
             **kwargs,
         )
-        self.language = language
         self.subset = subset
-        self.dataset_name = f"{DATASET_NAME}-{self.subset}"
         self.dataset = self.dataset.cast_column(
             "audio", Audio(sampling_rate=16000, decode=False)
         )
@@ -52,9 +53,9 @@ class NoiseEvaluationDataset(BaseMultimodalDataset):
         return DataLoaderIterable(
             audio=sample.get("audio", {}).get("bytes"),
             expected_output=sample.get("text", ""),
+            language=sample_language(sample.get("audio_language")),
             other_args={
-                "language": sample.get("audio_language", "unknown"), 
-                "recording_context": sample.get("recording_context", ""), 
+                "recording_context": sample.get("recording_context", ""),
                 "type_concept": sample.get("type_concept", ""),
                 "noise_type": self.subset,
                 "entities": sample.get("medical_entities", []),

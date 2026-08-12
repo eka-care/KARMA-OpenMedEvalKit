@@ -29,15 +29,15 @@ class RubricBaseDataset(BaseMultimodalDataset):
         self,
         dataset_name: str,
         split: str,
-        system_prompt: str,
         **kwargs,
     ):
+        # system_prompt is resolved by BaseMultimodalDataset from the dataset's
+        # default_args (registry name) or a dataset_args override.
         super().__init__(
             dataset_name=dataset_name,
             split=split,
             **kwargs,
         )
-        self.system_prompt = system_prompt
 
     def format_item(self, sample: Dict[str, Any]) -> DataLoaderIterable:
         # Extract prompt information

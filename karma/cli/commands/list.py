@@ -19,6 +19,7 @@ from karma.registries.model_registry import model_registry
 from karma.registries.dataset_registry import dataset_registry
 from karma.registries.metrics_registry import metric_registry
 from karma.registries.registry_manager import discover_all_registries
+from karma import prompts as prompts_registry
 
 
 def format_models_csv(models):
@@ -75,14 +76,24 @@ def format_metrics_csv(metrics):
     """Format metrics list as CSV."""
     output = io.StringIO()
     writer = csv.writer(output)
-    
+
     # Write header
     writer.writerow(['name'])
-    
+
     # Write data
     for metric in sorted(metrics):
         writer.writerow([metric])
-    
+
+    return output.getvalue()
+
+
+def format_prompts_csv(prompts):
+    """Format prompts list as CSV."""
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(['name', 'version', 'role'])
+    for prompt in sorted(prompts, key=lambda p: p.name):
+        writer.writerow([prompt.name, prompt.version, prompt.role])
     return output.getvalue()
 
 
@@ -351,6 +362,71 @@ def list_metrics(ctx, output_format):
 
     except Exception as e:
         console.print(ClickFormatter.error(f"Failed to list metrics: {str(e)}"))
+        raise click.Abort()
+
+
+@list_cmd.command(name="prompts")
+@click.option(
+    "--format",
+    "output_format",
+    type=click.Choice(["table", "simple", "csv"], case_sensitive=False),
+    default="table",
+    help="Output format",
+)
+@click.option("--role", help="Filter by role (user/system)")
+@click.pass_context
+def list_prompts(ctx, output_format, role):
+    """
+    List all named prompts in the registry.
+
+    Prompts live in karma/prompts/ as Prompt(name, version, role, body)
+    declarations; datasets reference them by name.
+
+    Examples:
+        karma list prompts
+        karma list prompts --role system
+    """
+    console = ctx.obj["console"]
+
+    try:
+        prompts = prompts_registry.list_prompts()
+        if role:
+            prompts = [p for p in prompts if p.role == role]
+
+        if not prompts:
+            console.print(ClickFormatter.warning("No prompts found in registry"))
+            console.print(
+                "\nTo register a prompt, add a Prompt(...) declaration under karma/prompts/."
+            )
+            return
+
+        prompts = sorted(prompts, key=lambda p: p.name)
+
+        if output_format == "table":
+            from rich.table import Table
+
+            table = Table(
+                title="Available Prompts", show_header=True, header_style="bold cyan"
+            )
+            table.add_column("Name", style="green")
+            table.add_column("Version", justify="right")
+            table.add_column("Role", style="magenta")
+            for prompt in prompts:
+                table.add_row(prompt.name, str(prompt.version), prompt.role)
+            console.print("\n")
+            console.print(table)
+        elif output_format == "csv":
+            print(format_prompts_csv(prompts), end='')
+            return
+        else:
+            console.print(f"\n[cyan]Available Prompts ({len(prompts)}):[/cyan]")
+            for prompt in prompts:
+                console.print(f"  {prompt.name} (v{prompt.version}, {prompt.role})")
+
+        console.print(f"\n{ClickFormatter.success(f'Found {len(prompts)} prompts')}")
+
+    except Exception as e:
+        console.print(ClickFormatter.error(f"Failed to list prompts: {str(e)}"))
         raise click.Abort()
 
 

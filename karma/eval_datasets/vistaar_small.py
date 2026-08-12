@@ -2,6 +2,7 @@ from typing import Dict, Any
 from karma.data_models.dataloader_iterable import DataLoaderIterable
 from karma.eval_datasets.base_dataset import BaseMultimodalDataset
 from karma.registries.dataset_registry import register_dataset
+from karma.utils.language import normalize_language, sample_language
 from datasets import Audio
 
 DATASET_NAME = "ekacare/vistaar_small_asr_eval"
@@ -15,8 +16,8 @@ COMMIT_HASH = "8b7b3e8d11d2da441c6c708c2d9a4a7958b57881"
     commit_hash=COMMIT_HASH,
     split=SPLIT,
     task_type="transcription",
-    required_args=["language"],
-    default_args={"language": "hi"},
+    required_args=["subset"],
+    default_args={"user_prompt": "asr_transcribe", "subset": "hi"},
     processors=["general_text_processor"],
 )
 class VistaarSmallDataset(BaseMultimodalDataset):
@@ -25,7 +26,7 @@ class VistaarSmallDataset(BaseMultimodalDataset):
         dataset_name: str = DATASET_NAME,
         split: str = SPLIT,
         commit_hash: str = COMMIT_HASH,
-        language: str = "hi",
+        subset: str = "hi",
         processors=None,
         **kwargs,
     ):
@@ -33,6 +34,7 @@ class VistaarSmallDataset(BaseMultimodalDataset):
         Initialize the IndicVoicesR dataset.
 
         """
+        language = normalize_language(subset)
         super().__init__(
             dataset_name=dataset_name,
             split=split,
@@ -42,7 +44,7 @@ class VistaarSmallDataset(BaseMultimodalDataset):
             **kwargs,
         )
         self.language = language
-        self.dataset_name = f"{DATASET_NAME}-{self.language}"
+        self.dataset_subset = language
         self.dataset = self.dataset.cast_column(
             "audio", Audio(sampling_rate=16000, decode=False)
         )
@@ -51,5 +53,5 @@ class VistaarSmallDataset(BaseMultimodalDataset):
         return DataLoaderIterable(
             audio=sample.get("audio", {}).get("bytes"),
             expected_output=sample.get("text", ""),
-            other_args={"language": sample.get("audio_language", "unknown")},
+            language=sample_language(sample.get("audio_language")),
         )

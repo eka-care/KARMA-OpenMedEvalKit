@@ -101,16 +101,59 @@ class F1Metric(HfMetric):
         super().__init__(metric_name)
 
 
+def _error_rate(measures_list):
+    """HuggingFace's accumulation: (S+D+I) / (S+D+H) summed over the batch.
+
+    jiwer is imported inside the methods below, not at module scope: it ships in
+    the optional `runtime` groups, and this module is imported for every metric.
+    """
+    incorrect = sum(m.substitutions + m.deletions + m.insertions for m in measures_list)
+    total = sum(m.substitutions + m.deletions + m.hits for m in measures_list)
+    return incorrect / total
+
+
 @register_metric("wer")
-class WERMetric(HfMetric):
+class WERMetric(BaseMetric):
+    """Word Error Rate, numerically identical to the HuggingFace `wer` metric.
+
+    Calls jiwer directly rather than through `evaluate.load("wer")`: the HF
+    wrapper writes an Arrow cache file guarded by a single global lock file per
+    `compute()` call, so concurrent callers serialise on it (and collide when
+    they share the default experiment id). Semantic WER makes tens of these
+    calls per utterance, where that overhead dominates.
+    """
+
     def __init__(self, metric_name: str = "wer", **kwargs):
         super().__init__(metric_name)
 
+    def evaluate(self, predictions, references, concatenate_texts=False, **kwargs):
+        import jiwer
+
+        if concatenate_texts:
+            return jiwer.process_words(references, predictions).wer
+        return _error_rate(
+            [jiwer.process_words(r, p) for p, r in zip(predictions, references)]
+        )
+
 
 @register_metric("cer")
-class CERMetric(HfMetric):
+class CERMetric(BaseMetric):
+    """Character Error Rate, numerically identical to the HuggingFace `cer` metric.
+
+    Direct jiwer for the same reason as WERMetric above.
+    """
+
     def __init__(self, metric_name: str = "cer", **kwargs):
         super().__init__(metric_name)
+
+    def evaluate(self, predictions, references, concatenate_texts=False, **kwargs):
+        import jiwer
+
+        if concatenate_texts:
+            return jiwer.process_characters(references, predictions).cer
+        return _error_rate(
+            [jiwer.process_characters(r, p) for p, r in zip(predictions, references)]
+        )
 
 
 @register_metric(

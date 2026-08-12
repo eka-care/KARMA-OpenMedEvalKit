@@ -17,17 +17,13 @@ logger = logging.getLogger(__name__)
 DATASET_NAME = "mdwiratathya/SLAKE-vqa-english"
 SPLIT = "test"
 COMMIT_HASH = "8d18b4d5a4eae47101c1d9f57b99fc58df66f17e"
-CONFINEMENT_INSTRUCTIONS = """<QUESTION> You may write out your argument before stating your final very short,
-definitive, and concise answer (if possible, a single word or the letter corresponding to your answer
-choice) X in the format "Final Answer: X": """
-
 @register_dataset(
     DATASET_NAME,
     commit_hash=COMMIT_HASH,
     split=SPLIT,
     metrics=["exact_match", "tokenised_f1"],
     task_type="vqa",
-    optional_args=["confinement_instructions"],
+    default_args={"user_prompt": "slake_cot"},
 )
 class SLAKEDataset(VQARADDataset):
     """
@@ -40,7 +36,6 @@ class SLAKEDataset(VQARADDataset):
         dataset_name=DATASET_NAME,
         split=SPLIT,
         commit_hash=COMMIT_HASH,
-        confinement_instructions: str = CONFINEMENT_INSTRUCTIONS,
         **kwargs,
     ):
         """
@@ -50,12 +45,11 @@ class SLAKEDataset(VQARADDataset):
             **kwargs: Additional arguments passed to base class
         """
         # Override the dataset name for SLAKE
-    
+
         super().__init__(
             dataset_name=dataset_name,
             split=split,
             commit_hash=commit_hash,
-            confinement_instructions=confinement_instructions,
             **kwargs,
         )
 

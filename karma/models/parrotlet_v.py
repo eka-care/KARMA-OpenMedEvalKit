@@ -20,7 +20,7 @@ class ParrotletVLiteLLM(MedGemmaLLM):
     def __init__(
         self,
         model_name_or_path,
-        device: str,
+        device: Optional[str] = None,
         max_tokens: int = 1024,
         temperature: float = 0.7,
         top_p: float = 0.9,
@@ -49,8 +49,6 @@ class ParrotletVLiteLLM(MedGemmaLLM):
             top_k=top_k,
             **kwargs,
         )
-        self.model_name_or_path = model_name_or_path
-        self.device = device
         self.max_tokens = max_tokens
         self.temperature = temperature
         self.top_p = top_p
@@ -98,11 +96,6 @@ ParrotletVLiteModel = ModelMeta(
     description="Parrotlet-v-lite-4b model",
     loader_class="karma.models.parrotlet_v.ParrotletVLiteLLM",
     loader_kwargs={
-        "device": "cuda"
-        if torch.cuda.is_available()
-        else "mps"
-        if torch.mps.is_available()
-        else "cpu",
         "max_tokens": 1024,
         "temperature": 0.01,
         "top_p": 0.9, 

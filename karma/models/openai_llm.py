@@ -6,6 +6,7 @@ import base64
 from typing import List, Optional, Dict, Any
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from openai import OpenAI
+from karma.utils.retry import call_with_retry
 from karma.models.base_model_abs import BaseModel
 from karma.models.mcp_client import FASTMCP_AVAILABLE, MCPClientPool, discover_mcp_tools
 from karma.data_models.dataloader_iterable import DataLoaderIterable
@@ -276,16 +277,19 @@ class OpenAILLM(BaseModel):
                 return asyncio.run(self._tool_loop(api_input))
             except Exception as e:
                 logger.error(f"Tool loop failed for OpenAI: {str(e)}")
-                return {"text": f"Error: {str(e)}", "tool_trace": ""}
+                return {"text": "", "tool_trace": "", "error": str(e)}
 
         try:
             api_kwargs = {k: v for k, v in api_input.items() if k != "tool_policy"}
-            response = self.client.chat.completions.create(**api_kwargs)
+            response = call_with_retry(
+                lambda: self.client.chat.completions.create(**api_kwargs),
+                description="OpenAI chat",
+            )
             generated_text = response.choices[0].message.content
             return {"text": generated_text or "", "tool_trace": ""}
         except Exception as e:
             logger.error(f"Failed to generate text with OpenAI: {str(e)}")
-            return {"text": f"Error: {str(e)}", "tool_trace": ""}
+            return {"text": "", "tool_trace": "", "error": str(e)}
 
     async def _tool_loop(self, api_input: Dict[str, Any]) -> Dict[str, str]:
         """Autonomous agentic loop: call LLM, execute tool calls via MCP, repeat until final text.
@@ -322,8 +326,11 @@ class OpenAILLM(BaseModel):
                 first_turn = False
 
                 try:
-                    response = self.client.chat.completions.create(
-                        messages=messages, **call_kwargs
+                    response = call_with_retry(
+                        lambda: self.client.chat.completions.create(
+                            messages=messages, **call_kwargs
+                        ),
+                        description="OpenAI chat (tool loop)",
                     )
                 except Exception as e:
                     logger.error(f"OpenAI API call failed in tool loop: {e}")
@@ -526,6 +533,7 @@ class OpenAILLM(BaseModel):
                 {
                     "text": output.get("text", "").strip(),
                     "tool_trace": output.get("tool_trace", "") or "",
+                    "error": output.get("error"),
                 }
             )
         return result
@@ -736,6 +744,45 @@ GPT52_LLM = ModelMeta(
 
 
 # Register the models
+
+GPT56_TERRA_LLM = ModelMeta(
+    name="gpt-5.6-terra",
+    description="OpenAI GPT-5.6 Terra language model",
+    loader_class="karma.models.openai_llm.OpenAILLM",
+    loader_kwargs={
+        "model_name_or_path": "gpt-5.6-terra",
+        "max_completion_tokens": 32768,
+        "temperature": 1.0,
+        "top_p": 1.0,
+        "frequency_penalty": 0.0,
+        "presence_penalty": 0.0,
+    },
+    reference="https://platform.openai.com/docs/models/gpt-5.6-terra",
+    model_type=ModelType.TEXT_GENERATION,
+    modalities=[ModalityType.TEXT, ModalityType.IMAGE],
+    release_date="2026-06-01",
+    version="1.0",
+)
+
+GPT56_LUNA_LLM = ModelMeta(
+    name="gpt-5.6-luna",
+    description="OpenAI GPT-5.6 Luna language model",
+    loader_class="karma.models.openai_llm.OpenAILLM",
+    loader_kwargs={
+        "model_name_or_path": "gpt-5.6-luna",
+        "max_completion_tokens": 32768,
+        "temperature": 1.0,
+        "top_p": 1.0,
+        "frequency_penalty": 0.0,
+        "presence_penalty": 0.0,
+    },
+    reference="https://platform.openai.com/docs/models/gpt-5.6-luna",
+    model_type=ModelType.TEXT_GENERATION,
+    modalities=[ModalityType.TEXT, ModalityType.IMAGE],
+    release_date="2026-06-01",
+    version="1.0",
+)
+
 register_model_meta(GPT4o_LLM)
 register_model_meta(GPT4o_Mini_LLM)
 register_model_meta(GPT35_Turbo_LLM)
@@ -746,3 +793,5 @@ register_model_meta(GPT5_LLM)
 register_model_meta(GPT5_NANO_LLM)
 register_model_meta(GPT5_MINI_LLM)
 register_model_meta(GPT52_LLM)
+register_model_meta(GPT56_TERRA_LLM)
+register_model_meta(GPT56_LUNA_LLM)
